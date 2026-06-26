@@ -10,7 +10,7 @@
 
 ---
 
-> 🚀 **New? Start here → [Quick Start Guide](docs/en/00-Quick-Start.md)** — get driving in 3 minutes.
+> 🚀 **New? Start here → [Quick Start Guide](.local/en/00-Quick-Start.md)** — get driving in 3 minutes.
 
 ---
 
@@ -109,7 +109,7 @@ gradlew build           # Build mod JAR
 gradlew runClient
 ```
 
-The first launch auto-extracts nested JAR dependencies. See [Getting Started Guide](docs/en/01-Getting-Started.md) for details.
+The first launch auto-extracts nested JAR dependencies. See [Getting Started Guide](.local/en/01-Getting-Started.md) for details.
 
 ---
 
@@ -117,12 +117,12 @@ The first launch auto-extracts nested JAR dependencies. See [Getting Started Gui
 
 | Document | Audience |
 | ---------- | ---------- |
-| [Feature Overview](docs/en/02-Feature-Overview.md) | Everyone |
-| [Getting Started Guide](docs/en/01-Getting-Started.md) | New contributors |
-| [SubLevel Physics Architecture](docs/en/03-SubLevel-Physics.md) | Developers |
-| [Code Map](docs/en/04-Code-Map.md) | Contributors |
-| [Troubleshooting](docs/en/05-Troubleshooting.md) | Everyone |
-| [Current Status & Roadmap](docs/en/06-Current-Status.md) | Everyone |
+| [Feature Overview](.local/en/02-Feature-Overview.md) | Everyone |
+| [Getting Started Guide](.local/en/01-Getting-Started.md) | New contributors |
+| [SubLevel Physics Architecture](.local/en/03-SubLevel-Physics.md) | Developers |
+| [Code Map](.local/en/04-Code-Map.md) | Contributors |
+| [Troubleshooting](.local/en/05-Troubleshooting.md) | Everyone |
+| [Current Status & Roadmap](.local/en/06-Current-Status.md) | Everyone |
 
 > **Chinese documentation (comprehensive)**: `《中控载具工坊：范式》项目推进文档3.0/` — includes 29 technical deep-dives, complete development history, design philosophy, and performance analysis. Machine-translation friendly.
 

@@ -24,15 +24,10 @@ config = "iac_p.mixins.json"
     side="BOTH"
 
 [[dependencies.iac_p]]
-    modId="create"
+    modId="sable"
     type="required"
-    versionRange="[6.0,7.0)"
+    versionRange="[2.0,99.0)"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.iac_p]]
-    modId="simulated"
-    type="required"
-    versionRange="[1.0,2.0)"
-    ordering="NONE"
-    side="BOTH"
+
