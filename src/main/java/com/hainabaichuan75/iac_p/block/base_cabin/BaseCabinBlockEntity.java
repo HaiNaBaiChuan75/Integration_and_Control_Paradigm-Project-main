@@ -1,15 +1,15 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
+import com.hainabaichuan75.iac_p.vehicle.cabin.CabinBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class BaseCabinBlockEntity extends BlockEntity implements GeoAnimatable {
+public class BaseCabinBlockEntity extends CabinBlockEntity implements GeoAnimatable {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public BaseCabinBlockEntity(BlockPos pos, BlockState state) {

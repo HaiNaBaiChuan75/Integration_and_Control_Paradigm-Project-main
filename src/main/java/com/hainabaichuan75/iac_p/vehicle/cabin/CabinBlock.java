@@ -1,7 +1,9 @@
 package com.hainabaichuan75.iac_p.vehicle.cabin;
 
+import com.hainabaichuan75.iac_p.util.AssemblyUtil;
 import com.hainabaichuan75.iac_p.util.SubLevelUtil;
 import dev.ryanhcode.sable.sublevel.SubLevel;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -10,8 +12,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -20,13 +26,57 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class CabinBlock extends Block {
+public abstract class CabinBlock<BE extends CabinBlockEntity> extends Block implements EntityBlock {
     protected static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public CabinBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
     }
+
+    public boolean isAssembled(BlockPos pos, ServerLevel level) {
+        return SubLevelUtil.getSubLevelAt(level, pos) != null;
+    }
+
+    // TODO: 高级组装方法
+    @Override
+    protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hitResult) {
+        if (level.isClientSide) {return InteractionResult.PASS;}
+        if (player.isShiftKeyDown()) {return InteractionResult.PASS;}
+        ServerLevel serverLevel = (ServerLevel) level;
+        SubLevel subLevel = SubLevelUtil.getSubLevelAt(serverLevel, pos);
+        if (subLevel == null) {
+            SubLevel result = AssemblyUtil.assemble(serverLevel, pos);
+            if (result!=null){return InteractionResult.SUCCESS;}
+            return InteractionResult.FAIL;
+        }
+
+        AssemblyUtil.disassembleSubLevel(level, subLevel, pos);
+
+        return InteractionResult.SUCCESS;
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state,
+                                                                  @NotNull BlockEntityType<T> blockEntityType) {
+        if (level.isClientSide()) {
+            return (lvl, pos, st, be) -> {
+                if (be instanceof CabinBlockEntity cabinBe) {
+                    cabinBe.tickClient((ClientLevel) lvl, pos, st);
+                }
+            };
+        }
+        return (lvl, pos, st, be) -> {
+            if (be instanceof CabinBlockEntity cabinBe) {
+                cabinBe.tickServer((ServerLevel) lvl, pos, st);
+            }
+        };
+    }
+
+    @Nullable
+    @Override
+    public abstract BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state);
 
     @Nullable
     @Override
@@ -38,24 +88,6 @@ public abstract class CabinBlock extends Block {
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(FACING);
-    }
-
-    // TODO: 高级组装方法
-    @Override
-    protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hitResult) {
-        if (level.isClientSide) {return InteractionResult.PASS;}
-        if (player.isShiftKeyDown()) {return InteractionResult.PASS;}
-        ServerLevel serverLevel = (ServerLevel) level;
-        SubLevel subLevel = SubLevelUtil.getSubLevelAt(serverLevel, pos);
-        if (subLevel == null) {
-            SubLevel result = SubLevelUtil.assemble(serverLevel, pos);
-            if (result!=null){return InteractionResult.SUCCESS;}
-            return InteractionResult.FAIL;
-        }
-
-        SubLevelUtil.disassembleSubLevel(level, subLevel, pos);
-
-        return InteractionResult.SUCCESS;
     }
 
     @Override
