@@ -36,32 +36,25 @@
 | # | Feature | Status | Description |
 |---|---------|--------|-------------|
 | 10 | Suspension Test Block | ✅ | Independent suspension + wheel physics test block. Built on top of Offroad's tire data components (`TireLike`). See comparison with Offroad WheelMountBlock below. |
-| 11 | Friction Circle Model | ✅ | Shared friction budget for longitudinal & lateral forces |
+| 11 | Binary Grip | ✅ | Per-wheel min(driveForce, μ×N), no friction budget sharing (replaced Friction Circle 06-17) |
 | 12 | Handbrake (v3) | ✅ | Wheel lock + pure sliding friction, ~0.35g deceleration |
 | 13 | Vehicle Control System | ✅ | C key GUI, 5 configurable keybindings per block |
-| 14 | Dynamic Load Transfer | ✅ | Weight shift during acceleration/braking/turning |
-| 15 | Brush Tire Lateral Slip | ✅ | Peak slip angle ~4.5°, grip collapse simulates drift |
-| 16 | Tire Physics System | ✅ | Pressure/width/stiffness/rolling resistance; runtime params simplified to compile-time constants in 06-09. Tire physics model (pressure, burst detection, rolling resistance) is IAC-P's own implementation; wheel items and data components (`TireLike`) come from Offroad. |
-| 17 | Quadratic Drag | ✅ | DRAG_COEFFICIENT=0.0045, top speed ~120 km/h |
-| 18 | MIN_IMPULSE Rationalization | ✅ | 500→30, friction budget from 45g to 2.75g |
-| 19 | Rolling Resistance Cleanup | ✅ | Removed `/0.4` backward-compat relic |
-| 20 | WASD Smart Mapping | ✅ | Multi-wheel coordinated input abstraction — FACING-voting forward axis, centroid-based steering assignment, Car Mode/Reverse/Toggle |
+| 14 | Tire Physics System | ✅ | Pressure/width/stiffness/rolling resistance; runtime params simplified to compile-time constants in 06-09. Tire physics model (pressure, burst detection, rolling resistance) is IAC-P's own implementation; wheel items and data components (`TireLike`) come from Offroad. |
+| 15 | MIN_IMPULSE Rationalization | ✅ | 500→30, friction budget from 45g to 2.75g |
+| 16 | Rolling Resistance Cleanup | ✅ | Removed `/0.4` backward-compat relic |
+| 17 | WASD Smart Mapping | ✅ | Multi-wheel coordinated input abstraction — FACING-voting forward axis, centroid-based steering assignment, Car Mode/Reverse/Toggle |
 
 ## 3. Powertrain
 
 | # | Feature | Status | Description |
 |---|---------|--------|-------------|
-| 21 | Engine Model | ✅ | Idle 800 / Redline 6,000 RPM, mass-adaptive torque |
-| 22 | Transmission | ✅ | 5 forward + R reverse + N neutral, ratios 4.0/2.5/1.6/1.2/1.0/-3.5 |
+| 21 | Engine Model | ✅ | Throttle-direct RPM + throttle-linear torque. RPM = IDLE + throttle × (MAX - IDLE), Torque = TORQUE_MIN + throttle × (TORQUE_MAX - TORQUE_MIN). Decoupled from RPM. |
+| 22 | Transmission | ✅ | 5 forward + R reverse + N neutral, ratios 4.0/2.5/1.6/1.2/1.0/-3.5, final drive 14.0 |
 | 23 | Gear Shift | ✅ | Q up / E down, rising-edge detection, RPM sync on shift |
 | 24 | Differential | ✅ | Equal torque distribution to all wheels |
 | 25 | Fallback Mode | ✅ | No cockpit → fixed RPM/Torque (400/80) |
-| 26 | Mass-Adaptive Torque | ✅ | `effectiveTorque = mass × g × 0.02` |
-| 27 | Continuous Throttle | ✅ | 0.0~1.0 throttle, triple decay profile |
-| 28 | Load-Balanced Engine | ✅ | `loadFactor = force demand / max force` |
-| 29 | Torque Curve | ✅ | RPM-dependent correction, peak ~3,400 RPM |
-| 30 | Engine-Wheel Coupling | ✅ | engineRPM = max(wheelRPM × gear × finalDrive, idle) |
-| 31 | Final Drive Ratio | ✅ | FINAL_DRIVE_RATIO=14.0 |
+| 26 | Continuous Throttle | ✅ | 0.0~1.0 throttle, Home+/End- control, no auto-decay |
+| 27 | Final Drive Ratio | ✅ | FINAL_DRIVE_RATIO=14.0 |
 
 ## 4. Turret & Weapon System
 
