@@ -496,17 +496,23 @@ public class ClientEvents {
                         WeaponOverlay.fireAllTurrets(mc);
                     }
                 } else {
-                    // 每 2 tick 射线检测 → 发送命中点世界坐标
-                    // 降低频率以减少 raycastGeneric 中全 SubLevel 遍历的开销
+                    // 每 2 tick 射线检测 → 发送命中点坐标 + 摄像机朝向角度
                     if (--raycastCooldown <= 0) {
                         raycastCooldown = 2;
                         Vec3 hitPos = WeaponOverlay.performRaycast();
+                        // 获取摄像机实际朝向（轨道模式下被 CameraMixin 强制设定，
+                        // 不同于 player.getYRot()/getXRot()）
+                        var camera = mc.gameRenderer.getMainCamera();
+                        float camYaw = camera.getYRot();
+                        float camPitch = camera.getXRot();
                         if (hitPos != null) {
                             ModNetworking.sendToServer(
                                     new MachineGunTargetC2SPacket(
                                             (float) hitPos.x,
                                             (float) hitPos.y,
-                                            (float) hitPos.z));
+                                            (float) hitPos.z,
+                                            camYaw,
+                                            camPitch));
                         }
                     }
 

@@ -109,11 +109,12 @@ public class PlayerMountTracker {
      * 清空所有骑乘状态，防止跨存档残留。
      */
     public static void onWorldLoad() {
-        if (!MOUNTED.isEmpty()) {
-            IACP.LOGGER.info("[PlayerMountTracker] 世界加载，清理 {} 条骑乘状态", MOUNTED.size());
+        int mountedSize = MOUNTED.size();
+        int occupantSize = SUBLEVEL_OCCUPANTS.size();
+        if (mountedSize > 0 || occupantSize > 0) {
+            IACP.LOGGER.info("[PlayerMountTracker] 世界加载，清理 {} 条骑乘状态 + {} 条占用状态",
+                    mountedSize, occupantSize);
             MOUNTED.clear();
-        }
-        if (!SUBLEVEL_OCCUPANTS.isEmpty()) {
             SUBLEVEL_OCCUPANTS.clear();
         }
     }
@@ -162,7 +163,8 @@ public class PlayerMountTracker {
             IACP.LOGGER.warn("[Mount] 注册载具归属失败（非致命）: {}", e.getMessage());
         }
 
-        IACP.LOGGER.info("Player {} mounted SubLevel {}", player.getName().getString(), subLevelUUID);
+        IACP.LOGGER.info("[Mount] Player {} mounted SubLevel {} (当前总骑乘: {})",
+                player.getName().getString(), subLevelUUID, MOUNTED.size());
     }
 
     public static MountData unmount(ServerPlayer player) {
@@ -175,11 +177,21 @@ public class PlayerMountTracker {
             SUBLEVEL_OCCUPANTS.values().removeIf(uid -> uid.equals(player.getUUID()));
             // 部件损坏：清理该 SubLevel 的耐久缓存
             PartDamageCache.clear(data.subLevelUUID(), player.serverLevel());
-            IACP.LOGGER.info("[ServerMount] 已清除 SubLevel {} 的占用与部件缓存", data.subLevelUUID());
+            int remainingMounted = MOUNTED.size();
+            int remainingOccupants = SUBLEVEL_OCCUPANTS.size();
+            IACP.LOGGER.info("[ServerMount] 已清除 SubLevel {} 的占用与部件缓存 (剩余骑乘: {}, 占用: {})",
+                    data.subLevelUUID(), remainingMounted, remainingOccupants);
         } else {
-            IACP.LOGGER.warn("[ServerMount] unmount() 时 MOUNTED 表中无此玩家数据");
-            // 即使 MOUNTED 表无记录，也清理 SUBLEVEL_OCCUPANTS 中残留的此玩家映射
+            // 即使 MOUNTED 表无记录，仍检查是否有残留占用并清理
+            int beforeCleanup = SUBLEVEL_OCCUPANTS.size();
             SUBLEVEL_OCCUPANTS.values().removeIf(uid -> uid.equals(player.getUUID()));
+            int afterCleanup = SUBLEVEL_OCCUPANTS.size();
+            if (beforeCleanup != afterCleanup) {
+                IACP.LOGGER.warn("[ServerMount] unmount() 时 MOUNTED 表无记录，但 SUBLEVEL_OCCUPANTS 中清理了 {} 条残留",
+                        beforeCleanup - afterCleanup);
+            } else {
+                IACP.LOGGER.warn("[ServerMount] unmount() 时 MOUNTED 表中无此玩家数据 (占用表无残留: {} 条)", beforeCleanup);
+            }
         }
         // 清除持久化标记
         player.getPersistentData().remove(MOUNTED_NBT_KEY);

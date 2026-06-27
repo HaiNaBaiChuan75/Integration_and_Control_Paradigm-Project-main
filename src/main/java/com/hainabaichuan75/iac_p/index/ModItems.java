@@ -32,6 +32,9 @@ public class ModItems {
     // === 悬挂测试方块 ===
     public static final DeferredItem<BlockItem> SUSPENSION_TEST = ITEMS.registerSimpleBlockItem(ModBlocks.SUSPENSION_TEST);
 
+    // === 炮塔测试方块（GeckoLib 动态骨骼旋转测试） ===
+    public static final DeferredItem<BlockItem> TURRET_TEST = ITEMS.registerSimpleBlockItem(ModBlocks.TURRET_TEST);
+
     // === 测试 Controller（GeckoLib 渲染测试） ===
     public static final DeferredItem<BlockItem> TEST_CONTROLLER = ITEMS.registerSimpleBlockItem(ModBlocks.TEST_CONTROLLER);
 

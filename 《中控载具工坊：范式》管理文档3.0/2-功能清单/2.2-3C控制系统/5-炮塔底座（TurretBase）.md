@@ -1,33 +1,29 @@
 ---
-updated: 2026-06-14
-status: current
+updated: 2026-06-27
+status: superseded
 maintainer: @项目协作者
 ---
 
-# 5. 炮塔底座 (TurretBase)
+# 5. 炮塔系统（历史）
 
-### 概述
-地毯形方块，**放置时自动装配**生成**物理化砂轮 + 避雷针 SubLevel**，无需右键。
-右键（空手）可切换拆卸/重新装配。
-通过 **RotaryConstraint（旋转轴承）** 将砂轮锚定到载具上。
+> ⚠ **06-27 炮塔架构重构**：旧 2-SubLevel+2-Constraint 炮塔底座系统（TurretBase）已整体替换为
+> **Crossout 风格单块炮塔（TurretTest）**，基于 GeckoLib `ENTITYBLOCK_ANIMATED`。
+>
+> 旧系统文件（`TurretBaseBlock.java`/`TurretBaseBlockEntity.java`/`TurretAimController.java`）已删除。
+> 本节留作架构决策历史参考，不再反映当前代码。
+>
+> **当前炮塔方案详见**：`7-开发日志/7.10-2026-06-27_炮塔架构重构：Crossout风格单块炮塔.md`
+>
+> **当前武器系统**：`content/blocks/turret/`（TurretTest）、`content/blocks/machine_gun/`（机枪）、
+> `content/blocks/shotgun/`（霰弹枪）
 
-### 装配流程
-```
-① 放置底座（自动）→ 判断地毯是否在 SubLevel 上
-   ├─ 在载具上：计算地毯世界坐标 + 获取载具姿态
-   └─ 在主世界：使用地毯本身坐标
+### 历史方案：TurretBase（已删除）
 
-② 计算砂轮生成位置
-   ├─ 在载具上：定位点（carpetWorld − anchor）+ 载具姿态
-   └─ 在主世界：空位 + identity
-
-③ 创建砂轮 SubLevel
-   └─ allocateNewSubLevel(Pose3d) → initSingleBlockSubLevel → teleport → updateLastPose
-
-④ 建立 RotaryConstraint（仅载具上）
-   ├─ pos1 = getCenterBlock() + (0.5,0.5,0.5) — 砂轮方块底层实际坐标
-   ├─ pos2 = this.worldPosition + (0.5,0.5,0.5) — 地毯方块底层实际坐标
-   ├─ normal1 = normal2 = (0, 1, 0) — 局部 Y 轴旋转
+旧方案使用地毯形方块 + 砂轮/避雷针 SubLevel + RotaryConstraint/SwivelBearing 约束链实现炮塔旋转。
+该方案存在以下问题导致被替换：
+- 2 SubLevel + 2 Constraint 复杂度过高，装配/拆卸/重载易出时序问题
+- Sable 约束系统在多 SubLevel 场景下稳定性不足
+- 瞄准延迟受 server tick 边界影响
    └─ setContactsEnabled(false) — 砂轮穿透载具
 
 ⑤ 创建避雷针 SubLevel（在附近空位）

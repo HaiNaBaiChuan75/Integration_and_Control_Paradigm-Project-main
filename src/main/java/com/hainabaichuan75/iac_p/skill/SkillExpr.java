@@ -181,10 +181,12 @@ public final class SkillExpr {
     //  异常
     // ==================================================================
 
+    @SuppressWarnings("serial")
     public static class EvalException extends RuntimeException {
         public EvalException(String msg) { super(msg); }
     }
 
+    @SuppressWarnings("serial")
     public static class ParseException extends RuntimeException {
         public final int position;
         public ParseException(String msg, int pos) {

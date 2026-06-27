@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.test_controller;
 
-import com.hainabaichuan75.iac_p.index.ModTestControllerBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,7 +23,7 @@ public class TestControllerBlockEntity extends BlockEntity implements GeoBlockEn
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public TestControllerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModTestControllerBlockEntityTypes.TEST_CONTROLLER.get(), pos, state);
+        super(ModBlockEntityTypes.TEST_CONTROLLER.get(), pos, state);
     }
 
     @Override

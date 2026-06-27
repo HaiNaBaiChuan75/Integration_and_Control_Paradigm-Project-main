@@ -124,8 +124,12 @@ public class CameraMixin {
                 }
 
                 // === 轨道模式：摄像机在球面上环绕，始终看向焦点 ===
-                float yaw = entity.getYRot();
-                float pitch = entity.getXRot();
+                // 使用独立轨道角度（由 ClientMountHandler 通过 GLFW 鼠标差分驱动），
+                // 不受 SablePostPhysicsTickEvent 服务端 player.setYRot() 覆盖影响。
+                // 这样即使服务端以 100Hz 强制覆盖玩家偏航，摄像机也不会跳变。
+                ClientMountHandler.updateOrbitalCamera();
+                float yaw = ClientMountHandler.getOrbitalYaw();
+                float pitch = ClientMountHandler.getOrbitalPitch();
 
                 // 球坐标 → 摄像机位置（在焦点周围的球面上）
                 double dx = Mth.sin(yaw * Mth.DEG_TO_RAD) * Mth.cos(pitch * Mth.DEG_TO_RAD) * distance;

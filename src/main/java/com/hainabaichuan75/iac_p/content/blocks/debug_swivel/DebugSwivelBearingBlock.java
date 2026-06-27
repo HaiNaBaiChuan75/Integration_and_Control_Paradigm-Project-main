@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.content.blocks.debug_swivel;
 
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
-import com.hainabaichuan75.iac_p.index.ModDebugSwivelBearingBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import dev.simulated_team.simulated.content.blocks.swivel_bearing.SwivelBearingBlock;
 import dev.simulated_team.simulated.content.blocks.swivel_bearing.SwivelBearingBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -28,6 +28,6 @@ public class DebugSwivelBearingBlock extends SwivelBearingBlock {
      */
     @Override
     public BlockEntityType<? extends SwivelBearingBlockEntity> getBlockEntityType() {
-        return ModDebugSwivelBearingBlockEntityTypes.DEBUG_SWIVEL_BEARING.get();
+        return ModBlockEntityTypes.DEBUG_SWIVEL_BEARING.get();
     }
 }

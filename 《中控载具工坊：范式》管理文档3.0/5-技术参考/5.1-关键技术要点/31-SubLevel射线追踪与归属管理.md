@@ -79,7 +79,7 @@ SubLevelOwnership (静态 Map)
 | `events/SubLevelOwnership.java` | 归属管理静态 Map |
 | `network/packets/WeaponFireC2SPacket.java` | 携带射线起点 + 命中点 |
 | `client/WeaponOverlay.java` | `fireAllTurrets()` 发送射线起点 |
-| `content/blocks/turret/TurretBaseBlockEntity.java` | `assemble/disassemble/read` 中注册/注销/重建 |
+| `content/blocks/turret/TurretTestBlockEntity.java` | 🆕 TurretTest BE：ComponentHost + driveImmediate |\n| `content/blocks/machine_gun/MachineGunBaseBlockEntity.java` | 🆕 机枪 BE：ComponentHost + 约束管理 |\n| `content/blocks/shotgun/ShotgunBaseBlockEntity.java` | 🆕 霰弹枪 BE：ComponentHost + 约束管理 |
 
 ## 参考
 

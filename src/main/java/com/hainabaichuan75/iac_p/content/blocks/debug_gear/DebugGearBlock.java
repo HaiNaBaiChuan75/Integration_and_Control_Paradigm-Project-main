@@ -1,5 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.debug_gear;
 
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
 import com.simibubi.create.foundation.block.IBE;
@@ -47,6 +48,6 @@ public class DebugGearBlock extends RotatedPillarKineticBlock implements ICogWhe
 
     @Override
     public BlockEntityType<? extends DebugGearBlockEntity> getBlockEntityType() {
-        return com.hainabaichuan75.iac_p.index.ModDebugGearBlockEntityTypes.DEBUG_GEAR.get();
+        return ModBlockEntityTypes.DEBUG_GEAR.get();
     }
 }
