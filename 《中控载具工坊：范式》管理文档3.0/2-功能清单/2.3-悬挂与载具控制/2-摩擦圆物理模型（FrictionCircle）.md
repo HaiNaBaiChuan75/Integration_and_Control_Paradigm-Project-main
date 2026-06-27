@@ -1,10 +1,14 @@
 ---
-updated: 2026-06-13
+updated: 2026-06-27
 status: current
 maintainer: @项目协作者
 ---
 
 # 2. 摩擦圆物理模型 (FrictionCircle)
+
+> ⚠ 本模型曾于 06-17 因调试需要被禁用，06-26 重新启用。
+> 禁用期间 BinaryGrip 独立限制纵/侧向力，无总预算约束，导致上游转向 + BinaryGrip 产生"气垫船效应"（转弯不减速）。
+> 重新启用后：转弯时侧向力挤占纵向预算 → 不能全油门过弯 → 消除气垫船效应。
 
 ### 核心公式
 
@@ -62,7 +66,7 @@ double targetSpeed = activeRpm × 2π / 60 × rad;        // m/s ✅
 | `DRIVE_RPM` | 400 | 目标转速（降级模式） | 增大→极速提高 |
 | `DRIVE_TORQUE` | 80 | P 控制器增益（降级模式） | 增大→加速更快 |
 | `MIN_IMPULSE_MULTIPLIER` | **30** (06-08 从 500 调整) | 摩擦预算基数 | 增大→抓地力更强 |
-| `TIRE_FRICTION_COEFFICIENT` | 0.9 | 轮胎摩擦系数 | 降低→更容易打滑 |
+| `TIRE_FRICTION_COEFFICIENT` | **1.2** (06-26 从 0.9 调整) | 轮胎摩擦系数 | 降低→更容易打滑 |
 | `DEFAULT_CRR_BASE` | **0.035** (06-08 从 0.015 调整) | 滚动阻力基础系数 | 增大→减速更快 |
 | `DRAG_COEFFICIENT` | **0.0045** (06-08 新增) | 二次方速度阻尼系数 | 增大→极速降低 |
 | `CORNERING_STIFFNESS` | **20.0** (06-08 从 10.0 调整) | 侧偏刚度 | 增大→峰值更早、回正更强 |

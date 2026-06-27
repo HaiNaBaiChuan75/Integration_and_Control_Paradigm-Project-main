@@ -31,21 +31,24 @@ import java.util.List;
 /**
  * 载具调试信息覆盖层。
  * <p>
- * 上车时在右下角显示动力系统与物理参数，每 3 ticks 刷新数据。
- * 文字左对齐，自动换行（单行数据），半透明黑底，F3 同款风格。
- * 通过 {@link RenderGuiEvent.Post} 渲染，注册到游戏事件总线。
+ * 上车时在右下角显示动力系统与物理参数，每 3 ticks 刷新数据。 文字左对齐，自动换行（单行数据），半透明黑底，F3 同款风格。 通过
+ * {@link RenderGuiEvent.Post} 渲染，注册到游戏事件总线。
  */
 @EventBusSubscriber(modid = "iac_p", value = Dist.CLIENT)
 public class VehicleDebugOverlay {
 
-    /** 数据刷新间隔（tick）—— 每 tick 采集，从缓存读取，不再需要等 3 tick 的批处理间隔 */
+    /**
+     * 数据刷新间隔（tick）—— 每 tick 采集，从缓存读取，不再需要等 3 tick 的批处理间隔
+     */
     private static final int UPDATE_INTERVAL = 1;
     private static int updateCooldown = 0;
 
     // ===== 缓存数据 =====
     private static double engineRpm = 0;
-    /** 引擎输出扭矩（Nm），含扭矩曲线修正 × 油门，由 CockpitBE 同步到客户端 */
-    private static double engineTorque = PowertrainConstants.ENGINE_TORQUE;
+    /**
+     * 引擎输出扭矩（Nm），含扭矩曲线修正 × 油门，由 CockpitBE 同步到客户端
+     */
+    private static double engineTorque = PowertrainConstants.TORQUE_MAX;
     private static int gear = 0;
     private static double gearboxRpm = 0;
     private static double gearboxTorque = 0;
@@ -56,31 +59,43 @@ public class VehicleDebugOverlay {
     private static double mass = 0;
     private static double idealSpeedMs = 0;
     private static double currentSpeedMs = 0;
-    /** 载具加速度（m/s²） */
+    /**
+     * 载具加速度（m/s²）
+     */
     private static double currentAccelMs2 = 0;
     private static double frictionPct = 0;
-    /** 力需求/摩擦预算比率（可 > 100%，表示打滑程度） */
+    /**
+     * 力需求/摩擦预算比率（可 > 100%，表示打滑程度）
+     */
     private static double frictionDemandRatio = 0;
 
-    /** 油门深度百分比 [0, 100] */
+    /**
+     * 油门深度百分比 [0, 100]
+     */
     private static double throttlePct = 0;
-    /** 发动机是否熄火 */
+    /**
+     * 发动机是否熄火
+     */
     private static boolean stalled = false;
 
-
-    /** 渲染行缓存 */
+    /**
+     * 渲染行缓存
+     */
     private static final List<Component> displayLines = new ArrayList<>();
 
     // ====================================================================
     //  渲染入口
     // ====================================================================
-
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
+        if (mc.player == null || mc.level == null) {
+            return;
+        }
         if (!ClientMountHandler.isMounted()) {
-            if (!displayLines.isEmpty()) displayLines.clear();
+            if (!displayLines.isEmpty()) {
+                displayLines.clear();
+            }
             return;
         }
 
@@ -90,7 +105,9 @@ public class VehicleDebugOverlay {
             collectData(mc);
         }
 
-        if (displayLines.isEmpty()) return;
+        if (displayLines.isEmpty()) {
+            return;
+        }
 
         GuiGraphics g = event.getGuiGraphics();
         Font font = mc.font;
@@ -101,7 +118,9 @@ public class VehicleDebugOverlay {
         int maxW = 0;
         for (Component line : displayLines) {
             int w = font.width(line);
-            if (w > maxW) maxW = w;
+            if (w > maxW) {
+                maxW = w;
+            }
         }
 
         var window = mc.getWindow();
@@ -127,12 +146,15 @@ public class VehicleDebugOverlay {
     // ====================================================================
     //  数据收集
     // ====================================================================
-
     private static void collectData(Minecraft mc) {
         ClientSubLevel sl = ClientMountHandler.getMountedClientSubLevel();
-        if (sl == null) return;
+        if (sl == null) {
+            return;
+        }
         LevelPlot plot = sl.getPlot();
-        if (plot == null) return;
+        if (plot == null) {
+            return;
+        }
 
         CockpitBlockEntity cockpit = null;
         List<SuspensionTestBlockEntity> susp = new ArrayList<>();
@@ -144,14 +166,18 @@ public class VehicleDebugOverlay {
 
         for (PlotChunkHolder chunk : plot.getLoadedChunks()) {
             BoundingBox3ic bb = chunk.getBoundingBox();
-            if (bb == null || bb == BoundingBox3i.EMPTY) continue;
+            if (bb == null || bb == BoundingBox3i.EMPTY) {
+                continue;
+            }
             int cmx = chunk.getPos().getMinBlockX();
             int cmz = chunk.getPos().getMinBlockZ();
             for (int x = bb.minX(); x <= bb.maxX(); x++) {
                 for (int y = bb.minY(); y <= bb.maxY(); y++) {
                     for (int z = bb.minZ(); z <= bb.maxZ(); z++) {
                         BlockPos wp = new BlockPos(x + cmx, y, z + cmz);
-                        if (samplePos == null) samplePos = wp;
+                        if (samplePos == null) {
+                            samplePos = wp;
+                        }
                         BlockState st = mc.level.getBlockState(wp);
                         BlockEntity be = mc.level.getBlockEntity(wp);
                         if (be instanceof CockpitBlockEntity cbe) {
@@ -165,7 +191,9 @@ public class VehicleDebugOverlay {
                                 onGroundCount++;
                             }
                             var tire = sbe.getHeldItem().get(OffroadDataComponents.TIRE);
-                            if (tire != null) totalRadius += tire.radius();
+                            if (tire != null) {
+                                totalRadius += tire.radius();
+                            }
                         }
                     }
                 }
@@ -175,7 +203,9 @@ public class VehicleDebugOverlay {
         totalWheels = susp.size();
         wheelsWithTire = 0;
         for (var s : susp) {
-            if (s.getHeldItem().has(OffroadDataComponents.TIRE)) wheelsWithTire++;
+            if (s.getHeldItem().has(OffroadDataComponents.TIRE)) {
+                wheelsWithTire++;
+            }
         }
         double avgR = wheelsWithTire > 0 ? totalRadius / wheelsWithTire : 0.25;
 
@@ -186,11 +216,11 @@ public class VehicleDebugOverlay {
         // 注：torquePerWheel 不单独同步，齿轮箱输出扭矩从 engineTorque × 齿比推算。
         if (ClientMountHandler.isMounted() && ClientMountHandler.getCachedEngineRpm() > 0) {
             // 缓存有效：使用实时推送数据
-            engineRpm      = ClientMountHandler.getCachedEngineRpm();
-            engineTorque   = ClientMountHandler.getCachedEffectiveTorque();
-            gear           = ClientMountHandler.getCachedCurrentGear();
-            throttlePct    = ClientMountHandler.getCachedThrottleLevel() * 100.0;
-            stalled        = ClientMountHandler.isCachedStalled();
+            engineRpm = ClientMountHandler.getCachedEngineRpm();
+            engineTorque = ClientMountHandler.getCachedEffectiveTorque();
+            gear = ClientMountHandler.getCachedCurrentGear();
+            throttlePct = ClientMountHandler.getCachedThrottleLevel() * 100.0;
+            stalled = ClientMountHandler.isCachedStalled();
             // 轮端数据：RPM 从 CockpitBE 读取，扭矩从 engineTorque × 齿比推算
             if (cockpit != null) {
                 avgWheelRpm = cockpit.getTargetWheelRpm();
@@ -203,28 +233,32 @@ public class VehicleDebugOverlay {
                     ? Math.abs(PowertrainConstants.getCurrentRatio(gear)) * PowertrainConstants.FINAL_DRIVE_RATIO
                     : 0;
             avgWheelTorque = effectiveRatio > 0 ? engineTorque * effectiveRatio / w : 0;
-            gearboxRpm    = avgWheelRpm;
+            gearboxRpm = avgWheelRpm;
             gearboxTorque = avgWheelTorque * w;
         } else if (cockpit != null) {
             // 降级：缓存未就绪时使用 NBT 同步值
-            engineRpm      = cockpit.getEngineRpm();
-            engineTorque   = cockpit.getEffectiveTorque();
-            gear           = cockpit.getCurrentGear();
-            int w          = Math.max(totalWheels, 1);
-            avgWheelRpm    = cockpit.getTargetWheelRpm();
+            engineRpm = cockpit.getEngineRpm();
+            engineTorque = cockpit.getEffectiveTorque();
+            gear = cockpit.getCurrentGear();
+            int w = Math.max(totalWheels, 1);
+            avgWheelRpm = cockpit.getTargetWheelRpm();
             double effectiveRatio = gear != 0
                     ? Math.abs(PowertrainConstants.getCurrentRatio(gear)) * PowertrainConstants.FINAL_DRIVE_RATIO
                     : 0;
             avgWheelTorque = effectiveRatio > 0 ? engineTorque * effectiveRatio / w : 0;
-            gearboxRpm     = avgWheelRpm;
-            gearboxTorque  = avgWheelTorque * w;
-            throttlePct    = cockpit.getThrottleLevel() * 100.0;
-            stalled        = cockpit.isStalled();
+            gearboxRpm = avgWheelRpm;
+            gearboxTorque = avgWheelTorque * w;
+            throttlePct = cockpit.getThrottleLevel() * 100.0;
+            stalled = cockpit.isStalled();
         } else {
-            engineRpm = 0; gear = 0;
-            gearboxRpm = 0; gearboxTorque = 0;
-            avgWheelRpm = 0; avgWheelTorque = 0;
-            throttlePct = 0; stalled = false;
+            engineRpm = 0;
+            gear = 0;
+            gearboxRpm = 0;
+            gearboxTorque = 0;
+            avgWheelRpm = 0;
+            avgWheelTorque = 0;
+            throttlePct = 0;
+            stalled = false;
         }
 
         // 速度
@@ -271,7 +305,6 @@ public class VehicleDebugOverlay {
     // ====================================================================
     //  文字构建
     // ====================================================================
-
     private static void buildLines() {
         displayLines.clear();
 
@@ -294,7 +327,7 @@ public class VehicleDebugOverlay {
                     .append(Component.literal(dirStr)));
         } else {
             // ═══ 在档模式：显示完整的载具动力系统数据 ═══
-            displayLines.add(line("debug.iac_p.overlay.mass",        String.format("%,.0f kg", mass)));
+            displayLines.add(line("debug.iac_p.overlay.mass", String.format("%,.0f kg", mass)));
             String stallTag = stalled ? " §c⛔熄火" : "";
             displayLines.add(line("debug.iac_p.overlay.engine",
                     String.format("%,.0f RPM  |  %.0f Nm  |  油门 %.0f%%%s", engineRpm, engineTorque, throttlePct, stallTag)));
@@ -303,7 +336,7 @@ public class VehicleDebugOverlay {
             displayLines.add(line("debug.iac_p.overlay.gear_wheels", (gear == -1 ? "R" : gear == 0 ? "N" : String.valueOf(gear))
                     + " 档" + shiftIcon + "  |  " + wheelsWithTire + "/" + totalWheels + " 轮着地"));
             displayLines.add(line("debug.iac_p.overlay.gearbox_out", String.format("%,.0f RPM  |  %.1f Nm", gearboxRpm, gearboxTorque)));
-            displayLines.add(line("debug.iac_p.overlay.tire_avg",    String.format("%,.0f RPM  |  %.1f Nm/轮", avgWheelRpm, avgWheelTorque)));
+            displayLines.add(line("debug.iac_p.overlay.tire_avg", String.format("%,.0f RPM  |  %.1f Nm/轮", avgWheelRpm, avgWheelTorque)));
             displayLines.add(line("debug.iac_p.overlay.ideal_speed", String.format("%.2f m/s", idealSpeedMs)));
             displayLines.add(line("debug.iac_p.overlay.current_speed", String.format("%.2f m/s  (%.1f km/h)", currentSpeedMs, currentSpeedMs * 3.6)));
             displayLines.add(Component.literal("§7加速度: §f%+.2f m/s²".formatted(currentAccelMs2)));

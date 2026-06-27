@@ -38,8 +38,8 @@ import static com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstan
  * 玩家输入 (油门)
  *   ↓
  * EngineModel.computeThrottleControlledRun()  ← 发动机始终独立运行
- *   RPM = IDLE + throttle × (MAX - IDLE)             油门直控
- *   扭矩 = TORQUE_MIN + throttle × (TORQUE_MAX - TORQUE_MIN)  油门线性，与RPM解耦
+ *   RPM = IDLE + throttle × (MAX - IDLE)         油门直控，不受变速箱影响
+ *   扭矩 = ENGINE_TORQUE × torqueCurve(RPM)      纯 RPM 函数，油门 100% 已含内部损耗
  *   ↓
  * 空档：torquePerWheel = 0（变速箱断开）
  * 在档：TransmissionModel.computeOutput() 纯数学变换
@@ -64,8 +64,9 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     public void onLoad() {
         super.onLoad();
         ComponentHost.registerComponent(this, getComponentRole());
-        // 油门始终 100%：引擎满扭矩恒备，WASD 只控制方向不控制油门深浅。
-        this.throttleLevel = 1.0;
+        // 油门强制归零：NBT 写入 throttleLevel 是为了客户端同步（覆盖层显示），
+        // 但重新加载世界时必须清零，否则油门残留会驱动 RPM 自涨。
+        this.throttleLevel = 0.0;
         this.rawThrottleDirection = 0;
     }
 
@@ -78,62 +79,43 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  运行时状态
     // ====================================================================
-    /**
-     * 当前档位：-1=R, 0=N, 1～5=前进档
-     */
+
+    /** 当前档位：-1=R, 0=N, 1～5=前进档 */
     private int currentGear = 0;
 
-    /**
-     * 发动机当前转速（RPM）
-     */
+    /** 发动机当前转速（RPM） */
     private double engineRpm = ENGINE_IDLE_RPM;
 
-    /**
-     * 油门踏板位置 [0.0, 1.0]。始终为 1.0（默认全油门），引擎始终满扭矩输出。
-     */
-    private double throttleLevel = 1.0;
+    /** 油门踏板位置 [0.0, 1.0] */
+    private double throttleLevel = 0.0;
 
-    /**
-     * 当前 tick 的引擎输出扭矩（Nm），油门线性，与 RPM 解耦。 即 computeThrottleControlledRun()
-     * 的计算结果缓存。
-     */
-    private double effectiveTorque = PowertrainConstants.TORQUE_MAX;
+    /** 当前 tick 的引擎输出扭矩（Nm），含扭矩曲线修正 × 油门。
+     *  即 computeEngineTorque() 的计算结果缓存，不含离合器/摩擦扣减。 */
+    private double effectiveTorque = PowertrainConstants.ENGINE_TORQUE;
 
-    /**
-     * 智能映射启用
-     */
+    /** 智能映射启用 */
     private boolean smartMappingActive = false;
 
-    /**
-     * 智能变速启用。开启后发动力不足时自动降档到 1 档。
-     */
+    /** 智能变速启用。开启后发动力不足时自动降档到 1 档。 */
     private boolean autoShiftEnabled = false;
 
-    /**
-     * 当前驾驶技能 ID
-     */
+    /** 当前驾驶技能 ID */
     private String activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
 
-    /**
-     * 原始油门方向（+1/-1/0），由 VehicleControlC2SPacket 设置
-     */
+    /** 原始油门方向（+1/-1/0），由 VehicleControlC2SPacket 设置 */
     private int rawThrottleDirection = 0;
 
     // ── 扭矩源模型新增字段 ──
-    /**
-     * 每轮可用扭矩（Nm），供悬挂 P 控制器限幅
-     */
+
+    /** 每轮可用扭矩（Nm），供悬挂 P 控制器限幅 */
     private double torquePerWheel = 0.0;
 
-    /**
-     * 发动机是否已熄火
-     */
+    /** 发动机是否已熄火 */
     private boolean stalled = false;
 
-    /**
-     * 上次更新时在档位中的轮子总数（用于扭矩均摊）
-     */
+    /** 上次更新时在档位中的轮子总数（用于扭矩均摊） */
     private int lastWheelCount = 0;
+
 
     // ── 换挡状态 ──
     public CockpitBlockEntity(BlockPos pos, BlockState state) {
@@ -147,23 +129,21 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  动力系统接口（供 SuspensionTestBlockEntity 查询）
     // ====================================================================
+
     /**
      * @return 每轮可用扭矩（Nm）。空档或熄火时返回 0。
      */
     public double getTorquePerWheel() {
-        if (stalled || currentGear == 0) {
-            return 0;
-        }
+        if (stalled || currentGear == 0) return 0;
         return torquePerWheel;
     }
 
     /**
-     * @return 轮端目标 RPM（由发动机当前转速通过齿比推算）。 正值前进，负值倒车。空档或熄火时返回 0。
+     * @return 轮端目标 RPM（由发动机当前转速通过齿比推算）。
+     *         正值前进，负值倒车。空档或熄火时返回 0。
      */
     public double getTargetWheelRpm() {
-        if (stalled) {
-            return 0;
-        }
+        if (stalled) return 0;
         return TransmissionModel.computeTargetWheelRpm(currentGear, engineRpm);
     }
 
@@ -171,9 +151,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
      * @return 方向符号：+1 前进, -1 倒车, 0 空档/熄火
      */
     public double getDirectionSign() {
-        if (stalled) {
-            return 0;
-        }
+        if (stalled) return 0;
         return TransmissionModel.getDirectionSign(currentGear);
     }
 
@@ -188,9 +166,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
      * 尝试重启发动机（仅熄火时有效）。
      */
     public void tryRestart() {
-        if (!stalled) {
-            return;
-        }
+        if (!stalled) return;
         stalled = false;
         engineRpm = ENGINE_IDLE_RPM;
         IACP.LOGGER.info("[Cockpit] 发动机重启");
@@ -201,20 +177,17 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  换挡操作
     // ====================================================================
+
     /**
      * 升档：R → N → 1 → 2 → 3 → 4 → 5。
      * <p>
-     * 非瞬时完成：启动换挡序列 → SHIFT_TIME_TICKS tick 动力中断 → 档位切换。 换挡期间 torquePerWheel =
-     * 0，发动机空载运行。
+     * 非瞬时完成：启动换挡序列 → SHIFT_TIME_TICKS tick 动力中断 → 档位切换。
+     * 换挡期间 torquePerWheel = 0，发动机空载运行。
      */
     public void gearUp() {
-        if (isShifting) {
-            return;
-        }
+        if (isShifting) return;
         var result = TransmissionModel.gearUp(this.currentGear, this.engineRpm);
-        if (result.gear() == this.currentGear) {
-            return;
-        }
+        if (result.gear() == this.currentGear) return;
         startShiftSequence(result.gear());
     }
 
@@ -224,13 +197,9 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
      * 非瞬时完成：启动换挡序列 → SHIFT_TIME_TICKS tick 动力中断 → 档位切换。
      */
     public void gearDown() {
-        if (isShifting) {
-            return;
-        }
+        if (isShifting) return;
         var result = TransmissionModel.gearDown(this.currentGear, this.engineRpm);
-        if (result.gear() == this.currentGear) {
-            return;
-        }
+        if (result.gear() == this.currentGear) return;
         startShiftSequence(result.gear());
     }
 
@@ -240,9 +209,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
      * 跳过逐级降档，直接设定目标档位为 1。同样有 6 tick 换挡真空期。
      */
     public void shiftToFirst() {
-        if (isShifting || currentGear <= 1) {
-            return;
-        }
+        if (isShifting || currentGear <= 1) return;
         startShiftSequence(1);
     }
 
@@ -277,6 +244,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  智能映射与技能
     // ====================================================================
+
     public boolean isSmartMappingActive() {
         return smartMappingActive;
     }
@@ -310,6 +278,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  控制输入
     // ====================================================================
+
     /**
      * 设置原始油门方向。由 VehicleControlC2SPacket 每 tick 调用。
      */
@@ -334,8 +303,9 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     /**
      * 启动换挡序列。
      * <p>
-     * 立即切断轮端扭矩（torquePerWheel = 0），启动换挡计时器。 计时器归零时由 tick() 完成档位切换。 换挡后 RPM
-     * 由实际轮速（车速）决定，而非旧 RPM × 齿比推算。
+     * 立即切断轮端扭矩（torquePerWheel = 0），启动换挡计时器。
+     * 计时器归零时由 tick() 完成档位切换。
+     * 换挡后 RPM 由实际轮速（车速）决定，而非旧 RPM × 齿比推算。
      *
      * @param targetGear 目标档位
      */
@@ -359,17 +329,18 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
         }
 
         IACP.LOGGER.debug("[Cockpit] 换挡开始 → {} (revMatch={} RPM)",
-                PowertrainConstants.gearName(targetGear), (int) this.revMatchTargetRpm);
+                PowertrainConstants.gearName(targetGear), (int)this.revMatchTargetRpm);
         setChanged();
         sendData();
     }
 
     /**
-     * 将发动机重置到怠速。下车/断线/重启时调用。 油门保持 100%（引擎始终满扭矩），只重置 RPM 和方向输入。
+     * 将发动机重置到怠速。下车/断线/重启时调用。
+     * 同时清零油门深度，防止 NBT 持久化的 throttleLevel 在重登后继续生效。
      */
     public void resetEngineToIdle() {
         this.engineRpm = ENGINE_IDLE_RPM;
-        this.throttleLevel = 1.0;
+        this.throttleLevel = 0.0;
         this.rawThrottleDirection = 0;
         this.stalled = false;
     }
@@ -386,88 +357,60 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  空档：油门直控转速，变速箱断开，发动机在测试架上独立运转。
     //  在档：变速箱纯比率变换，发动机转速由轮速运动学约束。
-    /**
-     * 缓存总质量（kg），仅用于覆盖层显示
-     */
+
+    /** 缓存总质量（kg），仅用于覆盖层显示 */
     private double totalMass = 1000.0;
 
-    /**
-     * 上次同步到客户端的油门值，用于阈值检测避免每 tick 刷包
-     */
+    /** 上次同步到客户端的油门值，用于阈值检测避免每 tick 刷包 */
     private double lastSyncedThrottle = -1.0;
 
-    /**
-     * 状态同步包冷却计数器（每 2 tick 向客户端推送一次实时状态）
-     */
+    /** 状态同步包冷却计数器（每 2 tick 向客户端推送一次实时状态） */
     private int stateSyncCooldown = 0;
-    /**
-     * 上次同步时的速度（m/s），用于加速度差分计算
-     */
+    /** 上次同步时的速度（m/s），用于加速度差分计算 */
     private double lastSyncSpeedMs = 0;
-    /**
-     * 最近计算的加速度（m/s²），供自动变速逻辑和覆盖层使用
-     */
+    /** 最近计算的加速度（m/s²），供自动变速逻辑和覆盖层使用 */
     private double currentAccelMs2 = 0;
 
     // ── 自动变速 ──
-    /**
-     * 升档节流计数器（每 10 tick 检查一次）
-     */
+    /** 升档节流计数器（每 10 tick 检查一次） */
     private int upshiftTimer = 0;
-    /**
-     * 上次升档检查时的速度（m/s）
-     */
+    /** 上次升档检查时的速度（m/s） */
     private double lastUpshiftSpeed = 0;
-    /**
-     * 降档持续计时器（速度比连续 N tick < 阈值才降，防转弯误触发）
-     */
+    /** 降档持续计时器（速度比连续 N tick < 阈值才降，防转弯误触发） */
     private int downshiftStallTimer = 0;
-    /**
-     * 上次换挡的游戏刻（升档在此 tick 内不触发，防升降档振荡）
-     */
+    /** 上次换挡的游戏刻（升档在此 tick 内不触发，防升降档振荡） */
     private int lastShiftTick = 0;
 
     // ── 换挡状态 ──
-    /**
-     * 是否正在换挡（动力中断期间）。期间 torquePerWheel = 0，发动机空载运行。
-     */
+    /** 是否正在换挡（动力中断期间）。期间 torquePerWheel = 0，发动机空载运行。 */
     private boolean isShifting = false;
-    /**
-     * 换挡倒计时（tick），归零时完成换挡
-     */
+    /** 换挡倒计时（tick），归零时完成换挡 */
     private int shiftingTimer = 0;
-    /**
-     * 换挡目标档位
-     */
+    /** 换挡目标档位 */
     private int targetShiftGear = 0;
-    /**
-     * 降档自动补油（Rev-Match）目标 RPM。降档时发动机需升转匹配低档位， 此值为目标转速，在换挡期间自动补油使 RPM 平滑接近此值。
-     */
+    /** 降档自动补油（Rev-Match）目标 RPM。降档时发动机需升转匹配低档位，
+     *  此值为目标转速，在换挡期间自动补油使 RPM 平滑接近此值。 */
     private double revMatchTargetRpm = 0;
 
     @Override
     public void tick() {
         super.tick();
-        if (level == null) {
-            return;
-        }
+        if (level == null) return;
 
         SubLevel sl = Sable.HELPER.getContaining(this);
-        if (sl == null) {
-            return;
-        }
+        if (sl == null) return;
 
         // ── 读取物理质量（仅服务端，仅用于覆盖层显示）──
         if (sl instanceof ServerSubLevel ssl) {
             try {
                 this.totalMass = ssl.getMassTracker().getMass();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) { }
         }
 
-        // ── 油门始终 100%（服务端才有 rawThrottleDirection，客户端跳过）──
-        // 不再需要油门渐变——引擎永远满扭矩，WASD 仅控制 BinaryGrip 方向。
-        this.throttleLevel = 1.0;
+        // ── 油门（服务端才有 rawThrottleDirection，客户端跳过）──
+        if (sl instanceof ServerSubLevel) {
+            this.throttleLevel = EngineModel.updateThrottle(this.throttleLevel, this.rawThrottleDirection);
+        }
 
         // ── 全部引擎计算仅服务端执行 ──
         if (sl instanceof ServerSubLevel serverSl) {
@@ -487,11 +430,8 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
                                     this.worldPosition.getX() + 0.5,
                                     this.worldPosition.getY() + 0.5,
                                     this.worldPosition.getZ() + 0.5));
-                    if (vel != null) {
-                        speedMs = vel.length();
-                    }
-                } catch (Exception ignored) {
-                }
+                    if (vel != null) speedMs = vel.length();
+                } catch (Exception ignored) { }
                 // 加速度 = 速度差分 / 时间间隔（2 tick = 0.1s）
                 double accelMs2 = (speedMs - this.lastSyncSpeedMs) / 0.1;
                 this.lastSyncSpeedMs = speedMs;
@@ -523,6 +463,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
             //  发动机始终由油门直控：throttle=0% → 800 RPM, 100% → 6000 RPM。
             //  无论空档还是在档，变速箱都不反向约束发动机转速。
             //  挂档只是把扭矩a × 齿比输出到轮端，不影响发动机自身状态。
+
             if (stalled) {
                 this.torquePerWheel = 0;
                 this.effectiveTorque = 0;
@@ -563,18 +504,6 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
             this.effectiveTorque = result.engineTorque();
             this.engineRpm = result.rpm();
 
-            // ═══ 空档自动挂档 ═══
-            // 按下 W/S 时自动挂 1 档，无需手动操作。游戏直觉：让车动起来就该进档。
-            if (this.currentGear == 0 && this.rawThrottleDirection != 0) {
-                this.currentGear = 1;
-                this.isShifting = false;
-                this.shiftingTimer = 0;
-                this.targetShiftGear = 0;
-                this.revMatchTargetRpm = 0;
-                setChanged();
-                sendData();
-            }
-
             if (this.currentGear == 0) {
                 // 空档：不向轮端输出扭矩
                 this.torquePerWheel = 0;
@@ -610,7 +539,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
                 if (autoShiftEnabled && !isShifting && currentGear >= 2
                         && this.throttleLevel > 0.3 && hasAnyThrottleInput(sl)
                         && !hasAnySteeringInput(sl)) {
-                    int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
+                    int gameTime = this.level == null ? 0 : (int)this.level.getGameTime();
                     if (gameTime - this.lastShiftTick > 40) {
                         double currentSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
                         double prevIdealRpm = TransmissionModel.computeTargetWheelRpm(
@@ -632,7 +561,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
                 // 每 10 tick 检查。刚降档后 30 tick 内不升（防振荡）。
                 if (autoShiftEnabled && !isShifting && currentGear >= 1
                         && currentGear < PowertrainConstants.NUM_FORWARD_GEARS) {
-                    int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
+                    int gameTime = this.level == null ? 0 : (int)this.level.getGameTime();
                     if (gameTime - this.lastShiftTick > 30 && ++this.upshiftTimer >= 10) {
                         this.upshiftTimer = 0;
                         double nowSpeed = 0;
@@ -642,11 +571,8 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
                                             this.worldPosition.getX() + 0.5,
                                             this.worldPosition.getY() + 0.5,
                                             this.worldPosition.getZ() + 0.5));
-                            if (vel != null) {
-                                nowSpeed = vel.length();
-                            }
-                        } catch (Exception ignored) {
-                        }
+                            if (vel != null) nowSpeed = vel.length();
+                        } catch (Exception ignored) { }
                         double accel = Math.abs(nowSpeed - this.lastUpshiftSpeed) / 0.5;
                         this.lastUpshiftSpeed = nowSpeed;
                         double prevTargetRpm = TransmissionModel.computeTargetWheelRpm(
@@ -684,9 +610,8 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  车轮扫描（简化版：仅获取轮速和数量，无需消耗扭矩）
     // ====================================================================
-    private record WheelScanResult(double avgWheelRpm, int wheelCount) {
 
-    }
+    private record WheelScanResult(double avgWheelRpm, int wheelCount) {}
 
     private WheelScanResult scanWheelRpm(SubLevel sl) {
         UUID subUUID = sl.getUniqueId();
@@ -706,9 +631,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
 
         for (var entry : entries) {
             BlockEntity be = entry.blockEntity();
-            if (!(be instanceof SuspensionTestBlockEntity sbe)) {
-                continue;
-            }
+            if (!(be instanceof SuspensionTestBlockEntity sbe)) continue;
             totalRpm += sbe.getCurrentWheelRpm();
             count++;
         }
@@ -722,12 +645,8 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
         int[] count = {0};
 
         SubLevelScanner.forEachBlock(sl, level, (worldPos, state, be) -> {
-            if (!(state.getBlock() instanceof SuspensionTestBlock)) {
-                return;
-            }
-            if (!(be instanceof SuspensionTestBlockEntity sbe)) {
-                return;
-            }
+            if (!(state.getBlock() instanceof SuspensionTestBlock)) return;
+            if (!(be instanceof SuspensionTestBlockEntity sbe)) return;
             totalRpm[0] += sbe.getCurrentWheelRpm();
             count[0]++;
         });
@@ -737,7 +656,8 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     }
 
     /**
-     * 检查是否有任何悬挂方块有驱动输入（W/S 按下）。 用于智能变速的判断条件。
+     * 检查是否有任何悬挂方块有驱动输入（W/S 按下）。
+     * 用于智能变速的判断条件。
      */
     private boolean hasAnyThrottleInput(SubLevel sl) {
         UUID subUUID = sl.getUniqueId();
@@ -745,36 +665,29 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
         if (!entries.isEmpty()) {
             for (var entry : entries) {
                 if (entry.blockEntity() instanceof SuspensionTestBlockEntity sbe) {
-                    if (sbe.hasThrottle()) {
-                        return true;
-                    }
+                    if (sbe.hasThrottle()) return true;
                 }
             }
         }
         return false;
     }
 
-    /**
-     * 检查是否有任何悬挂方块有转向输入（A/D 按下）。 转向时不自动降档，防止转弯掉速度误触发。
-     */
+    /** 检查是否有任何悬挂方块有转向输入（A/D 按下）。
+     *  转向时不自动降档，防止转弯掉速度误触发。 */
     private boolean hasAnySteeringInput(SubLevel sl) {
         UUID subUUID = sl.getUniqueId();
         var entries = ComponentRegistry.getComponents(subUUID, ComponentRole.SUSPENSION);
         if (!entries.isEmpty()) {
             for (var entry : entries) {
                 if (entry.blockEntity() instanceof SuspensionTestBlockEntity sbe) {
-                    if (Math.abs(sbe.getTargetSteeringYaw()) > 0.01) {
-                        return true;
-                    }
+                    if (Math.abs(sbe.getTargetSteeringYaw()) > 0.01) return true;
                 }
             }
         }
         return false;
     }
 
-    /**
-     * @return 当前加速度绝对值（m/s²），由状态同步段每 2 tick 更新
-     */
+    /** @return 当前加速度绝对值（m/s²），由状态同步段每 2 tick 更新 */
     private double getCurrentAccel() {
         return this.currentAccelMs2;
     }
@@ -782,11 +695,11 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ====================================================================
     //  NBT 持久化 & 同步
     // ====================================================================
+
     private static final String TAG_GEAR = "CurrentGear";
     private static final String TAG_RPM = "EngineRpm";
-    /**
-     * 油门深度写入 NBT 供客户端同步（覆盖层显示需要）。 onLoad() 强制归零，保证重登后不会油门残留。
-     */
+    /** 油门深度写入 NBT 供客户端同步（覆盖层显示需要）。
+     *  onLoad() 强制归零，保证重登后不会油门残留。 */
     private static final String TAG_THROTTLE_LEVEL = "ThrottleLevel";
     private static final String TAG_EFFECTIVE_TORQUE = "EffectiveTorque";
     private static final String TAG_SMART_MAPPING = "SmartMappingActive";
@@ -810,32 +723,16 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
-        if (tag.contains(TAG_GEAR)) {
-            this.currentGear = tag.getInt(TAG_GEAR);
-        }
-        if (tag.contains(TAG_RPM)) {
-            this.engineRpm = tag.getDouble(TAG_RPM);
-        }
+        if (tag.contains(TAG_GEAR)) this.currentGear = tag.getInt(TAG_GEAR);
+        if (tag.contains(TAG_RPM)) this.engineRpm = tag.getDouble(TAG_RPM);
         // 读 throttleLevel 用于客户端同步（覆盖层显示），
         // 但 onLoad() 会在 world load 时强制归零。
-        if (tag.contains(TAG_THROTTLE_LEVEL)) {
-            this.throttleLevel = tag.getDouble(TAG_THROTTLE_LEVEL);
-        }
-        if (tag.contains(TAG_EFFECTIVE_TORQUE)) {
-            this.effectiveTorque = tag.getDouble(TAG_EFFECTIVE_TORQUE);
-        }
-        if (tag.contains(TAG_SMART_MAPPING)) {
-            this.smartMappingActive = tag.getBoolean(TAG_SMART_MAPPING);
-        }
-        if (tag.contains(TAG_AUTO_SHIFT)) {
-            this.autoShiftEnabled = tag.getBoolean(TAG_AUTO_SHIFT);
-        }
-        if (tag.contains(TAG_SKILL_ID)) {
-            this.activeSkillId = tag.getString(TAG_SKILL_ID);
-        }
-        if (tag.contains(TAG_STALLED)) {
-            this.stalled = tag.getBoolean(TAG_STALLED);
-        }
+        if (tag.contains(TAG_THROTTLE_LEVEL)) this.throttleLevel = tag.getDouble(TAG_THROTTLE_LEVEL);
+        if (tag.contains(TAG_EFFECTIVE_TORQUE)) this.effectiveTorque = tag.getDouble(TAG_EFFECTIVE_TORQUE);
+        if (tag.contains(TAG_SMART_MAPPING)) this.smartMappingActive = tag.getBoolean(TAG_SMART_MAPPING);
+        if (tag.contains(TAG_AUTO_SHIFT)) this.autoShiftEnabled = tag.getBoolean(TAG_AUTO_SHIFT);
+        if (tag.contains(TAG_SKILL_ID)) this.activeSkillId = tag.getString(TAG_SKILL_ID);
+        if (tag.contains(TAG_STALLED)) this.stalled = tag.getBoolean(TAG_STALLED);
     }
 
     @Override

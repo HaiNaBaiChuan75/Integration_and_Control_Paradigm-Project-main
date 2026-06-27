@@ -1,6 +1,16 @@
-# 十九、扭矩曲线（Torque Curve）
+---
+updated: 2026-06-27
+status: archived
+maintainer: @项目协作者
+---
 
-### 设计动机
+# 十九、扭矩曲线（Torque Curve）—— 已移除
+
+> ⚠ **06-27 已移除**：发动机简化为油门线性扭矩模型，`Torque = TORQUE_MIN + throttle × (TORQUE_MAX - TORQUE_MIN)`，扭矩与 RPM 完全解耦。
+> 
+> 本文档保留供历史参考。
+
+### 历史设计动机（06-08 至 06-27）
 
 改进前（06-07 及之前）：有效扭矩与 RPM 无关，恒定为 `totalMass × g × TORQUE_WEIGHT_RATIO`。
 - 任何时候踩油门，扭矩输出相同

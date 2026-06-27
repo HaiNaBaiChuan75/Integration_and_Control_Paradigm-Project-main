@@ -153,21 +153,22 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     private double rollingResistanceMag = 0.0;
 
     // ===== Binary Grip 抓地状态 =====
-    /**
-     * 当前轮是否抓地（true=抓地, false=打滑）。由 Binary Grip 每 tick 更新。
-     */
+    /** 当前轮是否抓地（true=抓地, false=打滑）。由 Binary Grip 每 tick 更新。 */
     private boolean gripStatus = true;
 
     // ===== 横移轮标记（NS 朝向，Q/E 控制） =====
     /**
-     * 是否为横移轮（NS 朝向，由 Car Mode 智能映射分配 Q/E 控制）。 横移轮不走变速箱，直接在 physicsTick 中用 Q/E 的
-     * throttle 状态驱动 RPM。 NBT 持久化，重进世界后自动恢复。
+     * 是否为横移轮（NS 朝向，由 Car Mode 智能映射分配 Q/E 控制）。
+     * 横移轮不走变速箱，直接在 physicsTick 中用 Q/E 的 throttle 状态驱动 RPM。
+     * NBT 持久化，重进世界后自动恢复。
      */
     private boolean isStrafeWheel = false;
 
     // ===== 扭矩消耗上报（供驾驶舱负载反射） =====
     /**
-     * 本轮物理 tick 中消耗的轮端扭矩（Nm）。 = |P控制器实际力| × 轮半径 由 CockpitBE 扫描，用于计算负载反射和净扭矩。
+     * 本轮物理 tick 中消耗的轮端扭矩（Nm）。
+     * = |P控制器实际力| × 轮半径
+     * 由 CockpitBE 扫描，用于计算负载反射和净扭矩。
      */
     private double consumedWheelTorque = 0.0;
 
@@ -246,8 +247,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     /**
      * 抓地力需求比（Binary Grip）。
      * <ul>
-     * <li>0.5 = 抓地（驱动力 < 抓地极限，有余量）</li> <li
-     * >2.0 = 打滑（驱动力 > 抓地极限）</li>
+     * <li>0.5 = 抓地（驱动力 < 抓地极限，有余量）</li>
+     * <li>2.0 = 打滑（驱动力 > 抓地极限）</li>
      * </ul>
      * 通过 NBT 同步到客户端，用于调试覆盖层显示。
      */
@@ -320,7 +321,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     /**
-     * @return 本轮消耗的轮端扭矩（Nm），供驾驶舱负载反射计算。 = |P控制器实际力| × 轮半径
+     * @return 本轮消耗的轮端扭矩（Nm），供驾驶舱负载反射计算。
+     *          = |P控制器实际力| × 轮半径
      */
     public double getConsumedWheelTorque() {
         return consumedWheelTorque;
@@ -475,15 +477,16 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     /**
-     * @return 是否为横移轮（NS 朝向，Q/E 控制）。 横移轮在 physicsTick 中不走变速箱，直接用 Q/E 的 throttle
-     * 状态驱动 RPM。
+     * @return 是否为横移轮（NS 朝向，Q/E 控制）。
+     *         横移轮在 physicsTick 中不走变速箱，直接用 Q/E 的 throttle 状态驱动 RPM。
      */
     public boolean isStrafeWheel() {
         return isStrafeWheel;
     }
 
     /**
-     * 设置横移轮标记（由 SmartMapC2SPacket.applyCarMode 分配 NS 轮时调用）。 保存后标记脏数据并同步到客户端。
+     * 设置横移轮标记（由 SmartMapC2SPacket.applyCarMode 分配 NS 轮时调用）。
+     * 保存后标记脏数据并同步到客户端。
      */
     public void setStrafeWheel(boolean strafe) {
         this.isStrafeWheel = strafe;
@@ -731,20 +734,6 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         Direction.Axis axis = f.getAxis();
         Vector3dc sideD = rotAxis(axis);
         Vector3dc fwdD = rotPerp(axis);
-
-        // ═══════════════════════════════════════════════════════════════════
-        //  上游模式试验：力矢量方向随方向盘角度旋转
-        // ═══════════════════════════════════════════════════════════════════
-        //  旧模式：fwdD/sideD 固定于方块 facing 方向，转向仅靠差速器扭矩偏置。
-        //  新模式：fwdD/sideD 绕 Y 轴旋转 chasingYaw，力方向跟随方向盘。
-        //  效果：更像轮式转向车辆，而非坦克差速转向。
-        //  上游参考：WheelMountBlockEntity.getRotatedWheelAxis() → normalD.rotateY(chasingYaw)
-        if (Math.abs(this.chasingYaw) > 1e-8) {
-            Vector3d rf = new Vector3d(fwdD).rotateY(this.chasingYaw);
-            Vector3d rs = new Vector3d(sideD).rotateY(this.chasingYaw);
-            fwdD = rf;
-            sideD = rs;
-        }
 
         // 预计算本轮侧向/纵向位置（用于差速器 + 载荷转移）
         // 通过 SubLevel 区块坐标与驾驶舱位置的偏移确定轮位
@@ -1051,6 +1040,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
                 // double dragImpulse = TirePhysicsCalculator.calculateDragImpulse(
                 //         forwardSpeed, SuspensionConstants.DRAG_COEFFICIENT, dt);
                 // longForce += dragImpulse;
+
                 // ═══ 横向摩擦阻尼 ═══
                 // 抵制侧向速度——没有这个车辆就会横向漂移（"太空飞船"感）。
                 // 用简化的线性侧滑阻尼 + 抓地预算封顶，替代已禁用的 Brush 侧偏模型。
@@ -1061,24 +1051,19 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             }
 
             // ╔══════════════════════════════════════════════════════════════╗
-            // ║  摩擦圆模型 — 2026-06-26 重新启用                          ║
+            // ║  [暂时禁用] 摩擦圆模型 — Binary Grip 已取代               ║
             // ║                                                             ║
-            // ║  √(long² + lat²) ≤ μ × N                                   ║
-            // ║                                                             ║
-            // ║  BinaryGrip 独立限制纵向/侧向后，再加一道总预算约束。       ║
-            // ║  效果：转弯时侧向力挤占纵向预算 → 不能全油门过弯             ║
-            // ║        → 消除上游转向 + BinaryGrip 的"气垫船"效应           ║
-            // ║                                                             ║
-            // ║  Crossout 参考：该游戏大概率使用摩擦圆+载荷转移模型，        ║
-            // ║  其"不反打方向盘"的特性来自摩擦圆恢复速度快——回正方向        ║
-            // ║  后侧向力需求消失，全部预算回到纵向。                        ║
+            // ║  旧模型：√(long² + lat²) ≤ μ × N，按比例缩减两个分量。       ║
+            // ║  新模型：每轮独立 Binary Grip，驱动力min(需求, μ×N)。       ║
+            // ║  差速/转向等横向力分配由未来智能映射系统处理。               ║
             // ╚══════════════════════════════════════════════════════════════╝
-            double totalDemand = Math.sqrt(longForce * longForce + latForce * latForce);
-            if (totalDemand > frictionBudget && totalDemand > 1e-10) {
-                double scale = frictionBudget / totalDemand;
-                longForce *= scale;
-                latForce *= scale;
-            }
+            // double totalDemand = Math.sqrt(longForce * longForce + latForce * latForce);
+            // if (totalDemand > frictionBudget && totalDemand > 1e-10) {
+            //     double scale = frictionBudget / totalDemand;
+            //     longForce *= scale;
+            //     latForce *= scale;
+            // }
+
             // 摩擦需求比已在上方 Binary Grip 段计算，此处仅做节流同步
             // 阈值 0.005 确保微小的驱动力变化也能反映到客户端，
             // 冷却 2 tick 约 100ms 更新一次，兼顾平滑和响应。
@@ -1253,7 +1238,6 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
 
     private record TerrainCastResult(double maxExtension, Direction normal,
             @Nullable SubLevel subLevel, @Nullable BlockPos minInteractingBlock) {
-
     }
 
     private TerrainCastResult rayTerrain(Vector3dc nd, Pose3dc pose) {
@@ -1358,17 +1342,15 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     /**
      * 获取用于客户端视觉轮子旋转的 RPM 值。
      * <ul>
-     * <li>刹车 → 0（轮子锁死不转）</li>
-     * <li>抓地 → 物理车速转速（currentWheelRpm，轮子贴地正常滚动）</li>
-     * <li>打滑 → 理想转速（idealRpm = 引擎RPM/齿比，空转视觉效果）</li>
-     * <li>无驾驶舱/熄火 → 退回到物理转速</li>
+     *   <li>刹车 → 0（轮子锁死不转）</li>
+     *   <li>抓地 → 物理车速转速（currentWheelRpm，轮子贴地正常滚动）</li>
+     *   <li>打滑 → 理想转速（idealRpm = 引擎RPM/齿比，空转视觉效果）</li>
+     *   <li>无驾驶舱/熄火 → 退回到物理转速</li>
      * </ul>
      */
     private double getVisualRpm() {
         // 刹车时轮子锁死
-        if (this.braking) {
-            return 0.0;
-        }
+        if (this.braking) return 0.0;
 
         SubLevel sl = Sable.HELPER.getContaining(this);
         if (sl != null) {
