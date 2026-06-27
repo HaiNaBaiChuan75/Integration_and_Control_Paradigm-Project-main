@@ -8,7 +8,9 @@ import com.hainabaichuan75.iac_p.client.WeaponOverlay;
 import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestRenderer;
+import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModTestControllerBlockEntityTypes;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -52,5 +54,9 @@ public class IACPClient {
     private void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntityTypes.SUSPENSION_TEST.get(),
                 SuspensionTestRenderer::new);
+
+        // GeckoLib 测试控制器
+        event.registerBlockEntityRenderer(ModTestControllerBlockEntityTypes.TEST_CONTROLLER.get(),
+                TestControllerRenderer::new);
     }
 }

@@ -8,6 +8,7 @@
   "block.iac_p.cockpit_light_linear_3": "Light Cockpit Linear (Upper Ext)",
   "block.iac_p.shotgun_base": "Shotgun Base",
   "block.iac_p.machine_gun_base": "Machine Gun Base",
+  "block.iac_p.test_controller": "Test Controller (GeckoLib)",
   "block.iac_p.suspension_test": "Suspension Test Block",
   "block.iac_p.debug_gear": "Debug Gear",
   "block.iac_p.debug_swivel_bearing": "Debug SwivelBearing",
