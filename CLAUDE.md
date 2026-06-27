@@ -1,6 +1,8 @@
 # CLAUDE.md
-(update 2026/6/20)
+(update 2026/6/27)
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Full project documentation: `《中控载具工坊：范式》管理文档4.0/` (Chinese, comprehensive).
+Removed/simplified features (arcade mode): `2-功能清单/2.6-已移除功能.md`.
 
 ## Project Overview
 
@@ -50,14 +52,14 @@ All dependency versions are set in `gradle.properties`.
 
 **Powertrain (`CockpitBlockEntity` + `EngineModel` + `TransmissionModel`):**
 - Throttle-direct RPM model: RPM = IDLE + throttle × (MAX - IDLE), engine always runs independently
-- Torque = ENGINE_TORQUE × torqueCurve(RPM) — pure RPM function, not throttle-attenuated
+- Torque = TORQUE_MIN + throttle × (TORQUE_MAX - TORQUE_MIN) — throttle-linear, decoupled from RPM
 - 5-speed + reverse + neutral transmission: torque × gear ratio → torque per wheel
 - Shift sequence: 6-tick power interruption, rev-match on downshift
 - Auto-shift: detects speed/accel relative to gear-ideal speed, stalls prevention
 
-**Tire/Suspension Physics (`SuspensionTestBlockEntity` + `TirePhysicsCalculator` + `BrushTireModel`):**
+**Tire/Suspension Physics (`SuspensionTestBlockEntity` + `TirePhysicsCalculator`):**
 - Built on Sable's `BlockEntitySubLevelActor` — applies forces directly to Rapier rigid bodies
-- Brush tire lateral slip model (peak slip angle ~4.5°)
+- Binary Grip grip model (per-wheel, no friction circle sharing)
 - Dynamic load transfer during acceleration/braking/turning
 - Rolling resistance, tire deflection, burst detection, pressure sensitivity
 - Uses Offroad's `TireLike` data component for tire properties

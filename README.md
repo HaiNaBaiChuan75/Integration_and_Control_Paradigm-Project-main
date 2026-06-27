@@ -33,37 +33,41 @@ The heavy lifting comes from our dependencies. What we do is **connect them into
 ### On top of existing physics blocks, we added…
 
 - **Mount/dismount system**\* (F key, player hiding while seated, occupancy management)
-- **Universal Cockpit** (two-block structure integrity check)
+- **Universal Cockpit** (two-block structure integrity check) + **CockpitLight** (lightweight 2×2 linear cockpit)
 - **Orbital camera** with adaptive height/distance (tracks SubLevel pose via Sable API)
 - **Keybinding config GUI** (C key, per-vehicle key remapping + tire pressure input)
+- **Vehicle Orientation Screen** + **WASD Smart Mapping** (FACING-voting width axis, Car Mode, Reverse)
+- **Structure Info Screen** (N key block statistics + weapon system overview)
 
     > \* Player mounting within SubLevels is handled by Simulated-Project. IAC-P provides the mount/dismount triggers, player hiding, occupancy management, and state synchronization.
     > \* Honey Glue and Physical Assembler are provided by **Simulated-Project**. IAC-P interacts with them for vehicle assembly and cockpit placement within physical structures.
 
 ### On top of Create RPM network and Offroad tire data components, we built our own…
 
-> ⚠ The wheel items and tire data component (`TireLike` interface) are provided by Offroad. The physics simulation below — suspension springs, friction circle, brush tire model, load transfer — is our own implementation built on top of Offroad's tire data.
+> ⚠ The wheel items and tire data component (`TireLike` interface) are provided by Offroad. The physics simulation below — suspension springs, Binary Grip, tire pressure — is our own implementation built on top of Offroad's tire data.
 
-- **Full powertrain controller**: engine model with mass-adaptive torque, continuous throttle, torque curve (peak ~3,400 RPM), 5-speed + reverse transmission, load-balanced engine coupling, differential torque distribution
+- **Arcade-mode powertrain**: throttle-direct RPM + throttle-linear torque (decoupled from RPM), 5-speed + reverse transmission with 6-tick shift interruption
+- **Binary Grip** traction model: per-wheel min(driveForce, μ×N), no shared friction budget (replaced friction circle 06-17)
 - **Handbrake v3**: wheel lock + pure sliding friction (~0.35g)
-- **Dynamic load transfer**: weight shift during acceleration/braking/turning
-- **Brush tire lateral slip model**: peak slip angle ~4.5°, grip collapse simulates drift
 - **Tire physics**: pressure sensitivity, carcass stiffness, rolling resistance, burst detection
 
 ### On top of Sable constraints and SubLevels, we added…
 
-- **Turret system**: TurretBase block spawns a physical grindstone + lightning rod as two SubLevels, linked by a RotaryConstraint for yaw and a GenericConstraint for pitch. Anchor point config via GUI. RGB axis line rendering.
-- **Weapon system**: auto-aim with vehicle-local coordinate stabilization. Barrel-origin damage ray (independent of camera aim). Multi-turret support. Hold-to-fire, bypasses immunity frames. Bullet trail rendering.
+- **Turret system**: TurretBase block spawns a physical grindstone + lightning rod as two SubLevels, linked by a RotaryConstraint for yaw and a GenericConstraint for pitch. Position-mode PD servo aiming. Anchor point config via GUI. RGB axis line rendering.
+- **Shotgun system**: independent weapon type with 8-pellet spread, 1s cooldown
+- **Weapon system**: auto-aim with vehicle-local coordinate stabilization. Barrel-origin damage ray (independent of camera aim). Multi-turret support. Hold-to-fire, bypasses immunity frames. Bullet trail rendering. Part-damage system (5-hit block destruction).
+- **Affiliation system**: O(1) runtime index for SubLevel ownership, group membership, player-vehicle bindings. Policy-based ray interaction resolution.
 
 ### On top of NeoForge, we added…
 
+- **14 custom network packets** (C2S / S2C) for vehicle control, weapon fire, gear shift, smart mapping, anchor config
 - **Debug overlay** (F3-style HUD: weight, RPM, torque, gear, speed, friction budget)
 - **Debug Gear block** (small gear that prints RPM per tick for Create network diagnosis)
 - **Full i18n** (Chinese + English, 3-level NeoForge config GUI, all screens and messages translatable)
 
 ### Design Philosophy
 
-**IAC-P is bridgeware.** The physics engine already exists. The physical blocks already exist. What was missing was the **coordination** — a layer that says "when the player presses W, here's how the engine torque gets distributed to each wheel, accounting for load transfer, gear ratio, and the tire's current slip angle."
+**IAC-P is bridgeware.** The physics engine already exists. The physical blocks already exist. What was missing was the **coordination** — a layer that says "when the player presses W, here's how the engine torque gets distributed to each wheel, accounting for gear ratio and the tire's current grip limit."
 
 **Physics isn't just visual — it's playable.** Our springs *actually compress* — no animations, just real spring forces. When we say "50 km/h", that's `linearVelocity.length() × 3.6` computed for you.
 
@@ -85,10 +89,12 @@ gradlew build           # Build mod JAR
 | Key | Action |
 | :---: | -------- |
 | F | Mount / Dismount |
-| C | Vehicle keybinding config / Turret anchor config |
+| C | Vehicle orientation / keybinding config / Turret anchor config |
 | Q / E | Shift up / Shift down |
 | Left Mouse | Fire weapons (hold for auto-fire) |
-| N | Toggle Debug Gear output |
+| N | Structure info screen (near cockpit) / Toggle Debug Gear (near debug block) |
+| V | Toggle stationary camera mode |
+| Home / End | Increase / Decrease throttle |
 
 ---
 
@@ -98,10 +104,11 @@ gradlew build           # Build mod JAR
 | ----------- | --------- | ------- |
 | Minecraft | 1.21.1 | |
 | NeoForge | 21.1.230 | |
-| Create | 6.x | |
-| Simulated (Sable) | [1.0, 2.0) | Core physics framework |
-| Aeronautics | (in Simulated) | Propellers, balloons |
-| Offroad | (in Simulated) | Wheels, drills |
+| Create | 6.0.10-280 | Mechanical power network |
+| Sable | 2.0.3 | Rapier physics engine |
+| Simulated | 1.3.0 | Core physics framework (SubLevel, assembly) |
+| Aeronautics | 1.3.0 | Propellers, balloons |
+| Offroad | 1.3.0 | Wheels, drills, tire data components |
 
 ### First-Time Build
 
@@ -110,6 +117,8 @@ gradlew runClient
 ```
 
 The first launch auto-extracts nested JAR dependencies. See [Getting Started Guide](docs/en/01-Getting-Started.md) for details.
+
+All dependency versions are managed in `gradle.properties`.
 
 ---
 
@@ -124,7 +133,7 @@ The first launch auto-extracts nested JAR dependencies. See [Getting Started Gui
 | [Troubleshooting](docs/en/05-Troubleshooting.md) | Everyone |
 | [Current Status & Roadmap](docs/en/06-Current-Status.md) | Everyone |
 
-> **Chinese documentation (comprehensive)**: `《中控载具工坊：范式》项目推进文档3.0/` — includes 29 technical deep-dives, complete development history, design philosophy, and performance analysis. Machine-translation friendly.
+> **Chinese documentation (comprehensive)**: `《中控载具工坊：范式》管理文档4.0/` — the single source of truth. Includes complete feature list with status tracking, subsystem deep-dives, architecture & code index, current status with active/resolved/frozen issues, troubleshooting index (50+ entries), performance analysis, design philosophy, full development history, and developer guides. `《中控载具工坊：范式》管理文档3.0/` is an older version kept for reference.
 
 ---
 
@@ -150,11 +159,12 @@ Good ways to help: bug reports, feature suggestions, code PRs, documentation & t
 ## Acknowledgements
 
 - **Create** — mechanical power network (RPM, gearboxes, stress system)
-- **Sable (Simulated-Project)** — Rapier physics engine, SubLevel system, constraint API
+- **Sable (RyanHCode)** — Rapier physics engine, SubLevel system, constraint API
+- **Simulated-Project** — SubLevel hosting, assembly framework
 - **Offroad (Simulated-Project)** — wheel items, tire data components (`TireLike`)
 - **Aeronautics (Simulated-Project)** — propeller, balloon, and levitite systems
-- **Copilot(DeepSeek-V4)** — Code Implementation Guide
-- NeoForged modding framework
+- **NeoForged** — Minecraft modding framework
+- **Copilot (DeepSeek-V4)** — Code implementation assistance
 - Inspired by *Crossout* and *Besiege*
 
 *Building vehicles, one constraint at a time.*

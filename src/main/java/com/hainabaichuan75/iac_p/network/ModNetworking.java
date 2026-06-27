@@ -5,7 +5,6 @@ import com.hainabaichuan75.iac_p.network.packets.DebugGearToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.DebugSwivelToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.GearShiftC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.MountedStateS2CPacket;
-import com.hainabaichuan75.iac_p.network.packets.PlayerInputC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.SeatMountC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.TireConfigC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.MachineGunTargetC2SPacket;
@@ -38,11 +37,6 @@ public class ModNetworking {
                 SeatMountC2SPacket.TYPE,
                 SeatMountC2SPacket.STREAM_CODEC,
                 SeatMountC2SPacket::handle
-        );
-        registrar.playToServer(
-                PlayerInputC2SPacket.TYPE,
-                PlayerInputC2SPacket.STREAM_CODEC,
-                PlayerInputC2SPacket::handle
         );
         registrar.playToClient(
                 MountedStateS2CPacket.TYPE,

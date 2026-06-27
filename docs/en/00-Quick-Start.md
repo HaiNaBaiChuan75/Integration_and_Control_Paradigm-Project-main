@@ -14,7 +14,7 @@
 3. Place a **Cockpit** on the physical structure (or include it in the region before assembling).
 4. Place **Suspension Test Blocks** on the structure. Hold an **Offroad Wheel**\* item and right-click a Suspension Test Block to attach a wheel.
 
-    > \* Wheel items are provided by the Offroad module (included in Simulated-Project). The IAC-P mod implements suspension physics, friction circle, and tire pressure/burst simulation on top of Offroad's tire data components.
+    > \* Wheel items are provided by the Offroad module (included in Simulated-Project). The IAC-P mod implements suspension physics (spring-damper + Binary Grip grip model), and tire pressure/burst simulation on top of Offroad's tire data components.
     > \* Honey Glue and Physical Assembler are provided by **Simulated-Project**. IAC-P interacts with them for vehicle assembly and cockpit placement within physical structures. The underlying physics-ification of blocks (assemble/disassemble) is also handled by Simulated-Project.
 
 ### Drive
@@ -48,7 +48,7 @@
 3.在物理化结构上放置“通用驾驶舱”（当然，也可以在设定范围的时候一并囊括，随后一同物理化）
 4.在物理化结构上放置“悬挂测试方块”，并手持“车轮”\*物品右键悬挂测试方块，安装车轮。
 
-    > \* 车轮物品由 Offroad 模组提供（包含在 Simulated-Project 中）。IAC-P 在 Offroad 轮胎数据组件之上实现悬挂物理、摩擦圆和胎压/爆胎模拟。
+    > \* 车轮物品由 Offroad 模组提供（包含在 Simulated-Project 中）。IAC-P 在 Offroad 轮胎数据组件之上实现悬挂物理（弹簧-阻尼器 + Binary Grip 抓地力模型）、胎压/爆胎模拟。
     > \* "蜂蜜胶"(Honey Glue)和"物理组装器"(Physical Assembler)由 **Simulated-Project** 提供。IAC-P 与之交互以完成载具的装配和驾驶舱放置。方块物理化（装配/拆卸）的底层机制同样由 Simulated-Project 处理。
 
 驾驶！
