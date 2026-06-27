@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.content.blocks.debug_gear;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.index.ModDebugGearBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,7 +19,7 @@ public class DebugGearBlockEntity extends KineticBlockEntity {
     private boolean debugEnabled = false;
 
     public DebugGearBlockEntity(BlockPos pos, BlockState state) {
-        super(ModDebugGearBlockEntityTypes.DEBUG_GEAR.get(), pos, state);
+        super(ModBlockEntityTypes.DEBUG_GEAR.get(), pos, state);
     }
 
     /**

@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.content.blocks.debug_swivel;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.index.ModDebugSwivelBearingBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
@@ -33,7 +33,7 @@ public class DebugSwivelBearingBlockEntity extends SwivelBearingBlockEntity {
     private boolean debugEnabled = false;
 
     public DebugSwivelBearingBlockEntity(BlockPos pos, BlockState state) {
-        super(ModDebugSwivelBearingBlockEntityTypes.DEBUG_SWIVEL_BEARING.get(), pos, state);
+        super(ModBlockEntityTypes.DEBUG_SWIVEL_BEARING.get(), pos, state);
     }
 
     public void toggleDebug() {

@@ -11,12 +11,9 @@ import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModBlocks;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCreativeModeTabs;
-import com.hainabaichuan75.iac_p.index.ModDebugGearBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModDebugSwivelBearingBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModEntities;
 import com.hainabaichuan75.iac_p.index.ModItems;
 import com.hainabaichuan75.iac_p.index.ModLightCockpitBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModTestControllerBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModSounds;
 import org.slf4j.Logger;
 
@@ -43,10 +40,7 @@ public class IACP {
         ModEntities.ENTITIES.register(modEventBus);
         ModBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModCockpitBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
-        ModDebugGearBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
-        ModDebugSwivelBearingBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModLightCockpitBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
-        ModTestControllerBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
         ModSounds.SOUND_EVENTS.register(modEventBus);
 

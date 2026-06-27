@@ -76,7 +76,7 @@ All dependency versions are set in `gradle.properties`.
 - `RayPolicy`/`RayType`: Policy-based ray interaction resolution — decides whether rays penetrate, damage, or ignore SubLevel targets based on affiliation
 
 **Weapons System:**
-- Turret: `TurretBaseBlock` spawns grindstone + lightning rod as two SubLevels linked by RotaryConstraint (yaw) and GenericConstraint (pitch). Auto-aim with vehicle-local coordinate stabilization.
+- Turret: `TurretTestBlock` — Crossout-style single-block turret using GeckoLib `ENTITYBLOCK_ANIMATED` with yaw/pitch bone rotation. No separate SubLevels, no physical constraints. Replaces the old 2-SubLevel grindstone+lightning-rod architecture (files deleted 06-27).
 - Machine Gun + Shotgun: Barrel-origin damage rays, multi-turret support, hold-to-fire, bypasses immunity frames. Bullet trail rendering on client.
 - Aim controller uses immediate servo drive (packet handler → `driveImmediate()`) to eliminate one server tick of latency.
 

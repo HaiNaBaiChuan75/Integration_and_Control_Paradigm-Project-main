@@ -25,7 +25,6 @@ import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
 import dev.ryanhcode.sable.api.physics.mass.MassData;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
-import dev.ryanhcode.sable.mixinterface.clip_overwrite.ClipContextExtension;
 import dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertyHelper;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
@@ -37,13 +36,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
@@ -113,20 +108,14 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     private final Vector3d forceVec = new Vector3d();
     private final ForceTotal forceTotal = new ForceTotal();
 
-    // ===== 载具按键绑定（每个方块独立配置，持久化到 NBT） =====
-    private String keyForward = SuspensionConstants.DEFAULT_KEY_FORWARD;
-    private String keyBackward = SuspensionConstants.DEFAULT_KEY_BACKWARD;
-    private String keyLeft = SuspensionConstants.DEFAULT_KEY_LEFT;
-    private String keyRight = SuspensionConstants.DEFAULT_KEY_RIGHT;
-    private String keyBrake = SuspensionConstants.DEFAULT_KEY_BRAKE;
-
-    // ===== 智能映射按键（WASD 智能映射系统分配，不与手动按键冲突） =====
-    // 当 smartKey* 非空时优先使用，否则回退到手动 key*
-    private String smartKeyForward = "";
-    private String smartKeyBackward = "";
-    private String smartKeyLeft = "";
-    private String smartKeyRight = "";
-    private String smartKeyBrake = "";
+    // ===== 智能按键映射处理器（管理手动 + 智能映射按键） =====
+    private final SmartKeyHandler smartKeyHandler = new SmartKeyHandler(
+            SuspensionConstants.DEFAULT_KEY_FORWARD,
+            SuspensionConstants.DEFAULT_KEY_BACKWARD,
+            SuspensionConstants.DEFAULT_KEY_LEFT,
+            SuspensionConstants.DEFAULT_KEY_RIGHT,
+            SuspensionConstants.DEFAULT_KEY_BRAKE
+    );
 
     // ===== 运行时控制输入（由 VehicleControlC2SPacket 写入，物理 tick 读取） =====
     /**
@@ -384,94 +373,90 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         sendData();
     }
 
-    // ===== 按键绑定存取 =====
+    // ===== 按键绑定存取（委托 SmartKeyHandler） =====
     public String getKeyForward() {
-        return keyForward;
+        return smartKeyHandler.getKeyForward();
     }
 
     public String getKeyBackward() {
-        return keyBackward;
+        return smartKeyHandler.getKeyBackward();
     }
 
     public String getKeyLeft() {
-        return keyLeft;
+        return smartKeyHandler.getKeyLeft();
     }
 
     public String getKeyRight() {
-        return keyRight;
+        return smartKeyHandler.getKeyRight();
     }
 
     public String getKeyBrake() {
-        return keyBrake;
+        return smartKeyHandler.getKeyBrake();
     }
 
     /**
      * 批量设置 5 个按键绑定（由 VehicleKeyConfigC2SPacket 调用）。 保存后标记脏数据并同步到客户端。
      */
     public void setKeyBindings(String forward, String backward, String left, String right, String brake) {
-        this.keyForward = forward;
-        this.keyBackward = backward;
-        this.keyLeft = left;
-        this.keyRight = right;
-        this.keyBrake = brake;
+        smartKeyHandler.setKeyBindings(forward, backward, left, right, brake);
         setChanged();
         sendData();
     }
 
-    // ===== 智能映射按键存取 =====
+    // ===== 智能映射按键存取（委托 SmartKeyHandler） =====
     public String getSmartKeyForward() {
-        return smartKeyForward;
+        return smartKeyHandler.getSmartKeyForward();
     }
 
     public String getSmartKeyBackward() {
-        return smartKeyBackward;
+        return smartKeyHandler.getSmartKeyBackward();
     }
 
     public String getSmartKeyLeft() {
-        return smartKeyLeft;
+        return smartKeyHandler.getSmartKeyLeft();
     }
 
     public String getSmartKeyRight() {
-        return smartKeyRight;
+        return smartKeyHandler.getSmartKeyRight();
     }
 
     public String getSmartKeyBrake() {
-        return smartKeyBrake;
+        return smartKeyHandler.getSmartKeyBrake();
     }
 
     /**
      * @return 生效的前进键：智能映射键非空时优先，否则回退到手动配置
      */
     public String getActiveKeyForward() {
-        return smartKeyForward.isEmpty() ? keyForward : smartKeyForward;
+        return smartKeyHandler.getActiveKeyForward();
     }
 
     /**
      * @return 生效的后退键
      */
     public String getActiveKeyBackward() {
-        return smartKeyBackward.isEmpty() ? keyBackward : smartKeyBackward;
+        return smartKeyHandler.getActiveKeyBackward();
     }
 
     /**
      * @return 生效的左转键
      */
     public String getActiveKeyLeft() {
-        return smartKeyLeft.isEmpty() ? keyLeft : smartKeyLeft;
+        return smartKeyHandler.getActiveKeyLeft();
     }
 
     /**
      * @return 生效的右转键
      */
     public String getActiveKeyRight() {
-        return smartKeyRight.isEmpty() ? keyRight : smartKeyRight;
+        return smartKeyHandler.getActiveKeyRight();
     }
 
     /**
      * @return 生效的刹车键
      */
     public String getActiveKeyBrake() {
-        return smartKeyBrake.isEmpty() ? keyBrake : smartKeyBrake;
+        return smartKeyHandler.getActiveKeyBrake();
     }
 
     /**
@@ -495,11 +480,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
      * 批量设置智能映射按键（由 WASD 智能映射系统调用）。 设置后对应方块将使用 smartKey 而非手动 key。
      */
     public void setSmartKeyBindings(String forward, String backward, String left, String right, String brake) {
-        this.smartKeyForward = forward;
-        this.smartKeyBackward = backward;
-        this.smartKeyLeft = left;
-        this.smartKeyRight = right;
-        this.smartKeyBrake = brake;
+        smartKeyHandler.setSmartKeyBindings(forward, backward, left, right, brake);
         setChanged();
         sendData();
     }
@@ -508,11 +489,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
      * 清除所有智能映射按键，回退到手动配置。 下车或重新扫描方向时调用。
      */
     public void resetSmartKeys() {
-        this.smartKeyForward = "";
-        this.smartKeyBackward = "";
-        this.smartKeyLeft = "";
-        this.smartKeyRight = "";
-        this.smartKeyBrake = "";
+        smartKeyHandler.resetSmartKeys();
         setChanged();
         sendData();
     }
@@ -593,19 +570,6 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     // ===== NBT =====
-    private static final String TAG_KEY_FORWARD = "KeyForward";
-    private static final String TAG_KEY_BACKWARD = "KeyBackward";
-    private static final String TAG_KEY_LEFT = "KeyLeft";
-    private static final String TAG_KEY_RIGHT = "KeyRight";
-    private static final String TAG_KEY_BRAKE = "KeyBrake";
-
-    // 智能映射按键 NBT 标签
-    private static final String TAG_SMART_KEY_FORWARD = "SmartKeyForward";
-    private static final String TAG_SMART_KEY_BACKWARD = "SmartKeyBackward";
-    private static final String TAG_SMART_KEY_LEFT = "SmartKeyLeft";
-    private static final String TAG_SMART_KEY_RIGHT = "SmartKeyRight";
-    private static final String TAG_SMART_KEY_BRAKE = "SmartKeyBrake";
-
     // 横移轮标记 NBT 标签
     private static final String TAG_IS_STRAFE_WHEEL = "IsStrafeWheel";
 
@@ -617,18 +581,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     protected void write(CompoundTag t, HolderLookup.Provider r, boolean cp) {
         super.write(t, r, cp);
         t.put("HeldItem", this.heldItem.saveOptional(r));
-        // 持久化按键绑定
-        t.putString(TAG_KEY_FORWARD, this.keyForward);
-        t.putString(TAG_KEY_BACKWARD, this.keyBackward);
-        t.putString(TAG_KEY_LEFT, this.keyLeft);
-        t.putString(TAG_KEY_RIGHT, this.keyRight);
-        t.putString(TAG_KEY_BRAKE, this.keyBrake);
-        // 持久化智能映射按键
-        t.putString(TAG_SMART_KEY_FORWARD, this.smartKeyForward);
-        t.putString(TAG_SMART_KEY_BACKWARD, this.smartKeyBackward);
-        t.putString(TAG_SMART_KEY_LEFT, this.smartKeyLeft);
-        t.putString(TAG_SMART_KEY_RIGHT, this.smartKeyRight);
-        t.putString(TAG_SMART_KEY_BRAKE, this.smartKeyBrake);
+        // 持久化按键绑定（委托 SmartKeyHandler）
+        this.smartKeyHandler.writeToNbt(t);
         // 持久化横移轮标记
         t.putBoolean(TAG_IS_STRAFE_WHEEL, this.isStrafeWheel);
         // 持久化胎压（玩家唯一可调的运行时参数）
@@ -642,41 +596,11 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         if (t.contains("HeldItem")) {
             this.heldItem = ItemStack.parseOptional(r, t.getCompound("HeldItem"));
         }
-        // 恢复按键绑定
-        if (t.contains(TAG_KEY_FORWARD)) {
-            this.keyForward = t.getString(TAG_KEY_FORWARD);
-        }
-        if (t.contains(TAG_KEY_BACKWARD)) {
-            this.keyBackward = t.getString(TAG_KEY_BACKWARD);
-        }
-        if (t.contains(TAG_KEY_LEFT)) {
-            this.keyLeft = t.getString(TAG_KEY_LEFT);
-        }
-        if (t.contains(TAG_KEY_RIGHT)) {
-            this.keyRight = t.getString(TAG_KEY_RIGHT);
-        }
-        if (t.contains(TAG_KEY_BRAKE)) {
-            this.keyBrake = t.getString(TAG_KEY_BRAKE);
-        }
+        // 恢复按键绑定（委托 SmartKeyHandler）
+        this.smartKeyHandler.readFromNbt(t);
         // 恢复横移轮标记（兼容旧档——无此标签时 false）
         if (t.contains(TAG_IS_STRAFE_WHEEL)) {
             this.isStrafeWheel = t.getBoolean(TAG_IS_STRAFE_WHEEL);
-        }
-        // 恢复智能映射按键（兼容旧档——无此标签时保持空字符串）
-        if (t.contains(TAG_SMART_KEY_FORWARD)) {
-            this.smartKeyForward = t.getString(TAG_SMART_KEY_FORWARD);
-        }
-        if (t.contains(TAG_SMART_KEY_BACKWARD)) {
-            this.smartKeyBackward = t.getString(TAG_SMART_KEY_BACKWARD);
-        }
-        if (t.contains(TAG_SMART_KEY_LEFT)) {
-            this.smartKeyLeft = t.getString(TAG_SMART_KEY_LEFT);
-        }
-        if (t.contains(TAG_SMART_KEY_RIGHT)) {
-            this.smartKeyRight = t.getString(TAG_SMART_KEY_RIGHT);
-        }
-        if (t.contains(TAG_SMART_KEY_BRAKE)) {
-            this.smartKeyBrake = t.getString(TAG_SMART_KEY_BRAKE);
         }
         // 恢复胎压（兼容旧档——无此标签时保持默认值，旧版其他轮胎参数标签被忽略）
         if (t.contains(TAG_NOMINAL_PRESSURE)) {
@@ -760,7 +684,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             localPosX = worldDx * sideD.x() + worldDz * sideD.z(); // 侧向 (+右)
         }
 
-        var terr = rayTerrain(fwdD, pose);
+        var terr = CollisionHandler.rayTerrain(this.level, getBlockPos(), f,
+                fwdD, pose, Sable.HELPER.getContaining(this));
         double me = terr.maxExtension();
         this.extension = Mth.lerp(1.0, this.extension, me);
         if (me > rest + rad + 0.25) {
@@ -791,8 +716,9 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         {
             // 1. 地面摩擦系数
             if (terr.minInteractingBlock() != null) {
-                this.touchFriction = fudge(PhysicsBlockPropertyHelper.getFriction(
-                        this.level.getBlockState(terr.minInteractingBlock())));
+                this.touchFriction = CollisionHandler.fudgeGroundFriction(
+                        PhysicsBlockPropertyHelper.getFriction(
+                                this.level.getBlockState(terr.minInteractingBlock())));
             } else {
                 this.touchFriction = 1.0;
             }
@@ -869,35 +795,11 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             double tireDeflection = 0.0;
 
             if (this.braking) {
-                // ===== 手刹模式：轮子抱死，纯滑动摩擦 =====
-                //
-                // ╔══════════════════════════════════════════════════════════════╗
-                // ║  物理模型：                                                ║
-                // ║  1. 轮子抱死，不再滚动                                     ║
-                // ║  2. 车辆依靠轮胎-地面滑动摩擦减速                          ║
-                // ║  3. 驱动力 → 切断                                          ║
-                // ║  4. 滚动阻力 → 切断（轮子不转，无滚动摩擦）                 ║
-                // ║  5. 侧滑阻尼 → 切断（轮子不转，无回正力矩）                ║
-                // ║  6. 摩擦力沿总速度反方向，而非仅纵向                        ║
-                // ║  7. 摩擦力幅值 = BRAKE_STRENGTH × μ × springImpulse        ║
-                // ║                                                             ║
-                // ║  ⚠ 关键：必须用 springImpulse（真实法向冲量），             ║
-                // ║     不能用 frictionBasis！后者被 MIN_IMPULSE_MULTIPLIER     ║
-                // ║     (=500) 膨胀了 ~51 倍，导致减速度高达 18g，              ║
-                // ║     轻车一脚刹车直接钉在地上。                              ║
-                // ║                                                             ║
-                // ║  正确值：brakeMag = 0.5 × 0.7 × nm × 0.49 = nm × 0.17      ║
-                // ║  减速度 ≈ 3.4 m/s² ≈ 0.35g ✓                              ║
-                // ╚══════════════════════════════════════════════════════════════╝
-                double totalSpeed = Math.sqrt(forwardSpeed * forwardSpeed + lateralSpeed * lateralSpeed);
-                if (totalSpeed > 1e-8) {
-                    // 使用弹簧静载冲量（真实法向力），而非膨胀后的 frictionBasis
-                    double brakeMag = BRAKE_STRENGTH * mu * springImpulse;
-                    // 沿总速度反方向分解摩擦力
-                    longForce = -(forwardSpeed / totalSpeed) * brakeMag;
-                    latForce = -(lateralSpeed / totalSpeed) * brakeMag;
-                }
-                // totalSpeed ≈ 0：车辆已静止，无需额外力
+                // ===== 手刹模式：轮子抱死，纯滑动摩擦（委托 BrakeHandler） =====
+                var brakeResult = BrakeHandler.compute(
+                        forwardSpeed, lateralSpeed, mu, springImpulse, BRAKE_STRENGTH);
+                longForce = brakeResult.longForce();
+                latForce = brakeResult.latForce();
                 // 刹车时引擎不驱动轮子，负载报告归零
                 this.pControllerDemand = 0.0;
                 this.rollingResistanceMag = 0.0;
@@ -1187,7 +1089,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         float rad = tire.radius();
         // sl 已在 tick() 开头定义，此处复用
         this.lastExt = this.extension;
-        this.extension = Mth.lerp(0.7, this.extension, compMaxExt(rad));
+        this.extension = Mth.lerp(0.7, this.extension, computeMaxExtensionLocal(rad));
 
         // 轮子旋转：被动摩擦滚动 + 主动 RPM（从动力系统读取）
         double visualRpm = getVisualRpm();
@@ -1233,74 +1135,24 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     // ===== 工具 =====
-    private static double fudge(double v) {
-        return v < 1 ? 0.1 + 0.9 * v : v;
-    }
-
-    private double compMaxExt(float rad) {
+    /**
+     * 计算当前悬挂的最大伸展量，检测轮子是否离地。 委托 {@link CollisionHandler}。
+     */
+    private double computeMaxExtensionLocal(float rad) {
         SubLevel sl = Sable.HELPER.getContaining(this);
         if (sl == null) {
             return MAX_EXT;
         }
         Direction f = getBlockState().getValue(SuspensionTestBlock.HORIZONTAL_FACING);
-        var r = rayTerrain(rotPerp(f.getAxis()), sl.logicalPose());
-        double u = r.maxExtension - rad;
-        this.lifted = u > MAX_EXT;
-        this.touchFriction = r.minInteractingBlock() == null ? 1.0
-                : fudge(PhysicsBlockPropertyHelper.getFriction(this.level.getBlockState(r.minInteractingBlock())));
-        return Mth.clamp(u, -0.45, MAX_EXT);
-    }
-
-    private record TerrainCastResult(double maxExtension, Direction normal,
-            @Nullable SubLevel subLevel, @Nullable BlockPos minInteractingBlock) {
-
-    }
-
-    private TerrainCastResult rayTerrain(Vector3dc nd, Pose3dc pose) {
-        Direction f = getBlockState().getValue(SuspensionTestBlock.HORIZONTAL_FACING);
-        Vec3 c = this.getBlockPos().relative(f).getCenter();
-        double minE = 5.0;
-        Direction minN = Direction.UP;
-        SubLevel minSL = null;
-        BlockPos minBP = null;
-
-        for (int i = -1; i <= 1; i++) {
-            Vec3 o = c.add(JOMLConversion.toMojang(nd).scale(i));
-            ClipContext ctx = new ClipContext(o, o.subtract(0, 5, 0),
-                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty());
-            ((ClipContextExtension) ctx).sable$setIgnoredSubLevel(Sable.HELPER.getContaining(this));
-            BlockHitResult hit = this.level.clip(ctx);
-            if (hit.getType() == HitResult.Type.MISS) {
-                continue;
-            }
-
-            SubLevel hsl = Sable.HELPER.getContaining(this.level, hit.getLocation());
-            Vec3 lh = pose.transformPositionInverse(
-                    hsl == null ? hit.getLocation() : hsl.logicalPose().transformPosition(hit.getLocation()));
-            if (lh.y > c.y || o.distanceTo(lh) < 0.05) {
-                continue;
-            }
-            double d = c.y - lh.y;
-            if (d <= 1e-5) {
-                continue;
-            }
-
-            Vector3d hn = new Vector3d(hit.getDirection().getStepX(), hit.getDirection().getStepY(), hit.getDirection().getStepZ());
-            if (hsl != null) {
-                hsl.logicalPose().transformNormal(hn);
-            }
-            pose.transformNormalInverse(hn);
-            if (hn.dot(0, 1, 0) < 0.5) {
-                continue;
-            }
-            if (d < minE) {
-                minE = d;
-                minN = hit.getDirection();
-                minSL = hsl;
-                minBP = hit.getBlockPos();
-            }
-        }
-        return new TerrainCastResult(minE, minN, minSL, minBP);
+        var outLifted = new CollisionHandler.MutableBoolean();
+        var outFriction = new CollisionHandler.MutableDouble();
+        double result = CollisionHandler.computeMaxExtension(
+                this.level, getBlockPos(), f, rad, MAX_EXT,
+                sl, sl.logicalPose(), rotPerp(f.getAxis()),
+                outLifted, outFriction);
+        this.lifted = outLifted.value;
+        this.touchFriction = outFriction.value;
+        return result;
     }
 
     private @NotNull

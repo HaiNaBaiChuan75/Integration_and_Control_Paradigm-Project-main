@@ -14,6 +14,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -393,6 +394,147 @@ public class ClientMountHandler {
     }
 
     // ==================================================================
+    //  独立轨道摄像机角度追踪（解耦 entity.getYRot() 服务器覆盖问题）
+    // ==================================================================
+    /**
+     * 轨道摄像机独立偏航角（度），不受 {@code SablePostPhysicsTickEvent} 服务端
+     * {@code player.setYRot()} 覆盖影响。
+     * <p>
+     * 实现原理：跟踪 {@code entity.getYRot()} 的帧间变化，通过
+     * {@link #MAX_YAW_DELTA_PER_FRAME} 阈值滤除服务端强制覆盖（~100Hz 跳变），
+     * 仅接受鼠标产生的平滑小差分。类似低通滤波器。
+     */
+    private static float orbitalYaw = 0;
+
+    /**
+     * 轨道摄像机独立俯仰角（度），MC 惯例（负=上仰）。
+     */
+    private static float orbitalPitch = 0;
+
+    /**
+     * 轨道摄像机是否已初始化（上车时设为 true，下车时 false）。
+     */
+    private static boolean orbitalInitialized = false;
+
+    /**
+     * 上一帧 {@code entity.getYRot()} 的快照，用于计算帧间差分。
+     */
+    private static float lastEntityYaw = 0;
+
+    /**
+     * 上一帧 {@code entity.getXRot()} 的快照，用于计算帧间差分。
+     */
+    private static float lastEntityPitch = 0;
+
+    /**
+     * 帧间偏航最大可接受差分（度/帧）。
+     * <p>
+     * 鼠标快速甩动约 500°/s，60fps 下约 8.3°/帧；
+     * 服务端覆盖通常远大于此（车辆旋转可瞬时改变 >45°）。
+     * 15° 阈值能安全区分鼠标输入和服务端覆盖。
+     */
+    private static final float MAX_YAW_DELTA_PER_FRAME = 15.0f;
+
+    /**
+     * 帧间俯仰最大可接受差分（度/帧）。
+     */
+    private static final float MAX_PITCH_DELTA_PER_FRAME = 15.0f;
+
+    /**
+     * 上车时初始化轨道摄像机角度为玩家当前朝向。
+     * <p>
+     * 此后仅接受帧间小差分（鼠标输入），滤除服务端强制覆盖的大跳变。
+     */
+    private static void initOrbitalCamera() {
+        var mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            // 以上车瞬间的玩家朝向作为初始值
+            orbitalYaw = mc.player.getYRot();
+            orbitalPitch = mc.player.getXRot();
+            lastEntityYaw = orbitalYaw;
+            lastEntityPitch = orbitalPitch;
+            orbitalInitialized = true;
+            IACP.LOGGER.debug("[OrbitalCamera] 初始化: yaw={}, pitch={}", orbitalYaw, orbitalPitch);
+        }
+    }
+
+    /**
+     * 每帧更新轨道摄像机角度（由 CameraMixin 在 setup TAIL 中调用）。
+     * <p>
+     * 跟踪 {@code entity.getYRot()} 的帧间变化，仅接受低于阈值的平滑差分
+     * （来自鼠标输入），滤除服务器强制覆盖（~100Hz 大跳变）。
+     * 俯仰（pitch）取反：MC 负=上仰 → 轨道惯例保持一致。
+     */
+    public static void updateOrbitalCamera() {
+        if (!orbitalInitialized) {
+            return;
+        }
+
+        var mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+
+        float currentYaw = mc.player.getYRot();
+        float currentPitch = mc.player.getXRot();
+
+        // 计算帧间差分（归一化到 [-180, 180]）
+        float yawDelta = currentYaw - lastEntityYaw;
+        yawDelta = (float) Math.IEEEremainder(yawDelta, 360.0);
+
+        float pitchDelta = currentPitch - lastEntityPitch;
+
+        // 阈值过滤：仅接受平滑小差分（鼠标输入），滤除服务端覆盖的大跳变
+        if (Math.abs(yawDelta) <= MAX_YAW_DELTA_PER_FRAME) {
+            orbitalYaw += yawDelta;
+        }
+        if (Math.abs(pitchDelta) <= MAX_PITCH_DELTA_PER_FRAME) {
+            // MC 惯例：正 pitch = 下俯，负 pitch = 上仰
+            // 与轨道惯例一致，直接累加
+            orbitalPitch = (float) Mth.clamp(orbitalPitch + pitchDelta, -89.0, 89.0);
+        }
+
+        // 更新上一帧快照
+        lastEntityYaw = currentYaw;
+        lastEntityPitch = currentPitch;
+    }
+
+    /**
+     * @return 轨道摄像机独立偏航角（度，MC 惯例 CW+, 南=0°），不受服务端覆盖影响。
+     *         未初始化时回退到玩家实体偏航，避免时序问题导致摄像机归零。
+     */
+    public static float getOrbitalYaw() {
+        if (orbitalInitialized) {
+            return orbitalYaw;
+        }
+        var mc = Minecraft.getInstance();
+        return mc.player != null ? mc.player.getYRot() : 0;
+    }
+
+    /**
+     * @return 轨道摄像机独立俯仰角（度，MC 惯例负=上仰），不受服务端覆盖影响。
+     *         未初始化时回退到玩家实体俯仰。
+     */
+    public static float getOrbitalPitch() {
+        if (orbitalInitialized) {
+            return orbitalPitch;
+        }
+        var mc = Minecraft.getInstance();
+        return mc.player != null ? mc.player.getXRot() : 0;
+    }
+
+    /**
+     * 下车时重置轨道摄像机状态。
+     */
+    private static void resetOrbitalCamera() {
+        orbitalInitialized = false;
+        orbitalYaw = 0;
+        orbitalPitch = 0;
+        lastEntityYaw = 0;
+        lastEntityPitch = 0;
+    }
+
+    // ==================================================================
     //  车辆实时状态缓存（由 VehicleStateS2CPacket 每 2 tick 填充）
     // ==================================================================
     //  覆盖层从此处读取高频动态数据，与 NBT 块实体同步解耦，
@@ -484,6 +626,9 @@ public class ClientMountHandler {
         if (mounted) {
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
 
+            // 初始化独立轨道摄像机（使用上车瞬间的玩家朝向，之后仅由鼠标差分驱动）
+            initOrbitalCamera();
+
             // 上车时自动扫描载具悬挂朝向，缓存供 WASD 智能映射使用
             ClientSubLevel clientSubLevel = getMountedClientSubLevel();
             if (clientSubLevel != null && mc.level != null) {
@@ -506,6 +651,8 @@ public class ClientMountHandler {
             WeaponOverlay.onDismount();
             // 强制关闭哨兵模式
             disableStationaryCamera();
+            // 重置独立轨道摄像机
+            resetOrbitalCamera();
             // 清空车辆状态缓存
             clearVehicleStateCache();
         }

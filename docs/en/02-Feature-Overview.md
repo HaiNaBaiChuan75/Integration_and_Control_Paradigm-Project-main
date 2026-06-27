@@ -65,19 +65,19 @@
 | 34 | Grindstone Config Screen | ✅ | C key GUI for orientation & anchor editing |
 | 35 | Grindstone Config Packet | ✅ | C→S orientation update |
 | 36 | Anchor Config Packet | ✅ | C→S anchor coordinate update |
-| 37 | Anchor Data Packet | ✅ | S→C anchor + axis line world positions |
-| 38 | Axis Line Rendering | ✅ | RGB axes per SubLevel + per-carpet focus crosshairs |
-| 39 | Rotary Joint | ✅ | RotaryConstraint linking grindstone ↔ vehicle |
-| 40 | Weapon System | ✅ | 1000-block raycast, barrel-origin damage, multi-turret |
-| 41 | Auto-Tracking | ✅ | Continuous client-tick raycast → TurretTargetC2SPacket |
-| 42 | Turret Kinetic Block | ✅ | KineticBlock + ICogWheel for Create stress network |
-| 43 | Position-Mode PD Servo | ✅ | SwivelBearing-style position-mode, stable tracking |
-| 44 | Absolute Angle Aiming | ✅ | AimController computes absolute target angle, no drift |
-| 45 | Yaw Calibration Offset | ✅ | Configurable -180~180° offset |
-| 46 | Vehicle-Local Stabilization | ✅ | Target direction transformed to vehicle local space |
-| 47 | Pitch PD Servo | ✅ | Position-mode, kP=6000/kD=400 for gravity compensation |
-| 48 | Barrel Damage Ray | ✅ | Ray from lightning rod pose, independent of camera aim |
-| 49 | Bullet Trail Rendering | ✅ | White line barrel→hit point, zero SubLevel scan |
+| 37 | Axis Line Rendering | ✅ | RGB axes per SubLevel + per-carpet focus crosshairs |
+| 38 | Weapon System | ✅ | 1000-block raycast, barrel-origin damage, multi-turret support |
+| 39 | Bullet Trail Rendering | ✅ | White line barrel→hit point, zero SubLevel scan |
+| 40 | Hold-to-Fire | ✅ | Mouse hold + 3-tick min interval |
+| 41 | No-I-Frames | ✅ | entity.invulnerableTime = 0 |
+| 42 | TurretTest | ✅ | Crossout-style single-block turret (GeckoLib ANIMATED), yaw/pitch bone rotation, no SubLevel |
+| 43 | Machine Gun | ✅ | Independent MG block + BE + AimController, packet handler direct drive |
+| 44 | Shotgun | ✅ | Independent shotgun block + BE + AimController |
+| 45 | Auto-Tracking | ✅ | Continuous client-tick raycast → MachineGunTargetC2SPacket |
+| 46 | Crosshair Bias Cone | ✅ | ±5° cone bias toward crosshair to mask turret rotation latency |
+| 47 | Weapon Sound System | ✅ | Shotgun/MG fire sounds, S→C sync for non-shooter players |
+| 48 | TestController | ✅ | GeckoLib 4.6.6 ENTITYBLOCK_ANIMATED test, SubLevel render compatible ✅ |
+| 49 | CockpitLight | ✅ | 2×2 compact cockpit structure, ComponentHost without shift/skill systems |
 | 50 | Hold-to-Fire | ✅ | Left mouse down, 3-tick cooldown |
 | 51 | Bypass Immunity Frames | ✅ | `entity.invulnerableTime = 0` before hurt |
 

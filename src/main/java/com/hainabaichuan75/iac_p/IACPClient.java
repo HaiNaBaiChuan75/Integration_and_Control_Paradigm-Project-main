@@ -9,8 +9,9 @@ import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestRenderer;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModTestControllerBlockEntityTypes;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -56,7 +57,11 @@ public class IACPClient {
                 SuspensionTestRenderer::new);
 
         // GeckoLib 测试控制器
-        event.registerBlockEntityRenderer(ModTestControllerBlockEntityTypes.TEST_CONTROLLER.get(),
+        event.registerBlockEntityRenderer(ModBlockEntityTypes.TEST_CONTROLLER.get(),
                 TestControllerRenderer::new);
+
+        // GeckoLib 炮塔测试（动态骨骼旋转）
+        event.registerBlockEntityRenderer(ModBlockEntityTypes.TURRET_TEST.get(),
+                TurretTestRenderer::new);
     }
 }

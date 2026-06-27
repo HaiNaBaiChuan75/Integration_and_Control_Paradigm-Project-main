@@ -466,7 +466,6 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
         }
 
         // ── 油门始终 100%（服务端才有 rawThrottleDirection，客户端跳过）──
-        // 不再需要油门渐变——引擎永远满扭矩，WASD 仅控制 BinaryGrip 方向。
         this.throttleLevel = 1.0;
 
         // ── 全部引擎计算仅服务端执行 ──
@@ -477,193 +476,45 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
                 setChanged();
                 sendData();
             }
-            // 状态包推送：每 2 tick
-            if (--this.stateSyncCooldown <= 0) {
-                this.stateSyncCooldown = 2;
-                double speedMs = 0;
-                try {
-                    org.joml.Vector3d vel = dev.ryanhcode.sable.Sable.HELPER.getVelocity(level,
-                            new org.joml.Vector3d(
-                                    this.worldPosition.getX() + 0.5,
-                                    this.worldPosition.getY() + 0.5,
-                                    this.worldPosition.getZ() + 0.5));
-                    if (vel != null) {
-                        speedMs = vel.length();
-                    }
-                } catch (Exception ignored) {
-                }
-                // 加速度 = 速度差分 / 时间间隔（2 tick = 0.1s）
-                double accelMs2 = (speedMs - this.lastSyncSpeedMs) / 0.1;
-                this.lastSyncSpeedMs = speedMs;
-                this.currentAccelMs2 = Math.abs(accelMs2);
-                var subLevel = dev.ryanhcode.sable.Sable.HELPER.getContaining(this);
-                if (subLevel != null) {
-                    var player = com.hainabaichuan75.iac_p.events.PlayerMountTracker.getPlayerForSubLevel(
-                            subLevel.getUniqueId(), (net.minecraft.server.level.ServerLevel) level);
-                    if (player != null) {
-                        com.hainabaichuan75.iac_p.network.ModNetworking.sendToPlayer(player,
-                                new com.hainabaichuan75.iac_p.network.packets.VehicleStateS2CPacket(
-                                        this.engineRpm,
-                                        this.throttleLevel,
-                                        this.currentGear,
-                                        this.stalled,
-                                        this.effectiveTorque,
-                                        speedMs,
-                                        accelMs2,
-                                        this.isShifting
-                                ));
-                    }
-                }
-            }
+            trySyncStateToClient(serverSl);
 
-            // ═══════════════════════════════════════════════════════════════
-            //  引擎计算 — 发动机完全独立运行，变速箱仅做数学变换
-            // ═══════════════════════════════════════════════════════════════
-            //
-            //  发动机始终由油门直控：throttle=0% → 800 RPM, 100% → 6000 RPM。
-            //  无论空档还是在档，变速箱都不反向约束发动机转速。
-            //  挂档只是把扭矩a × 齿比输出到轮端，不影响发动机自身状态。
+            // 熄火：切断扭矩输出
             if (stalled) {
                 this.torquePerWheel = 0;
                 this.effectiveTorque = 0;
                 return;
             }
 
-            // ═══ 换挡真空期 ═══
-            if (this.isShifting) {
-                this.torquePerWheel = 0;
-                this.effectiveTorque = 0;
-
-                // Rev-match 自动补油：降档时临时提高油门
-                double effectiveThrottle = this.throttleLevel;
-                if (this.revMatchTargetRpm > 0) {
-                    double rpmNow = EngineModel.computeThrottleControlledRun(this.throttleLevel).rpm();
-                    if (this.revMatchTargetRpm > rpmNow) {
-                        double blip = (this.revMatchTargetRpm - ENGINE_IDLE_RPM)
-                                / (ENGINE_MAX_RPM - ENGINE_IDLE_RPM);
-                        effectiveThrottle = Math.max(effectiveThrottle, Math.min(blip, 0.8));
-                    }
-                }
-
-                var sr = EngineModel.computeThrottleControlledRun(effectiveThrottle);
-                this.engineRpm = sr.rpm();
-
-                if (--this.shiftingTimer <= 0) {
-                    this.currentGear = this.targetShiftGear;
-                    this.isShifting = false;
-                    IACP.LOGGER.debug("[Cockpit] 换挡完成 → {}", PowertrainConstants.gearName(this.currentGear));
-                    setChanged();
-                    sendData();
-                }
-                return;
-            }
+            // 换挡真空期
+            if (tryProcessShifting()) return;
 
             // ═══ 正常行驶：发动机永远独立运行 ═══
             var result = EngineModel.computeThrottleControlledRun(this.throttleLevel);
             this.effectiveTorque = result.engineTorque();
             this.engineRpm = result.rpm();
 
-            // ═══ 空档自动挂档 ═══
-            // 按下 W/S 时自动挂 1 档，无需手动操作。游戏直觉：让车动起来就该进档。
-            if (this.currentGear == 0 && this.rawThrottleDirection != 0) {
-                this.currentGear = 1;
-                this.isShifting = false;
-                this.shiftingTimer = 0;
-                this.targetShiftGear = 0;
-                this.revMatchTargetRpm = 0;
-                setChanged();
-                sendData();
-            }
+            // 空档自动挂档
+            tryAutoEngageGear();
 
             if (this.currentGear == 0) {
-                // 空档：不向轮端输出扭矩
                 this.torquePerWheel = 0;
             } else {
-                // 在档：变速箱做纯数学变换，扭矩a × 齿比 → 扭矩b
+                // 在档：变速箱做纯数学变换
                 WheelScanResult wheels = scanWheelRpm(sl);
                 this.lastWheelCount = wheels.wheelCount;
                 int wheelCount = Math.max(wheels.wheelCount, 1);
                 var gbOut = TransmissionModel.computeOutput(result.engineTorque(), result.rpm(), this.currentGear);
                 this.torquePerWheel = gbOut.torqueB() / wheelCount;
 
-                // ═══ 憋住救急 ═══
-                // 静止踩油门下直接跳 1 档（无换挡真空期），不等逐级降档。
-                // 适用场景：5 档 100% 油门憋在原地起不来。
-                if (autoShiftEnabled && currentGear > 1 && hasAnyThrottleInput(sl)) {
-                    double curSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
-                    if (curSpeed < 0.5) {
-                        IACP.LOGGER.info("[Cockpit] 憋住救急: 瞬跳 1 档 (gear={})", currentGear);
-                        this.currentGear = 1;
-                        this.isShifting = false;
-                        this.shiftingTimer = 0;
-                        this.targetShiftGear = 0;
-                        this.revMatchTargetRpm = 0;
-                        setChanged();
-                        sendData();
-                    }
-                }
+                // 憋住救急
+                double curSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
+                tryStallRescue(sl, curSpeed);
 
-                // ═══ 自动降档 ═══
-                // 刚换挡后 40 tick (2s) 内不降，防升降档振荡。
-                // 转向时不降档。降档条件：当前速度 < 低一档在当前 RPM 下的理想速度。
-                // 物理含义：你跑得比低档应有的速度还慢 → 当前档位太高了。
-                if (autoShiftEnabled && !isShifting && currentGear >= 2
-                        && this.throttleLevel > 0.3 && hasAnyThrottleInput(sl)
-                        && !hasAnySteeringInput(sl)) {
-                    int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
-                    if (gameTime - this.lastShiftTick > 40) {
-                        double currentSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
-                        double prevIdealRpm = TransmissionModel.computeTargetWheelRpm(
-                                currentGear - 1, this.engineRpm);
-                        double prevIdealSpeed = Math.abs(prevIdealRpm) * Math.PI * 2.0 / 60.0 * 0.5;
-                        if (currentSpeed < prevIdealSpeed && currentSpeed > 0.5) {
-                            IACP.LOGGER.info("[Cockpit] 自动降档: {}→{} (speed {} < ideal({}) {})",
-                                    currentGear, currentGear - 1,
-                                    String.format("%.1f", currentSpeed),
-                                    currentGear - 1,
-                                    String.format("%.1f", prevIdealSpeed));
-                            gearDown();
-                            this.lastShiftTick = gameTime;
-                        }
-                    }
-                }
+                // 自动降档
+                tryAutoDownshift(sl, wheels);
 
-                // ═══ 自动升档 ═══
-                // 每 10 tick 检查。刚降档后 30 tick 内不升（防振荡）。
-                if (autoShiftEnabled && !isShifting && currentGear >= 1
-                        && currentGear < PowertrainConstants.NUM_FORWARD_GEARS) {
-                    int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
-                    if (gameTime - this.lastShiftTick > 30 && ++this.upshiftTimer >= 10) {
-                        this.upshiftTimer = 0;
-                        double nowSpeed = 0;
-                        try {
-                            org.joml.Vector3d vel = dev.ryanhcode.sable.Sable.HELPER.getVelocity(
-                                    level, new org.joml.Vector3d(
-                                            this.worldPosition.getX() + 0.5,
-                                            this.worldPosition.getY() + 0.5,
-                                            this.worldPosition.getZ() + 0.5));
-                            if (vel != null) {
-                                nowSpeed = vel.length();
-                            }
-                        } catch (Exception ignored) {
-                        }
-                        double accel = Math.abs(nowSpeed - this.lastUpshiftSpeed) / 0.5;
-                        this.lastUpshiftSpeed = nowSpeed;
-                        double prevTargetRpm = TransmissionModel.computeTargetWheelRpm(
-                                currentGear - 1, this.engineRpm);
-                        double prevIdealSpeed = Math.abs(prevTargetRpm) * Math.PI * 2.0 / 60.0 * 0.5;
-                        if (accel < 1.0 && nowSpeed > prevIdealSpeed && nowSpeed > 0.5) {
-                            IACP.LOGGER.info("[Cockpit] 自动升档: {}→{} (accel={}, speed={})",
-                                    currentGear, currentGear + 1,
-                                    String.format("%.2f", accel),
-                                    String.format("%.1f", nowSpeed));
-                            gearUp();
-                            this.lastShiftTick = gameTime;
-                        }
-                    }
-                } else {
-                    this.upshiftTimer = 0;
-                }
+                // 自动升档
+                tryAutoUpshift(sl);
             }
         }
     }
@@ -770,6 +621,181 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
             }
         }
         return false;
+    }
+
+    // ====================================================================
+    //  tick() 子方法提取
+    // ====================================================================
+
+    /**
+     * 每 2 tick 向骑乘者推送一次实时状态（RPM/档位/速度/加速度等）。
+     */
+    private void trySyncStateToClient(ServerSubLevel serverSl) {
+        if (--this.stateSyncCooldown > 0) return;
+        this.stateSyncCooldown = 2;
+
+        double speedMs = 0;
+        try {
+            org.joml.Vector3d vel = dev.ryanhcode.sable.Sable.HELPER.getVelocity(level,
+                    new org.joml.Vector3d(
+                            this.worldPosition.getX() + 0.5,
+                            this.worldPosition.getY() + 0.5,
+                            this.worldPosition.getZ() + 0.5));
+            if (vel != null) speedMs = vel.length();
+        } catch (Exception ignored) {}
+
+        double accelMs2 = (speedMs - this.lastSyncSpeedMs) / 0.1;
+        this.lastSyncSpeedMs = speedMs;
+        this.currentAccelMs2 = Math.abs(accelMs2);
+
+        var subLevel = dev.ryanhcode.sable.Sable.HELPER.getContaining(this);
+        if (subLevel != null) {
+            var player = com.hainabaichuan75.iac_p.events.PlayerMountTracker.getPlayerForSubLevel(
+                    subLevel.getUniqueId(), (net.minecraft.server.level.ServerLevel) level);
+            if (player != null) {
+                com.hainabaichuan75.iac_p.network.ModNetworking.sendToPlayer(player,
+                        new com.hainabaichuan75.iac_p.network.packets.VehicleStateS2CPacket(
+                                this.engineRpm, this.throttleLevel, this.currentGear,
+                                this.stalled, this.effectiveTorque,
+                                speedMs, accelMs2, this.isShifting));
+            }
+        }
+    }
+
+    /**
+     * 处理换挡真空期。降档时执行 Rev-Match 自动补油， 计时器归零后完成档位切换。
+     *
+     * @return true 如果仍在换挡真空期（调用方应提前 return）
+     */
+    private boolean tryProcessShifting() {
+        if (!this.isShifting) return false;
+
+        this.torquePerWheel = 0;
+        this.effectiveTorque = 0;
+
+        double effectiveThrottle = this.throttleLevel;
+        if (this.revMatchTargetRpm > 0) {
+            double rpmNow = EngineModel.computeThrottleControlledRun(this.throttleLevel).rpm();
+            if (this.revMatchTargetRpm > rpmNow) {
+                double blip = (this.revMatchTargetRpm - ENGINE_IDLE_RPM)
+                        / (ENGINE_MAX_RPM - ENGINE_IDLE_RPM);
+                effectiveThrottle = Math.max(effectiveThrottle, Math.min(blip, 0.8));
+            }
+        }
+
+        var sr = EngineModel.computeThrottleControlledRun(effectiveThrottle);
+        this.engineRpm = sr.rpm();
+
+        if (--this.shiftingTimer <= 0) {
+            this.currentGear = this.targetShiftGear;
+            this.isShifting = false;
+            IACP.LOGGER.debug("[Cockpit] 换挡完成 → {}", PowertrainConstants.gearName(this.currentGear));
+            setChanged();
+            sendData();
+        }
+        return true;
+    }
+
+    /**
+     * 空档自动挂档：按下 W/S 时自动跳入 1 档。
+     */
+    private void tryAutoEngageGear() {
+        if (this.currentGear != 0 || this.rawThrottleDirection == 0) return;
+
+        this.currentGear = 1;
+        this.isShifting = false;
+        this.shiftingTimer = 0;
+        this.targetShiftGear = 0;
+        this.revMatchTargetRpm = 0;
+        setChanged();
+        sendData();
+    }
+
+    /**
+     * 憋住救急：静止踩油门下从高档直接瞬跳 1 档，防止卡在 5 档起不来。
+     */
+    private void tryStallRescue(SubLevel sl, double currentSpeed) {
+        if (!autoShiftEnabled || currentGear <= 1 || !hasAnyThrottleInput(sl)) return;
+        if (currentSpeed >= 0.5) return;
+
+        IACP.LOGGER.info("[Cockpit] 憋住救急: 瞬跳 1 档 (gear={})", currentGear);
+        this.currentGear = 1;
+        this.isShifting = false;
+        this.shiftingTimer = 0;
+        this.targetShiftGear = 0;
+        this.revMatchTargetRpm = 0;
+        setChanged();
+        sendData();
+    }
+
+    /**
+     * 自动降档：当前速度 < 低一档在当前 RPM 下的理想速度时降档。
+     * 转向时不降档，刚换挡后 40 tick 内不降。
+     */
+    private void tryAutoDownshift(SubLevel sl, WheelScanResult wheels) {
+        if (!autoShiftEnabled || isShifting || currentGear < 2
+                || this.throttleLevel <= 0.3 || !hasAnyThrottleInput(sl)
+                || hasAnySteeringInput(sl)) return;
+
+        int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
+        if (gameTime - this.lastShiftTick <= 40) return;
+
+        double currentSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
+        double prevIdealRpm = TransmissionModel.computeTargetWheelRpm(
+                currentGear - 1, this.engineRpm);
+        double prevIdealSpeed = Math.abs(prevIdealRpm) * Math.PI * 2.0 / 60.0 * 0.5;
+
+        if (currentSpeed < prevIdealSpeed && currentSpeed > 0.5) {
+            IACP.LOGGER.info("[Cockpit] 自动降档: {}→{} (speed {} < ideal({}) {})",
+                    currentGear, currentGear - 1,
+                    String.format("%.1f", currentSpeed),
+                    currentGear - 1,
+                    String.format("%.1f", prevIdealSpeed));
+            gearDown();
+            this.lastShiftTick = gameTime;
+        }
+    }
+
+    /**
+     * 自动升档：每 10 tick 检查加速度和速度， 条件满足时升档。刚降档后 30 tick 内不升。
+     */
+    private void tryAutoUpshift(SubLevel sl) {
+        if (!autoShiftEnabled || isShifting || currentGear < 1
+                || currentGear >= PowertrainConstants.NUM_FORWARD_GEARS) {
+            this.upshiftTimer = 0;
+            return;
+        }
+
+        int gameTime = this.level == null ? 0 : (int) this.level.getGameTime();
+        if (gameTime - this.lastShiftTick <= 30) return;
+        if (++this.upshiftTimer < 10) return;
+
+        this.upshiftTimer = 0;
+        double nowSpeed = 0;
+        try {
+            org.joml.Vector3d vel = dev.ryanhcode.sable.Sable.HELPER.getVelocity(
+                    level, new org.joml.Vector3d(
+                            this.worldPosition.getX() + 0.5,
+                            this.worldPosition.getY() + 0.5,
+                            this.worldPosition.getZ() + 0.5));
+            if (vel != null) nowSpeed = vel.length();
+        } catch (Exception ignored) {}
+
+        double accel = Math.abs(nowSpeed - this.lastUpshiftSpeed) / 0.5;
+        this.lastUpshiftSpeed = nowSpeed;
+
+        double prevTargetRpm = TransmissionModel.computeTargetWheelRpm(
+                currentGear - 1, this.engineRpm);
+        double prevIdealSpeed = Math.abs(prevTargetRpm) * Math.PI * 2.0 / 60.0 * 0.5;
+
+        if (accel < 1.0 && nowSpeed > prevIdealSpeed && nowSpeed > 0.5) {
+            IACP.LOGGER.info("[Cockpit] 自动升档: {}→{} (accel={}, speed={})",
+                    currentGear, currentGear + 1,
+                    String.format("%.2f", accel),
+                    String.format("%.1f", nowSpeed));
+            gearUp();
+            this.lastShiftTick = gameTime;
+        }
     }
 
     /**

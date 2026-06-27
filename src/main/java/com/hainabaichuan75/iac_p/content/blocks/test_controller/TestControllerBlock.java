@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.test_controller;
 
-import com.hainabaichuan75.iac_p.index.ModTestControllerBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;

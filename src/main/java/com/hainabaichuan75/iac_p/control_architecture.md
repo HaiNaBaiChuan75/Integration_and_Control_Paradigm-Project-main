@@ -56,9 +56,10 @@
 │    │   └─ avgWheelRpm: 从所有悬挂的 currentWheelRpm 计算          │
 │    │                                                              │
 │    ├─ direction = this.rawThrottleDirection  ← Layer 2 设置       │
-│    ├─ throttleLevel = EngineModel.updateThrottle(方向)            │
-│    ├─ engineRpm = EngineModel.computeRpmUpdate(...)               │
-│    └─ engineRpm = EngineModel.applyEngineCoupling(轮速, 齿比)    │
+    ├─ throttleLevel = 1.0  ← 06-27 简化：油门始终 100%           │
+    ├─ var result = EngineModel.computeThrottleControlledRun(1.0)  │
+    │  → RPM=6000, Torque=TORQUE_MAX(5.0 Nm)                      │
+    └─ engineRpm = result.rpm(); effectiveTorque = result.engineTorque() │
 │                                                                    │
 │  getWheelOutput(totalWheels):                                      │
 │    └─ TransmissionModel.computeWheelOutput(档位, 油门, RPM, ...)   │
@@ -76,24 +77,20 @@
 │  physicsTick():                                                     │
 │    ├─ 刹车模式: 纯滑动摩擦，切断驱动力                              │
 │    │                                                                │
-│    ├─ 正常模式: 计算 targetRpm 和 torqueGain                        │
-│    │  ├─ isStrafeWheel?                                            │
-│    │  │   ├─ throttleForward  → +STRAFE_RPM                        │
-│    │  │   ├─ throttleBackward → -STRAFE_RPM                        │
-│    │  │   └─ 其他 → 0                                              │
+│    ├─ 正常模式: BinaryGrip 直驱（06-27 简化）                       │
+│    │  ├─ isStrafeWheel? → [暂禁用] 不驱动                          │
 │    │  │                                                             │
 │    │  ├─ 有驾驶舱? (preCockpit != null)                            │
-│    │  │   ├─ targetRpm = getWheelOutput().wheelRpm()                │
-│    │  │   ├─ 差速器: targetRpm *= (1.0 + diffOffset)               │
-│    │  │   └─ 方向映射: throttleBackward → -targetRpm               │
+│    │  │   ├─ wheelTorque = preCockpit.getTorquePerWheel()          │
+│    │  │   ├─ direction = throttleForward?1 : throttleBackward?-1:0 │
+│    │  │   ├─ driveImpulse = (wheelTorque/rad) × DT × direction    │
+│    │  │   ├─ BinaryGrip: |driveImpulse| ≤ maxGrip → 全量通过       │
+│    │  │   ├─ 运动学约束: currentWheelRpm ≤ targetWheelRpm         │
+│    │  │   └─ 差速器扭矩偏置: diffFactor ∈ [0.5, 1.5]              │
 │    │  │                                                             │
-│    │  └─ 无驾驶舱? (降级回退)                                      │
-│    │      ├─ throttleForward  → +FALLBACK_DRIVE_RPM                │
-│    │      ├─ throttleBackward → -FALLBACK_DRIVE_RPM                │
-│    │      └─ 其他 → 0                                             │
+│    │  └─ 无驾驶舱? → [暂禁用] 不驱动                              │
 │    │                                                                │
-│    └─ P 控制器: force = f(targetRpm - actualSpeed)                 │
-│       → 摩擦圆约束 → 施加到刚体                                    │
+│    └─ 最终限幅: 摩擦圆 √(long²+lat²) ≤ μN → 施加到刚体            │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
