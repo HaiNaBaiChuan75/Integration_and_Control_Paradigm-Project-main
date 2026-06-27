@@ -8,12 +8,12 @@ public class BaseCabinBlockModel extends GeoModel<BaseCabinBlockEntity> {
 
     @Override
     public ResourceLocation getModelResource(BaseCabinBlockEntity animatable) {
-        return ResourceLocation.fromNamespaceAndPath(IACP.MODID, "geo/base_cabin.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(IACP.MODID, "geo/base_cabin/cabin.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(BaseCabinBlockEntity animatable) {
-        return ResourceLocation.fromNamespaceAndPath(IACP.MODID, "textures/base_cabin.png");
+        return ResourceLocation.fromNamespaceAndPath(IACP.MODID, "geo/base_cabin/cabin.png");
     }
 
     @Override
