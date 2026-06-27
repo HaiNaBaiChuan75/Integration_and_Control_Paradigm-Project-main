@@ -46,6 +46,8 @@ repositories {
         name "ithundxr's mavenReleases"
         url "https://maven.ithundxr.dev/snapshots"
     }
+    // GeckoLib
+    maven { url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
 }
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
@@ -58,6 +60,8 @@ dependencies {
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
     implementation("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
+    // GeckoLib — 用于多方块 Controller 渲染 + 骨骼动画
+    implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
 }
 
 neoForge {
