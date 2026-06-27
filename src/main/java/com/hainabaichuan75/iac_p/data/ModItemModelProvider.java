@@ -14,7 +14,6 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        // BaseCabin 物品模型 → 沿用中心方块模型
-        withExistingParent(IACPBlocks.BASE_CABIN.getId().getPath(), modLoc("block/base_cabin"));
+
     }
 }

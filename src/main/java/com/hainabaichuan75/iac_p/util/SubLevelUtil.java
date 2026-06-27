@@ -36,8 +36,7 @@ public abstract class SubLevelUtil {
         BoundingBox3i bounds = result.boundingBox();
         if (bounds == null) {return null;}
         if (blocks == null) {return null;}
-        ServerSubLevel subLevel = SubLevelAssemblyHelper.assembleBlocks(level, pos, blocks, bounds);
-        return subLevel;
+        return SubLevelAssemblyHelper.assembleBlocks(level, pos, blocks, bounds);
     }
 
     @Nullable
@@ -56,12 +55,11 @@ public abstract class SubLevelUtil {
                                            @NotNull final BlockPos subLevelAnchor) {
         BlockPos disassemblyGoal =
                 BlockPos.containing(toDisassemble.logicalPose().transformPosition(Vec3.atCenterOf(subLevelAnchor)));
-        disassemblyGoal = disassemblyGoal.above();
+        disassemblyGoal = disassemblyGoal.above();//TODO: 移除向上偏移
         Rotation rotation = Rotation.NONE;
         final BoundingBox3i plotBounds = new BoundingBox3i(toDisassemble.getPlot().getBoundingBox());
         final SubLevelAssemblyHelper.AssemblyTransform transform =
-                new SubLevelAssemblyHelper.AssemblyTransform(subLevelAnchor, disassemblyGoal,
-                        rotation == Rotation.NONE ? 0 : (4 - rotation.ordinal()), rotation, (ServerLevel) level);
+                new SubLevelAssemblyHelper.AssemblyTransform(subLevelAnchor, disassemblyGoal, 0, rotation, (ServerLevel) level);
 
         final ObjectArrayList<BlockPos> blocks = new ObjectArrayList<>();
         final LevelPlot plot = toDisassemble.getPlot();

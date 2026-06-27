@@ -7,9 +7,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,22 +20,31 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class CabinBlock<BE extends CabinBlockEntity> extends Block implements EntityBlock {
+public abstract class CabinBlock extends Block {
     protected static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public CabinBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
     }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(FACING);
     }
 
+    // TODO: 高级组装方法
     @Override
     protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hitResult) {
         if (level.isClientSide) {return InteractionResult.PASS;}
+        if (player.isShiftKeyDown()) {return InteractionResult.PASS;}
         ServerLevel serverLevel = (ServerLevel) level;
         SubLevel subLevel = SubLevelUtil.getSubLevelAt(serverLevel, pos);
         if (subLevel == null) {
@@ -48,9 +57,6 @@ public abstract class CabinBlock<BE extends CabinBlockEntity> extends Block impl
 
         return InteractionResult.SUCCESS;
     }
-
-    @Override
-    public abstract @Nullable BE newBlockEntity(@NotNull BlockPos blockPos, @NotNull BlockState blockState);
 
     @Override
     protected @NotNull BlockState rotate(@NotNull BlockState state, @NotNull Rotation rotation) {
