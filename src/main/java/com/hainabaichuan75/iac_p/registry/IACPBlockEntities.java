@@ -28,5 +28,11 @@ public abstract class IACPBlockEntities {
         return create(id, BlockEntityType.Builder.of(factory, validBlocks));
     }
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BaseCabinBlockEntity>> BASE_CABIN = create("base_cabin", BaseCabinBlockEntity::new, IACPBlocks.BASE_CABIN.get());
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BaseCabinBlockEntity>> BASE_CABIN =
+            BLOCK_ENTITIES.register("base_cabin", () -> {
+        // 在 lambda 中获取方块，此时方块已经注册
+        Type<?> type = Util.fetchChoiceType(References.BLOCK_ENTITY, "base_cabin");
+        return BlockEntityType.Builder.of(BaseCabinBlockEntity::new, IACPBlocks.BASE_CABIN.get()  // 延迟执行，安全
+        ).build(type == null ? DSL.remainderType() : type);
+    });
 }

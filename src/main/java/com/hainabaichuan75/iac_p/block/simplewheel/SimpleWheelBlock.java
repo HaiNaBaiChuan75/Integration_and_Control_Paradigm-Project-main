@@ -5,14 +5,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +38,7 @@ public class SimpleWheelBlock extends Block implements CapabilityProviderBlock {
         this.damping = damping;
     }
 
-    @Override
+/*    @Override
     protected @NotNull VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
                                            CollisionContext context) {
         // 根据 radius;thick;verticalOffset;horizontalOffset;返回方块
@@ -52,7 +49,7 @@ public class SimpleWheelBlock extends Block implements CapabilityProviderBlock {
             case EAST:
             default:
         }
-    }
+    }*/
 
     @Nullable
     @Override
