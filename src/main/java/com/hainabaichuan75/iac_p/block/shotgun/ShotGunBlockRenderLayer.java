@@ -18,7 +18,7 @@ public class ShotGunBlockRenderLayer extends GeoRenderLayer<ShotGunBlockEntity> 
     public void preRender(PoseStack poseStack, ShotGunBlockEntity animatable, BakedGeoModel bakedModel,
                           @Nullable RenderType renderType, MultiBufferSource bufferSource,
                           @Nullable VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        //        partialTick=1;
+        partialTick = 1;
         System.out.println(partialTick);
         System.out.printf("%f, %f", animatable.pitch, animatable.yaw);
         float smoothYaw = (float) (animatable.prevYaw + (animatable.yaw - animatable.prevYaw) * partialTick);
