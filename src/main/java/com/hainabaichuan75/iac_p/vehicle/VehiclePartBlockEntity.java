@@ -14,8 +14,9 @@ import org.joml.Vector3dc;
  * 载具方块实体的抽象基类。
  * <p>
  * 所有载具部件（座舱、轮子、炮塔）都继承此类。
- * Systems 不再由特定方块驱动，而是由
- * {@link com.hainabaichuan75.iac_p.event.VehicleTickHandler} 统一调度。
+ * 载具系统不再由特定方块驱动，而是由
+ * {@link com.hainabaichuan75.iac_p.event.VehicleTickHandler} 和
+ * {@link com.hainabaichuan75.iac_p.event.VehiclePhysicsTickHandler} 统一调度。
  * <p>
  * {@link #sable$tick(ServerSubLevel)} 提供空实现 —— 子类按需覆盖。
  */
@@ -35,15 +36,4 @@ public abstract class VehiclePartBlockEntity extends BlockEntity implements Bloc
                 worldPosition.getY() + getLogicCenter().y(), worldPosition.getZ() + getLogicCenter().z()));
     }
 
-    /**
-     * 游戏 tick（20Hz），在物理 step 之前调用。
-     * 子类按需覆盖（如 {@code ShotGunBlockEntity} 的瞄准旋转）。
-     * <p>
-     * 注意：不要在子类中驱动 {@link Systems} —— 已由
-     * {@link com.hainabaichuan75.iac_p.event.VehicleTickHandler} 统一处理。
-     */
-    @Override
-    public void sable$tick(ServerSubLevel subLevel) {
-        // 默认空实现 — 子类按需覆盖
-    }
 }

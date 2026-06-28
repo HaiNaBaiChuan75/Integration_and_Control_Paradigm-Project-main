@@ -1,14 +1,14 @@
 package com.hainabaichuan75.iac_p.test_system;
 
-import com.hainabaichuan75.iac_p.vehicle.System;
 import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.vehicle.VehicleTickSystem;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.util.Mth;
 import org.joml.Vector3d;
 
 import java.util.List;
 
-public class RandomAimSystem implements System {
+public class RandomAimVehicleSystem implements VehicleTickSystem {
     @Override
     public void onSubLevelTick(ServerSubLevel subLevel, List<VehiclePartBlockEntity> parts) {
 

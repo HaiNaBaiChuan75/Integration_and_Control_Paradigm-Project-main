@@ -1,9 +1,9 @@
 package com.hainabaichuan75.iac_p.event;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.vehicle.System;
-import com.hainabaichuan75.iac_p.vehicle.Systems;
 import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.vehicle.VehiclePhysicsSystem;
+import com.hainabaichuan75.iac_p.vehicle.VehicleSystems;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
@@ -29,16 +29,17 @@ public class VehiclePhysicsTickHandler {
         for (ServerSubLevel subLevel : container.getAllSubLevels()) {
             if (subLevel.isRemoved()) continue;
 
-            List<VehiclePartBlockEntity> parts = Systems.collectParts(subLevel);
+            List<VehiclePartBlockEntity> parts = VehicleSystems.collectParts(subLevel);
             if (parts.isEmpty()) continue;
 
             var handle = physicsSystem.getPhysicsHandle(subLevel);
 
-            for (System system : Systems.SYSTEMS) {
+            for (VehiclePhysicsSystem system : VehicleSystems.PHYSICS_SYSTEMS) {
                 try {
-                    system.onSubLevelPhysicsTick(subLevel, handle, timeStep, parts);
+                    system.onSubLevelPhysicsTick(subLevel, parts, handle, timeStep);
                 } catch (Exception e) {
-                    IACP.LOGGER.warn("[System: {}] onSubLevelPhysicsTick: ", system.getClass().getSimpleName(), e);
+                    IACP.LOGGER.warn("[VehiclePhysicsSystem: {}] onSubLevelPhysicsTick: ",
+                            system.getClass().getSimpleName(), e);
                 }
             }
         }

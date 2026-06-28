@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 IAC-P is a **Minecraft 1.21.1 NeoForge mod** — a "glue layer" that adds vehicle controls, weapons, and HUD on top of the [Sable](https://github.com/ryanhcode/sable) physics engine (Rapier rigid-body simulation) and [Create](https://github.com/Creators-of-Create/Create) mechanical power network. It does not provide its own physics; it **coordinates** existing systems into a playable vehicle experience.
 
+## Coding Principles
+
+### Code as documentation — 以代码为注释
+
+Prefer expressive, self-documenting code over explanatory comments. If a piece of logic needs a comment to be
+understood, consider whether the code itself can be made clearer — by naming intermediate values, extracting a
+well-named method, or restructuring. Comments and Javadoc should be rare exceptions, not the norm.
+
+**What this looks like in practice:**
+
+- Method and variable names carry the *what* and *why*, not comments.
+- Complex logic is decomposed into small, clearly named steps rather than walled behind a comment block.
+- Javadoc is reserved for public API surfaces that are consumed externally (e.g., other mods' integration points);
+  internal code gets none.
+- A comment that says *what* the code does (rather than *why* an unusual choice was made) is a smell — refactor the code
+  instead.
+
 ## Build Commands
 
 ```bash

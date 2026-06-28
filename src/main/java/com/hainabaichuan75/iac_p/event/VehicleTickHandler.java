@@ -1,9 +1,9 @@
 package com.hainabaichuan75.iac_p.event;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.vehicle.System;
-import com.hainabaichuan75.iac_p.vehicle.Systems;
 import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.vehicle.VehicleSystems;
+import com.hainabaichuan75.iac_p.vehicle.VehicleTickSystem;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.server.level.ServerLevel;
@@ -29,14 +29,14 @@ public class VehicleTickHandler {
             if (subLevel.isRemoved()) continue;
 
             // 懒收集——只有该 SubLevel 里有载具部件时才跑 Systems
-            List<VehiclePartBlockEntity> parts = Systems.collectParts(subLevel);
+            List<VehiclePartBlockEntity> parts = VehicleSystems.collectParts(subLevel);
             if (parts.isEmpty()) continue;
 
-            for (System system : Systems.SYSTEMS) {
+            for (VehicleTickSystem system : VehicleSystems.TICK_SYSTEMS) {
                 try {
                     system.onSubLevelTick(subLevel, parts);
                 } catch (Exception e) {
-                    IACP.LOGGER.warn("[System: {}] onSubLevelTick: ", system.getClass().getSimpleName(), e);
+                    IACP.LOGGER.warn("[VehicleTickSystem: {}] onSubLevelTick: ", system.getClass().getSimpleName(), e);
                 }
             }
         }
