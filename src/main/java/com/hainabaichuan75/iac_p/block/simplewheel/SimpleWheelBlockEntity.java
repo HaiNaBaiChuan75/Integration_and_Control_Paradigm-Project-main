@@ -37,12 +37,6 @@ public class SimpleWheelBlockEntity extends VehiclePartBlockEntity {
 
     /* ==================== 地面探测 ==================== */
 
-    /**
-     * 沿轮轴侧向扫描，返回轮心到地面的最短距离及碰撞信息。
-     *
-     * @param pose 子世界位姿
-     * @return 最近地面探测结果，{@code maxExtension == SUSPENSION_TRAVEL} 表示未触地
-     */
     private TerrainCastResult computeMaxExtensionToTerrain(ServerSubLevel subLevel) {
         Pose3d pose = subLevel.logicalPose();
         final Direction facing = this.getBlockState().getValue(SimpleWheelBlock.FACING);

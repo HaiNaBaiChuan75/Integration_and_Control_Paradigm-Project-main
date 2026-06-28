@@ -3,8 +3,8 @@ package com.hainabaichuan75.iac_p.vehicle;
 import com.hainabaichuan75.iac_p.test_system.RandomAimVehicleSystem;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,9 +17,9 @@ import java.util.List;
  * </ul>
  */
 public class VehicleSystems {
-    public static final List<VehicleTickSystem> TICK_SYSTEMS = new ObjectArrayList<>();
-    public static final List<VehiclePhysicsSystem> PHYSICS_SYSTEMS = new ObjectArrayList<>();
-    public static final List<VehicleClientSystem> CLIENT_SYSTEMS = new ObjectArrayList<>();
+    public static final List<VehicleTickSystem> TICK_SYSTEMS = new ArrayList<>();
+    public static final List<VehiclePhysicsSystem> PHYSICS_SYSTEMS = new ArrayList<>();
+    public static final List<VehicleClientSystem> CLIENT_SYSTEMS = new ArrayList<>();
 
     private VehicleSystems() {}
 
@@ -47,7 +47,7 @@ public class VehicleSystems {
      * 从 SubLevel 中收集所有{@link VehiclePartBlockEntity}。
      */
     public static List<VehiclePartBlockEntity> collectParts(SubLevel subLevel) {
-        var parts = new ObjectArrayList<>();
+        var parts = new ArrayList<VehiclePartBlockEntity>();
         for (BlockEntitySubLevelActor actor : subLevel.getPlot().getBlockEntityActors()) {
             if (actor instanceof VehiclePartBlockEntity vp) {
                 parts.add(vp);

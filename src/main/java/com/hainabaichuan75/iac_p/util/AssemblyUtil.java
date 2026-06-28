@@ -23,14 +23,6 @@ public class AssemblyUtil {
     private AssemblyUtil() {
     }
 
-    /**
-     * 尝试装配或拆解 SubLevel。
-     * <p>
-     * 在 {@link net.minecraft.world.level.block.Block#useWithoutItem} 中调用。
-     * 仅在服务端、非潜行时生效。
-     *
-     * @return SUCCESS 操作成功，FAIL 无操作，PASS 客户端透传
-     */
     public static InteractionResult tryAssembleOrDisassemble(Level level, BlockPos pos, Player player) {
         if (level.isClientSide) return InteractionResult.PASS;
         if (player.isShiftKeyDown()) return InteractionResult.PASS;
