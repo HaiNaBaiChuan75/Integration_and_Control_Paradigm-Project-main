@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
-import com.hainabaichuan75.iac_p.vehicle.cabin.CabinBlockEntity;
+import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoAnimatable;
@@ -9,7 +9,7 @@ import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class BaseCabinBlockEntity extends CabinBlockEntity implements GeoAnimatable {
+public class BaseCabinBlockEntity extends VehiclePartBlockEntity implements GeoAnimatable {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public BaseCabinBlockEntity(BlockPos pos, BlockState state) {
@@ -18,7 +18,6 @@ public class BaseCabinBlockEntity extends CabinBlockEntity implements GeoAnimata
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-
         // 无动画
     }
 

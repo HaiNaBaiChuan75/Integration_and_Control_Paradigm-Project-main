@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
-import com.hainabaichuan75.iac_p.vehicle.Aimable;
+import com.hainabaichuan75.iac_p.test_system.Aimable;
 import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;

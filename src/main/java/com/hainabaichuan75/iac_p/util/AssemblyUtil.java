@@ -9,6 +9,8 @@ import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
@@ -19,6 +21,30 @@ import java.util.Set;
 
 public class AssemblyUtil {
     private AssemblyUtil() {
+    }
+
+    /**
+     * 尝试装配或拆解 SubLevel。
+     * <p>
+     * 在 {@link net.minecraft.world.level.block.Block#useWithoutItem} 中调用。
+     * 仅在服务端、非潜行时生效。
+     *
+     * @return SUCCESS 操作成功，FAIL 无操作，PASS 客户端透传
+     */
+    public static InteractionResult tryAssembleOrDisassemble(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+
+        ServerLevel serverLevel = (ServerLevel) level;
+        SubLevel subLevel = SubLevelUtil.getSubLevelAt(serverLevel, pos);
+        if (subLevel == null) {
+            SubLevel result = assemble(serverLevel, pos);
+            if (result != null) return InteractionResult.SUCCESS;
+            return InteractionResult.FAIL;
+        }
+
+        disassembleSubLevel(level, subLevel, pos);
+        return InteractionResult.SUCCESS;
     }
 
     public static @Nullable SubLevel assemble(ServerLevel level, BlockPos pos) {
@@ -53,7 +79,6 @@ public class AssemblyUtil {
             ((ServerLevelPlot) toDisassemble.getPlot()).kickAllEntities();
             SubLevelAssemblyHelper.moveBlocks((ServerLevel) level, transform, blocks);
         }
-
         SubLevelAssemblyHelper.moveTrackingPoints((ServerLevel) level, plotBounds, null, transform);
 
         // 从容器中移除已拆解的 SubLevel
