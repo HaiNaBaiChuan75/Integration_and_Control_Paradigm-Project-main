@@ -111,6 +111,11 @@ public enum ComponentRole {
      */
     STRUCTURE,
     /**
+     * 炮塔测试块：Crossout 风格单块武器原型，使用 GeckoLib 动画视觉旋转，
+     * 无独立 SubLevel，无物理约束，通过 ClearanceSolver 实现碰撞阻挡。
+     */
+    TURRET_TEST,
+    /**
      * 未归类
      */
     UNKNOWN;
@@ -122,7 +127,8 @@ public enum ComponentRole {
         return this == MACHINE_GUN_BASE || this == MACHINE_GUN_YAW || this == MACHINE_GUN_PITCH
                 || this == SHOTGUN_BASE || this == SHOTGUN_YAW || this == SHOTGUN_PITCH
                 || this == WEAPON_CANNON || this == WEAPON_MACHINEGUN
-                || this == WEAPON_MISSILE || this == WEAPON_LASER;
+                || this == WEAPON_MISSILE || this == WEAPON_LASER
+                || this == TURRET_TEST;
     }
 
     /**

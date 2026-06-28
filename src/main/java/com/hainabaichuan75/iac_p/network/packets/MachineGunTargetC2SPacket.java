@@ -1,15 +1,22 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
+import java.util.UUID;
+
+import org.joml.Quaterniond;
+import org.joml.Vector3d;
+
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunAimController;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
+
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
-import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;
+import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.plot.LevelPlot;
 import dev.ryanhcode.sable.sublevel.plot.PlotChunkHolder;
@@ -23,34 +30,25 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import dev.ryanhcode.sable.companion.math.Pose3dc;
-import org.joml.Quaterniond;
-import org.joml.Vector3d;
-import java.util.UUID;
-
 /**
  * 机枪瞄准数据包（客户端 → 服务器）。
  * <p>
- * 客户端发送射线检测命中点的世界坐标，服务端将所有坐标变换到<b>载具局部空间</b>
- * 后为每座机枪独立计算瞄准角度。
- * <p>
- * <b>载具局部空间计算</b>：
- * <ol>
- * <li>命中点世界坐标 → {@code vPose⁻¹ · (hit - vPos)} 变换到载具局部空间</li>
- * <li>机枪（砂轮）世界坐标 → 同样变换到载具局部空间</li>
- * <li>在局部空间中计算角度，结果天然是载具相对角度，无需额外减去载具偏航</li>
- * </ol>
- * <b>角度分离（三维球坐标）</b>：
+ * 客户端发送：
  * <ul>
- * <li>方向机 Yaw（俯视投影 / XZ 平面）：{@code -atan2(dx, dz)}</li>
- * <li>高低机 Pitch（侧面投影 / 垂直面）：{@code atan2(dy, sqrt(dx²+dz²))}</li>
+ * <li>命中点世界坐标 (hitX, hitY, hitZ) — 用于旧机枪/霰弹枪的局部空间角度计算</li>
+ * <li>摄像机实际朝向 (cameraYaw, cameraPitch) — 用于 TurretTest 平行模式</li>
  * </ul>
- * 载具翻转（上下颠倒、侧翻）时，由于全部在载具局部空间计算，角度天然正确。
+ * <p>
+ * <b>摄像机朝向说明</b>：在轨道摄像机模式下，{@code player.getYRot()} 控制的是
+ * 摄像机在球面上的<b>位置</b>而非实际朝向。必须从 {@code Camera.getYRot()/getXRot()} 获取被
+ * CameraMixin 强制设定后的实际朝向角度。
  */
 public record MachineGunTargetC2SPacket(
         float hitX,
         float hitY,
-        float hitZ
+        float hitZ,
+        float cameraYaw,
+        float cameraPitch
         ) implements CustomPacketPayload {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(IACP.MODID, "machine_gun_target");
@@ -63,6 +61,8 @@ public record MachineGunTargetC2SPacket(
             return new MachineGunTargetC2SPacket(
                     buf.readFloat(),
                     buf.readFloat(),
+                    buf.readFloat(),
+                    buf.readFloat(),
                     buf.readFloat()
             );
         }
@@ -72,6 +72,8 @@ public record MachineGunTargetC2SPacket(
             buf.writeFloat(packet.hitX);
             buf.writeFloat(packet.hitY);
             buf.writeFloat(packet.hitZ);
+            buf.writeFloat(packet.cameraYaw);
+            buf.writeFloat(packet.cameraPitch);
         }
     };
 
@@ -147,6 +149,40 @@ public record MachineGunTargetC2SPacket(
     }
 
     /**
+     * 驱动 TurretTest 瞄准目标点 —— 在载具局部空间中计算角度。
+     * <p>
+     * 复用旧架构（机枪/霰弹枪）的 worldToLocal + atan2 方案：
+     * <ol>
+     * <li>{@code hitLocal} 是命中点在载具局部空间中的坐标（相对载具原点的小数值）</li>
+     * <li>武器位置相对于载具原点的偏移很小（几格），远小于目标距离（几十~几百格）， 直接用 {@code hitLocal}
+     * 作为从武器到目标的方向向量精度足够</li>
+     * <li>在载具局部空间中 {@code atan2(dx, dz)} 得到炮塔相对角度（GeckoLib 使用 CCW+，与 atan2 一致），
+     * 天然排除载具偏航影响</li>
+     * </ol>
+     *
+     * @param tt 炮塔 BlockEntity
+     * @param hitLocal 命中点在载具局部空间中的坐标
+     */
+    private static void driveTurretTestAtTarget(TurretTestBlockEntity tt,
+            Vector3d hitLocal) {
+        // 直接用 hitLocal 作为从载具原点到目标的方向向量
+        // （武器相对载具原点的偏移仅几格，忽略不计）
+        double horiz = Math.sqrt(hitLocal.x * hitLocal.x + hitLocal.z * hitLocal.z);
+
+        // ---- 方向机：载具局部 XZ 平面俯视投影 ----
+        // 注意：GeckoLib 的 bone.setRotY() 使用标准右手系（CCW+），
+        // 与 MC 的 CW+ 约定相反。因此直接使用 atan2（CCW+）不加负号。
+        // 模型默认朝向 Z-（与 atan2 的 Z+ 零位相反），故取反向量即等效 +180°。
+        float turretYaw = horiz < 0.001 ? 0f
+                : (float) Math.toDegrees(Math.atan2(-hitLocal.x, -hitLocal.z));
+
+        // ---- 高低机：载具局部侧面投影 ----
+        float turretPitch = (float) Math.toDegrees(Math.atan2(hitLocal.y, Math.max(horiz, 0.001)));
+
+        tt.driveImmediate(turretYaw, turretPitch);
+    }
+
+    /**
      * 服务端处理：将命中点 + 每座机枪坐标变换到载具局部空间后计算角度。
      * <p>
      * 载具局部空间计算的优势：
@@ -193,10 +229,10 @@ public record MachineGunTargetC2SPacket(
             }
             var vOrientInv = new Quaterniond(vPose.orientation()).conjugate();
 
-            // 变换命中点到载具局部空间（只需做一次）
+            //  换命中点到载具局部空间（只需做一次）
             var hitLocal = worldToLocal(vPose, vOrientInv, hitX, hitY, hitZ);
 
-            // ---- 首选：ComponentRegistry O(1) 查找 ----
+            //  --- 首选：ComponentRegistry O(1) 查找 ----
             // 机枪（MachineGun）
             var machineGunEntries = ComponentRegistry.getComponents(vehicleUUID, ComponentRole.MACHINE_GUN_BASE);
             for (var entry : machineGunEntries) {
@@ -217,6 +253,19 @@ public record MachineGunTargetC2SPacket(
                 var turretLocal = worldToLocal(vPose, vOrientInv,
                         gsPose.position().x(), gsPose.position().y(), gsPose.position().z());
                 driveTurretAtTarget(tb, hitLocal, turretLocal);
+            }
+
+            // TurretTest（Crossout 风格炮塔测试块）
+            var turretTestEntries = ComponentRegistry.getComponents(vehicleUUID, ComponentRole.TURRET_TEST);
+            for (var entry : turretTestEntries) {
+                if (!(entry.blockEntity() instanceof TurretTestBlockEntity tt)) {
+                    continue;
+                }
+                // 直接用 hitLocal（命中点在载具局部空间中的坐标）计算方向。
+                // 不引入 weaponLocal 的原因是 plot 底层坐标（大数目）与 hitWorld
+                // （玩家附近坐标）相减后旋转，会产生数值敏感的方向抖动。
+                // 武器相对载具原点的偏移量仅几格，远小于目标距离，忽略不计。
+                driveTurretTestAtTarget(tt, hitLocal);
             }
 
             // 霰弹枪（Shotgun）
@@ -242,7 +291,7 @@ public record MachineGunTargetC2SPacket(
             }
 
             // 如果注册表中找到武器条目，跳过回退扫描
-            if (!machineGunEntries.isEmpty() || !shotgunEntries.isEmpty()) {
+            if (!machineGunEntries.isEmpty() || !turretTestEntries.isEmpty() || !shotgunEntries.isEmpty()) {
                 return;
             }
 

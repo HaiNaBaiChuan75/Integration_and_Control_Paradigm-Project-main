@@ -19,7 +19,9 @@
 | `.../MountedStateS2CPacket.java` | S→C | Mount state + SubLevel UUID + vehicle mass |
 | `.../VehicleControlC2SPacket.java` | C→S | WASD/brake control input |
 | `.../GearShiftC2SPacket.java` | C→S | Shift up/down request |
-| `.../TurretTargetC2SPacket.java` | C→S | Turret aim target coordinates |
+| `.../MachineGunTargetC2SPacket.java` | C→S | 🆕 Weapon aim target coordinates (replaces TurretTargetC2SPacket) |
+| `.../VehicleStateS2CPacket.java` | S→C | 🆕 Vehicle real-time state sync (RPM/gear/torque/speed) |
+| `.../WeaponSoundS2CPacket.java` | S→C | 🆕 Weapon fire sound sync |
 | `.../WeaponFireC2SPacket.java` | C→S | Weapon fire hit position + damage |
 | `.../AnchorConfigC2SPacket.java` | C→S | Anchor point coordinate update |
 | `.../AnchorDataS2CPacket.java` | S→C | Anchor + axis world position data |
@@ -57,9 +59,12 @@
 | `.../content/blocks/suspension_test/TirePhysicsCalculator.java` | 🆕 Tire physics pure functions (rolling resistance, burst, deflection) |
 | `.../content/blocks/suspension_test/BrushTireModel.java` | 🆕 Brush tire lateral slip pure function |
 | `.../content/blocks/suspension_test/SuspensionTestBlockEntity.java` | Suspension BE — orchestrates physics tick + smartKey* fallback |
-| `.../content/blocks/turret/TurretBaseBlock.java` | Turret base (KineticBlock + ICogWheel) |
-| `.../content/blocks/turret/TurretBaseBlockEntity.java` | Turret yaw servo, pitch servo |
-| `.../content/blocks/turret/TurretAimController.java` | Auto-aim logic (server-side) |
+| `.../content/blocks/turret/TurretTestBlock.java` | 🆕 Crossout-style single-block turret (GeckoLib) |
+| `.../content/blocks/turret/TurretTestBlockEntity.java` | 🆕 TurretTest BE: yaw/pitch + driveImmediate |
+| `.../content/blocks/turret/TurretClearanceSolver.java` | 🆕 Grid-level turret rotation clearance solver |
+| `.../content/blocks/turret/ClearanceAlgorithmTest.java` | 🆕 Standalone clearance test (9 scenarios) |
+| `.../content/blocks/machine_gun/MachineGunBaseBlock.java` | 🆕 Machine gun block + BE + AimController |
+| `.../content/blocks/shotgun/ShotgunBaseBlock.java` | 🆕 Shotgun block + BE + AimController |
 | `.../content/blocks/debug_gear/DebugGearBlock.java` | Debug gear for RPM diagnosis |
 | `.../content/blocks/debug_gear/DebugGearBlockEntity.java` | Debug gear RPM printout |
 

@@ -14,6 +14,7 @@ import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBl
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -93,6 +94,15 @@ public class ModBlocks {
     public static final DeferredBlock<CockpitLightLinear3Block> COCKPIT_LIGHT_LINEAR_3 =
             BLOCKS.registerBlock("cockpit_light_linear_3",
                     CockpitLightLinear3Block::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(3.0f, 3.0f)
+                            .sound(SoundType.METAL)
+                            .noOcclusion());
+
+    // === 炮塔测试方块（GeckoLib 动态骨骼旋转测试） ===
+    public static final DeferredBlock<TurretTestBlock> TURRET_TEST =
+            BLOCKS.registerBlock("turret_test",
+                    TurretTestBlock::new,
                     BlockBehaviour.Properties.of()
                             .strength(3.0f, 3.0f)
                             .sound(SoundType.METAL)

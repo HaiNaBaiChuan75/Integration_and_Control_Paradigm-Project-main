@@ -4,12 +4,25 @@ import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
+/**
+ * BlockEntity 类型注册中心（主）。
+ * <p>
+ * 包含：SUSPENSION_TEST, MACHINE_GUN_BASE, SHOTGUN_BASE,
+ * DEBUG_GEAR, DEBUG_SWIVEL_BEARING, TEST_CONTROLLER, TURRET_TEST。
+ * <p>
+ * 驾驶舱/Cockpit 系列 BE 保留单独注册类（ModCockpitBlockEntityTypes /
+ * ModLightCockpitBlockEntityTypes）以避免 Block ↔ BE 循环依赖。
+ */
 public class ModBlockEntityTypes {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, IACP.MODID);
@@ -33,5 +46,35 @@ public class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             ShotgunBaseBlockEntity::new,
                             ModBlocks.SHOTGUN_BASE.get()
+                    ).build(null));
+
+    // ===== 以下从旧独立注册类合并而来 =====
+
+    public static final Supplier<BlockEntityType<DebugGearBlockEntity>> DEBUG_GEAR =
+            BLOCK_ENTITY_TYPES.register("debug_gear",
+                    () -> BlockEntityType.Builder.of(
+                            DebugGearBlockEntity::new,
+                            ModBlocks.DEBUG_GEAR.get()
+                    ).build(null));
+
+    public static final Supplier<BlockEntityType<DebugSwivelBearingBlockEntity>> DEBUG_SWIVEL_BEARING =
+            BLOCK_ENTITY_TYPES.register("debug_swivel_bearing",
+                    () -> BlockEntityType.Builder.of(
+                            DebugSwivelBearingBlockEntity::new,
+                            ModBlocks.DEBUG_SWIVEL_BEARING.get()
+                    ).build(null));
+
+    public static final Supplier<BlockEntityType<TestControllerBlockEntity>> TEST_CONTROLLER =
+            BLOCK_ENTITY_TYPES.register("test_controller",
+                    () -> BlockEntityType.Builder.of(
+                            TestControllerBlockEntity::new,
+                            ModBlocks.TEST_CONTROLLER.get()
+                    ).build(null));
+
+    public static final Supplier<BlockEntityType<TurretTestBlockEntity>> TURRET_TEST =
+            BLOCK_ENTITY_TYPES.register("turret_test",
+                    () -> BlockEntityType.Builder.of(
+                            TurretTestBlockEntity::new,
+                            ModBlocks.TURRET_TEST.get()
                     ).build(null));
 }

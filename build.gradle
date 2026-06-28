@@ -26,8 +26,8 @@ java {
 //}
 
 repositories {
-    maven { url 'https://maven.aliyun.com/repository/public/' }
-    maven { url 'https://maven.aliyun.com/repository/central/' }
+    maven { url = 'https://maven.aliyun.com/repository/public/' }
+    maven { url = 'https://maven.aliyun.com/repository/central/' }
     mavenCentral()
     maven {
         name = 'NeoForged'
@@ -43,8 +43,8 @@ repositories {
         url = 'https://maven.blamejared.com'
     }
     maven {
-        name "ithundxr's mavenReleases"
-        url "https://maven.ithundxr.dev/snapshots"
+        name = "ithundxr's mavenReleases"
+        url = "https://maven.ithundxr.dev/snapshots"
     }
     // GeckoLib
     maven { url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
@@ -146,7 +146,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url = "file://${project.projectDir}/repo"
         }
         maven {
             name = "Modrinth"
@@ -161,6 +161,7 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:all,-processing,-path' << '-Xlint:-this-escape'
 }
 
 idea {
