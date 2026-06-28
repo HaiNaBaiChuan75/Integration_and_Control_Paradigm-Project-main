@@ -23,9 +23,11 @@ public class ModLanguageProvider extends LanguageProvider {
 
     private void addEnUs() {
         add("block.iac_p.base_cabin", "Base Cabin");
+        add("block.iac_p.shot_gun", "Shotgun Turret");
     }
 
     private void addZhCn() {
         add("block.iac_p.base_cabin", "基础舱室");
+        add("block.iac_p.shot_gun", "霰弹枪炮塔");
     }
 }

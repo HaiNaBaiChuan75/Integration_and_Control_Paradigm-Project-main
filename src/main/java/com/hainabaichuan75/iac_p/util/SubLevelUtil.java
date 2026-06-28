@@ -12,11 +12,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.event.level.BlockEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public class SubLevelUtil {
     private SubLevelUtil() {}
@@ -33,13 +30,6 @@ public class SubLevelUtil {
         return plot != null ? plot.getSubLevel() : null;
     }
 
-    public static List<BlockEvent> getAllBlockEntities(SubLevel level) {
-        LevelPlot plot = level.getPlot();
-        ChunkPos chunkMax = plot.getChunkMax();
-        ChunkPos chunkMin = plot.getChunkMin();
-        System.out.println("from(" + chunkMin.x + "," + chunkMin.z + "), to(" + chunkMax.x + "," + chunkMax.z + ")");
-        return null;
-    }
 
     public static @NotNull ObjectArrayList<BlockPos> scanBlocks(@NotNull Level level, @NotNull SubLevel toDisassemble) {
         final ObjectArrayList<BlockPos> blocks = new ObjectArrayList<>();

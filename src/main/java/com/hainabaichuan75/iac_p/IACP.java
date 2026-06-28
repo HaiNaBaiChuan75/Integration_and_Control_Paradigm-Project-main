@@ -1,13 +1,13 @@
 package com.hainabaichuan75.iac_p;
 
+import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
+import com.hainabaichuan75.iac_p.vehicle.Systems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
-import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import static com.hainabaichuan75.iac_p.registry.IACPBlocks.BLOCKS;
 import static com.hainabaichuan75.iac_p.registry.IACPItems.ITEMS;
 
@@ -26,5 +26,7 @@ public class IACP {
         ITEMS.register(modEventBus);
         BLOCKS.register(modEventBus);
         IACPBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+
+        Systems.registerAll();
     }
 }

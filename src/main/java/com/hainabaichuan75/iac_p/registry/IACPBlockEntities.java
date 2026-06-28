@@ -2,6 +2,8 @@ package com.hainabaichuan75.iac_p.registry;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockEntity;
+import com.hainabaichuan75.iac_p.block.simplewheel.SimpleWheelBlockEntity;
 import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.types.Type;
 import net.minecraft.Util;
@@ -34,5 +36,18 @@ public abstract class IACPBlockEntities {
         Type<?> type = Util.fetchChoiceType(References.BLOCK_ENTITY, "base_cabin");
         return BlockEntityType.Builder.of(BaseCabinBlockEntity::new, IACPBlocks.BASE_CABIN.get()  // 延迟执行，安全
         ).build(type == null ? DSL.remainderType() : type);
+    });
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SimpleWheelBlockEntity>> SIMPLE_WHEEL =
+            BLOCK_ENTITIES.register("simple_wheel", () -> {
+        Type<?> type = Util.fetchChoiceType(References.BLOCK_ENTITY, "simple_wheel");
+        return BlockEntityType.Builder.of(SimpleWheelBlockEntity::new, IACPBlocks.SIMPLE_WHEEL.get()).build(type == null ? DSL.remainderType() : type);
+    });
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ShotGunBlockEntity>> SHOT_GUN =
+            BLOCK_ENTITIES.register("shot_gun", () -> {
+        Type<?> type = Util.fetchChoiceType(References.BLOCK_ENTITY, "shot_gun");
+        return BlockEntityType.Builder.of(ShotGunBlockEntity::new, IACPBlocks.SHOT_GUN.get()).build(type == null ?
+                DSL.remainderType() : type);
     });
 }

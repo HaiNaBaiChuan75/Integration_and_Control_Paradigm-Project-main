@@ -9,4 +9,8 @@ public abstract class IACPItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(IACP.MODID);
 
     public static final DeferredItem<BlockItem> BASE_CABIN = ITEMS.registerSimpleBlockItem(IACPBlocks.BASE_CABIN);
+
+    public static final DeferredItem<BlockItem> SIMPLE_WHEEL = ITEMS.registerSimpleBlockItem(IACPBlocks.SIMPLE_WHEEL);
+
+    public static final DeferredItem<BlockItem> SHOT_GUN = ITEMS.registerSimpleBlockItem(IACPBlocks.SHOT_GUN);
 }
