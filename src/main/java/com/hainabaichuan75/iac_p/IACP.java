@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p;
 
-import com.hainabaichuan75.iac_p.core.system.VehicleSystems;
+import com.hainabaichuan75.iac_p.core.system.VehicleSystemRegistry;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -27,6 +27,6 @@ public class IACP {
         BLOCKS.register(modEventBus);
         IACPBlockEntities.BLOCK_ENTITIES.register(modEventBus);
 
-        VehicleSystems.registerAll();
+        VehicleSystemRegistry.registerAll();
     }
 }

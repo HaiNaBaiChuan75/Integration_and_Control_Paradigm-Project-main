@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
-import com.hainabaichuan75.iac_p.core.vehicle.PartRenderer;
-import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.core.part.PartRenderer;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import com.hainabaichuan75.iac_p.test_system.Aimable;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
@@ -35,7 +35,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 /**
  * 霰弹枪炮塔方块实体。
  * <ul>
- *   <li>继承 {@link VehiclePartBlockEntity} 接入载具子系统</li>
+ *   <li>继承 {@link PartBlockEntity} 接入载具子系统</li>
  *   <li>实现 {@link Aimable} 接收外部瞄准指令</li>
  *   <li>实现 {@link GeoAnimatable} 接入 GeckoLib 渲染管线</li>
  *   <li>在 {@link #sable$tick} 中以固定角速度平滑转向瞄准点</li>
@@ -43,7 +43,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  *
  * <p>yaw/pitch 的实时骨骼控制由 {@link PartRenderer} 完成。
  */
-public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimable, GeoBlockEntity {
+public class ShotGunBlockEntity extends PartBlockEntity implements Aimable, GeoBlockEntity {
 
     private static final Int2ObjectMap<Quaterniondc> ORIENTATIONS = Util.make(new Int2ObjectOpenHashMap<>(4), map -> {
         for (int i = 0; i < 4; i++) {
@@ -66,7 +66,7 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
     }
 
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         return ORIENTATIONS.get(facingIndex);
     }
 

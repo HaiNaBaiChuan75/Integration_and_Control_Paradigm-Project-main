@@ -19,7 +19,7 @@ public class SubLevelUtil {
     private SubLevelUtil() {}
 
     @Nullable
-    public static SubLevel getSubLevelAt(ServerLevel level, BlockPos pos) {
+    public static SubLevel getSubLevelAt(@NotNull ServerLevel level, @NotNull BlockPos pos) {
         ServerSubLevelContainer container = ServerSubLevelContainer.getContainer(level);
         if (container == null) {
             return null;
@@ -30,8 +30,8 @@ public class SubLevelUtil {
         return plot != null ? plot.getSubLevel() : null;
     }
 
-
-    public static @NotNull ObjectArrayList<BlockPos> scanBlocks(@NotNull Level level, @NotNull SubLevel toDisassemble) {
+    public static @NotNull ObjectArrayList<BlockPos> collectBlocks(@NotNull Level level,
+                                                                   @NotNull SubLevel toDisassemble) {
         final ObjectArrayList<BlockPos> blocks = new ObjectArrayList<>();
         final LevelPlot plot = toDisassemble.getPlot();
         for (final PlotChunkHolder chunk : plot.getLoadedChunks()) {

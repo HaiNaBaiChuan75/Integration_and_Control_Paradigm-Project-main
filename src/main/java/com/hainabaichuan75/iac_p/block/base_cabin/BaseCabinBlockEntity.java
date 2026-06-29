@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
-import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -22,7 +22,7 @@ import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class BaseCabinBlockEntity extends VehiclePartBlockEntity implements GeoAnimatable {
+public class BaseCabinBlockEntity extends PartBlockEntity implements GeoAnimatable {
     private static final Int2ObjectMap<Quaterniondc> ORIENTATIONS = Util.make(new Int2ObjectOpenHashMap<>(8), map -> {
         for (int i = 0; i < 8; i++) {
             map.put(i, new Quaterniond().rotateY(Math.toRadians(-i * 45)));
@@ -43,7 +43,7 @@ public class BaseCabinBlockEntity extends VehiclePartBlockEntity implements GeoA
     }
 
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         return ORIENTATIONS.get(facingIndex);
     }
 

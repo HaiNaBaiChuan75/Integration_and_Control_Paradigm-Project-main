@@ -1,11 +1,13 @@
-package com.hainabaichuan75.iac_p.core.system;
+package com.hainabaichuan75.iac_p.core.api.system;
 
-import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
+import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.core.system.VehicleClientSystem;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.DustParticleOptions;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
@@ -13,7 +15,7 @@ import java.util.List;
 
 public class AxisRenderSystem implements VehicleClientSystem {
     @Override
-    public void onClientTick(ClientSubLevel subLevel, List<VehiclePartBlockEntity> parts) {
+    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
         if (!Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
             return;
         }
@@ -21,7 +23,7 @@ public class AxisRenderSystem implements VehicleClientSystem {
         Vector3f green = new Vector3f(0.0F, 1.0F, 0.0F); // Y - 绿
         Vector3f blue = new Vector3f(0.0F, 0.0F, 1.0F);  // Z - 蓝
         ClientLevel level = subLevel.getLevel();
-        for (VehiclePartBlockEntity part : parts) {
+        for (PartBlockEntity part : parts) {
             Pose3d pose = part.localPose();
             // 粒子效果
             for (double i = 0; i <= 1.5; i += 0.1) {

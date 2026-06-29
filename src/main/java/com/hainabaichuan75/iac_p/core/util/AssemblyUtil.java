@@ -23,7 +23,8 @@ public class AssemblyUtil {
     private AssemblyUtil() {
     }
 
-    public static InteractionResult tryAssembleOrDisassemble(Level level, BlockPos pos, Player player) {
+    public static InteractionResult tryAssembleOrDisassemble(@NotNull Level level, @NotNull BlockPos pos,
+                                                             @NotNull Player player) {
         if (level.isClientSide) return InteractionResult.PASS;
         if (player.isShiftKeyDown()) return InteractionResult.PASS;
 
@@ -39,7 +40,7 @@ public class AssemblyUtil {
         return InteractionResult.SUCCESS;
     }
 
-    public static @Nullable SubLevel assemble(ServerLevel level, BlockPos pos) {
+    public static @Nullable SubLevel assemble(@NotNull ServerLevel level, @NotNull BlockPos pos) {
         var result = SubLevelAssemblyHelper.gatherConnectedBlocks(pos, level, 1000, null);
 
         if (result.assemblyState() != SubLevelAssemblyHelper.GatherResult.State.SUCCESS) {
@@ -53,18 +54,15 @@ public class AssemblyUtil {
         return SubLevelAssemblyHelper.assembleBlocks(level, pos, blocks, bounds);
     }
 
-    public static void disassembleSubLevel(@NotNull final Level level, @NotNull final SubLevel toDisassemble,
-                                           @NotNull final BlockPos subLevelAnchor) {
-        BlockPos disassemblyGoal =
-                BlockPos.containing(toDisassemble.logicalPose().transformPosition(Vec3.atCenterOf(subLevelAnchor)));
-        disassemblyGoal = disassemblyGoal.above();//TODO: 移除向上偏移
+    public static void disassembleSubLevel(@NotNull final Level level, @NotNull final SubLevel toDisassemble, @NotNull final BlockPos triggerPos) {
+        BlockPos targetWorldPos =
+                BlockPos.containing(toDisassemble.logicalPose().transformPosition(Vec3.atCenterOf(triggerPos)));
         Rotation rotation = Rotation.NONE;
         final BoundingBox3i plotBounds = new BoundingBox3i(toDisassemble.getPlot().getBoundingBox());
-        final SubLevelAssemblyHelper.AssemblyTransform transform =
-                new SubLevelAssemblyHelper.AssemblyTransform(subLevelAnchor, disassemblyGoal, 0, rotation,
+        final SubLevelAssemblyHelper.AssemblyTransform transform = new SubLevelAssemblyHelper.AssemblyTransform(triggerPos, targetWorldPos, 0, rotation,
                         (ServerLevel) level);
 
-        final ObjectArrayList<BlockPos> blocks = SubLevelUtil.scanBlocks(level, toDisassemble);
+        final ObjectArrayList<BlockPos> blocks = SubLevelUtil.collectBlocks(level, toDisassemble);
 
         // if there's no blocks in the given sublevel, don't attempt to move the blocks
         if (!blocks.isEmpty()) {

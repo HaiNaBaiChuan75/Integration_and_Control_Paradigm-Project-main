@@ -4,7 +4,7 @@ import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockModel;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockEntity;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockModel;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockRenderLayer;
-import com.hainabaichuan75.iac_p.core.vehicle.PartRenderer;
+import com.hainabaichuan75.iac_p.core.part.PartRenderer;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
