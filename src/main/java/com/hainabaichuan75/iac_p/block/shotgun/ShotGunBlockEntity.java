@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
+import org.joml.Vector3d;
 import org.joml.Vector3dc;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -113,20 +114,18 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
         if (targetAbsPoint == null) return;
 
-        double originX = getAnchor().x();
-        double originY = getAnchor().y();
-        double originZ = getAnchor().z();
+        Vector3d target = localPose().transformPositionInverse(new Vector3d(targetAbsPoint));
 
-        double dx = targetAbsPoint.x() - originX;
-        double dy = targetAbsPoint.y() - originY;
-        double dz = targetAbsPoint.z() - originZ;
+        double dx = (target).x();
+        double dy = (target).y();
+        double dz = (target).z();
 
         double horizontalDistSq = dx * dx + dz * dz;
         if (horizontalDistSq < 1.0e-5) {
             return;
         }
 
-        double desiredYaw = Math.toDegrees(Math.atan2(dx, dz));
+        double desiredYaw = 180 + Math.toDegrees(Math.atan2(dx, dz));
         double horizontalDist = Math.sqrt(horizontalDistSq);
         double desiredPitch = Math.toDegrees(Math.atan2(dy, horizontalDist));
         desiredPitch = Math.clamp(desiredPitch, -45, 45);

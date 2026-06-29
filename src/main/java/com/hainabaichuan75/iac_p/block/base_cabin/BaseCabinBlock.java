@@ -34,8 +34,8 @@ public class BaseCabinBlock extends Block implements EntityBlock {
     public void setPlacedBy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state,
                             @Nullable LivingEntity placer, @NotNull ItemStack stack) {
         if (placer != null && level.getBlockEntity(pos) instanceof BaseCabinBlockEntity cabin) {
-            // 玩家 yaw（0 = 南, 顺时针为正）映射到 0-7 索引：方块正面朝向玩家
-            int index = Math.round(placer.getYRot() / 45f) & 7;
+            float yRot = placer.getYRot();
+            int index = Math.round(yRot / 45f) & 7;
             cabin.setFacingIndex(index);
         }
     }

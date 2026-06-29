@@ -12,7 +12,7 @@ public class RandomAimVehicleSystem implements VehicleTickSystem {
     @Override
     public void onSubLevelTick(ServerSubLevel subLevel, List<VehiclePartBlockEntity> parts) {
 
-        float p = subLevel.getLevel().getGameTime() / 200f;
+        float p = subLevel.getLevel().getGameTime() / 80f;
         Vector3d relativeTarget = new Vector3d(10, 2 * Mth.sin(p / 1.414f), 0).rotateAxis(p, 0, 1, 0);
 
         for (VehiclePartBlockEntity vehiclePartBlockEntity : parts) {
