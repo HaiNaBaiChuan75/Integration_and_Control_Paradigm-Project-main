@@ -1,9 +1,13 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
+import com.hainabaichuan75.iac_p.core.vehicle.PartRenderer;
 import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import com.hainabaichuan75.iac_p.test_system.Aimable;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +19,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaterniond;
+import org.joml.Quaterniondc;
 import org.joml.Vector3dc;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -34,14 +40,34 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  *   <li>在 {@link #sable$tick} 中以固定角速度平滑转向瞄准点</li>
  * </ul>
  *
- * <p>yaw/pitch 的实时骨骼控制由 {@link ShotGunBlockRenderer#renderRecursively} 完成。
+ * <p>yaw/pitch 的实时骨骼控制由 {@link PartRenderer} 完成。
  */
 public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimable, GeoBlockEntity {
+
+    private static final Int2ObjectMap<Quaterniondc> ORIENTATIONS = Util.make(new Int2ObjectOpenHashMap<>(4), map -> {
+        for (int i = 0; i < 4; i++) {
+            map.put(i, new Quaterniond().rotateY(Math.toRadians(-i * 90)));
+        }
+    });
 
     /**
      * 旋转速度（度/秒）
      */
     private static final double ROTATION_SPEED_DEG_PER_SEC = 180.0;
+
+    /* ==================== 朝向 ==================== */
+
+    private byte facingIndex;   // 0-3, 对应 ORIENTATIONS 中的键
+
+    public void setFacingIndex(int index) {
+        this.facingIndex = (byte) (index & 3);
+        setChanged();
+    }
+
+    @Override
+    public Quaterniondc orientation() {
+        return ORIENTATIONS.get(facingIndex);
+    }
 
     /* ==================== 状态 ==================== */
 
@@ -69,31 +95,15 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
     /* ==================== Aimable ==================== */
 
-    /**
-     * 设定瞄准目标点（绝对世界坐标）。
-     * 不会立即改变朝向，而是由 {@link #sable$tick} 每 tick 平滑转向该点。
-     */
     @Override
     public void aimAt(Vector3dc targetAbsPoint) {
         this.targetAbsPoint = targetAbsPoint;
     }
 
-    /* ==================== Sable tick（服务端每 tick 调用） ==================== */
+    /* ==================== Sable tick ==================== */
 
-    @Override
-    public void requestModelDataUpdate() {
-        super.requestModelDataUpdate();
-    }
-
-    /**
-     * 每 tick 将炮塔向瞄准点方向旋转，角速度由 {@link #ROTATION_SPEED_DEG_PER_SEC} 决定。
-     * 到达目标角度附近时停止增量，避免震荡。
-     */
     @Override
     public void sable$tick(ServerSubLevel subLevel) {
-        System.out.println(getBlockPose());
-
-
         prevPitch = pitch;
         prevYaw = yaw;
 
@@ -113,20 +123,18 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
         double horizontalDistSq = dx * dx + dz * dz;
         if (horizontalDistSq < 1.0e-5) {
-            return; // 目标就在炮塔正上方/下方，忽略
+            return;
         }
 
-        // 期望角度
         double desiredYaw = Math.toDegrees(Math.atan2(dx, dz));
         double horizontalDist = Math.sqrt(horizontalDistSq);
         double desiredPitch = Math.toDegrees(Math.atan2(dy, horizontalDist));
         desiredPitch = Math.clamp(desiredPitch, -45, 45);
 
-        double maxStep = ROTATION_SPEED_DEG_PER_SEC / 20.0; // 每 tick 最大步长
+        double maxStep = ROTATION_SPEED_DEG_PER_SEC / 20.0;
 
-        // —— 平滑旋转 yaw（处理 360° 环绕） ——
         double yawDiff = desiredYaw - this.yaw;
-        yawDiff = ((yawDiff % 360) + 540) % 360 - 180; // 归一化到 (-180, 180]
+        yawDiff = ((yawDiff % 360) + 540) % 360 - 180;
 
         if (Math.abs(yawDiff) <= maxStep) {
             this.yaw = desiredYaw;
@@ -134,11 +142,9 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
             this.yaw += Math.signum(yawDiff) * maxStep;
         }
 
-        // 保持 yaw 在 (-180, 180]
         if (this.yaw > 180) this.yaw -= 360;
         if (this.yaw <= -180) this.yaw += 360;
 
-        // —— 平滑旋转 pitch（无需环绕） ——
         double pitchDiff = desiredPitch - this.pitch;
         if (Math.abs(pitchDiff) <= maxStep) {
             this.pitch = desiredPitch;
@@ -146,7 +152,6 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
             this.pitch += Math.signum(pitchDiff) * maxStep;
         }
 
-        // 同步到客户端
         setChanged();
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -157,12 +162,8 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "base", 0, state -> {
-            // 默认循环 idle
-            return state.setAndContinue(RawAnimation.begin().then("idle", Animation.LoopType.LOOP));
-        })
-                // 注册可触发的开火动画（PLAY_ONCE = 播放一次后自动回到 idle）
-                .triggerableAnim("firing", RawAnimation.begin().then("firing", Animation.LoopType.PLAY_ONCE)));
+        controllers.add(new AnimationController<>(this, "base", 0,
+                state -> state.setAndContinue(RawAnimation.begin().then("idle", Animation.LoopType.LOOP))).triggerableAnim("firing", RawAnimation.begin().then("firing", Animation.LoopType.PLAY_ONCE)));
     }
 
     @Override
@@ -170,13 +171,12 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
         return cache;
     }
 
-
-
     /* ==================== NBT 持久化 ==================== */
 
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putByte("facingIndex", facingIndex);
         tag.putDouble("yaw", this.yaw);
         tag.putDouble("pitch", this.pitch);
     }
@@ -184,9 +184,12 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
     @Override
     public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        this.facingIndex = tag.getByte("facingIndex");
         this.yaw = tag.getDouble("yaw");
         this.pitch = tag.getDouble("pitch");
     }
+
+    /* ==================== 网络同步 ==================== */
 
     @Override
     public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
@@ -202,6 +205,7 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
     @Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.@NotNull Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
+        tag.putByte("facingIndex", facingIndex);
         tag.putDouble("yaw", this.yaw);
         tag.putDouble("pitch", this.pitch);
         return tag;
@@ -209,6 +213,8 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider lookupProvider) {
+        super.handleUpdateTag(tag, lookupProvider);
+        this.facingIndex = tag.getByte("facingIndex");
         yaw = tag.getDouble("yaw");
         pitch = tag.getDouble("pitch");
     }

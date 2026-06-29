@@ -30,6 +30,7 @@ public class VehicleSystems {
      */
     public static void registerAll() {
         registerTickSystem(new RandomAimVehicleSystem());
+        registerClientSystem(new AxisRenderSystem());
     }
 
     public static void registerTickSystem(VehicleTickSystem system) {

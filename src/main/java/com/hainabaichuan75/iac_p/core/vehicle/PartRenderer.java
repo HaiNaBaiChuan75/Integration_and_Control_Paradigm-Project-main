@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 public class PartRenderer<BE extends VehiclePartBlockEntity & GeoAnimatable> extends GeoBlockRenderer<BE> {
@@ -17,6 +18,10 @@ public class PartRenderer<BE extends VehiclePartBlockEntity & GeoAnimatable> ext
 
     public PartRenderer(BlockEntityType<? extends BE> blockEntityType) {
         super(blockEntityType);
+    }
+
+    public PartRenderer(GeoModel<BE> model) {
+        super(model);
     }
 
     @Override

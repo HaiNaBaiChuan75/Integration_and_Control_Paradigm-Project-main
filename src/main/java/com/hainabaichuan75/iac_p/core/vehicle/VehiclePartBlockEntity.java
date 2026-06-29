@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
@@ -52,8 +53,7 @@ public abstract class VehiclePartBlockEntity extends BlockEntity implements Bloc
      * @see Pose3d#transformPosition(Vector3d) 使用该变换将局部点转换到世界坐标
      */
     public Pose3d localPose() {
-        SubLevel subLevel = getSubLevel();
-        Pose3d subPose = subLevel == null ? new Pose3d() : subLevel.logicalPose();
+        Pose3d subPose = getSubLevelPose();
         Vector3d subScale = subPose.scale();
         double sx = subScale.x, sy = subScale.y, sz = subScale.z;
         // 检查缩放是否均匀，若不均匀则告警并用平均值近似
@@ -76,8 +76,14 @@ public abstract class VehiclePartBlockEntity extends BlockEntity implements Bloc
         return new Pose3d(offset, combinedOri, new Vector3d(), uniformScaleVec);
     }
 
+    @NotNull
+    private Pose3d getSubLevelPose() {
+        SubLevel subLevel = getSubLevel();
+        return subLevel == null ? new Pose3d() : subLevel.logicalPose();
+    }
+
     public Vector3dc getAnchor() {
-        return localPose().transformNormalInverse(new Vector3d());
+        return getSubLevelPose().transformPosition(JOMLConversion.atCenterOf(worldPosition));
     }
 
 }

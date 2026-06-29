@@ -22,11 +22,9 @@ public class ShotGunBlockRenderLayer extends GeoRenderLayer<ShotGunBlockEntity> 
 
         float smoothYaw = (float) (animatable.prevYaw + (animatable.yaw - animatable.prevYaw) * partialTick);
         float smoothPitch = (float) (animatable.prevPitch + (animatable.pitch - animatable.prevPitch) * partialTick);
-        System.out.printf("%f, %f", smoothPitch, smoothYaw);
         bakedModel.getBone("yaw").ifPresent(bone -> {
             bone.setRotY((float) Math.toRadians(smoothYaw));
         });
-
         bakedModel.getBone("pitch").ifPresent(bone -> {
             bone.setRotX((float) Math.toRadians(smoothPitch));
         });

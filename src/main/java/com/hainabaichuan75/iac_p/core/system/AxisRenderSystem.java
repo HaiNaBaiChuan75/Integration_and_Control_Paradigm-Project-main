@@ -1,0 +1,40 @@
+package com.hainabaichuan75.iac_p.core.system;
+
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
+import dev.ryanhcode.sable.companion.math.Pose3d;
+import dev.ryanhcode.sable.sublevel.ClientSubLevel;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.particles.DustParticleOptions;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
+
+import java.util.List;
+
+public class AxisRenderSystem implements VehicleClientSystem {
+    @Override
+    public void onClientTick(ClientSubLevel subLevel, List<VehiclePartBlockEntity> parts) {
+        System.out.println(0);
+        if (!Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
+            System.out.println(-1);
+            return;
+        }
+        Vector3f red = new Vector3f(1.0F, 0.0F, 0.0F);   // X - 红
+        Vector3f green = new Vector3f(0.0F, 1.0F, 0.0F); // Y - 绿
+        Vector3f blue = new Vector3f(0.0F, 0.0F, 1.0F);  // Z - 蓝
+        ClientLevel level = subLevel.getLevel();
+        for (VehiclePartBlockEntity part : parts) {
+            Pose3d pose = part.localPose();
+            // 粒子效果
+            for (double i = 0; i <= 1; i += 0.1) {
+
+                Vector3d posX = pose.transformPosition(new Vector3d(i, 0, 0));
+                Vector3d posY = pose.transformPosition(new Vector3d(0, i, 0));
+                Vector3d posZ = pose.transformPosition(new Vector3d(0, 0, i));
+                level.addParticle(new DustParticleOptions(red, 1.0F), posX.x, posX.y, posX.z, 0, 0, 0);
+                level.addParticle(new DustParticleOptions(green, 1.0F), posY.x, posY.y, posY.z, 0, 0, 0);
+                level.addParticle(new DustParticleOptions(blue, 1.0F), posZ.x, posZ.y, posZ.z, 0, 0, 0);
+            }
+        }
+    }
+}
