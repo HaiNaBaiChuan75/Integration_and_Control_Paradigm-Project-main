@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
-import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoAnimatable;

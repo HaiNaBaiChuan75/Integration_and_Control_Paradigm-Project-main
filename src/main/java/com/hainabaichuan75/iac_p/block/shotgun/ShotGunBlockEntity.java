@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
 import com.hainabaichuan75.iac_p.test_system.Aimable;
-import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -91,6 +91,9 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
      */
     @Override
     public void sable$tick(ServerSubLevel subLevel) {
+        System.out.println(getBlockPose());
+
+
         prevPitch = pitch;
         prevYaw = yaw;
 
@@ -100,9 +103,9 @@ public class ShotGunBlockEntity extends VehiclePartBlockEntity implements Aimabl
 
         if (targetAbsPoint == null) return;
 
-        double originX = getAbsPosition(subLevel).x();
-        double originY = getAbsPosition(subLevel).y();
-        double originZ = getAbsPosition(subLevel).z();
+        double originX = getAnchor().x();
+        double originY = getAnchor().y();
+        double originZ = getAnchor().z();
 
         double dx = targetAbsPoint.x() - originX;
         double dy = targetAbsPoint.y() - originY;

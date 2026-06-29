@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p;
 
+import com.hainabaichuan75.iac_p.core.system.VehicleSystems;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
-import com.hainabaichuan75.iac_p.vehicle.VehicleSystems;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;

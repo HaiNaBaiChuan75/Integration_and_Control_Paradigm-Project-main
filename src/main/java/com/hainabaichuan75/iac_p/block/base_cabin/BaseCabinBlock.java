@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
-import com.hainabaichuan75.iac_p.util.AssemblyUtil;
+import com.hainabaichuan75.iac_p.core.util.AssemblyUtil;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

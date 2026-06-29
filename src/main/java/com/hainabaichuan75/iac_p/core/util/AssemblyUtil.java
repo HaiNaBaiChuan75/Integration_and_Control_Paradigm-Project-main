@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.util;
+package com.hainabaichuan75.iac_p.core.util;
 
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;

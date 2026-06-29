@@ -1,5 +1,6 @@
-package com.hainabaichuan75.iac_p.vehicle;
+package com.hainabaichuan75.iac_p.core.system;
 
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import com.hainabaichuan75.iac_p.test_system.RandomAimVehicleSystem;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;

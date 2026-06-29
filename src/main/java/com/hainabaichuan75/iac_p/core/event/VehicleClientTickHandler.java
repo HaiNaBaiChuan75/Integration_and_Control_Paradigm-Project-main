@@ -1,9 +1,9 @@
-package com.hainabaichuan75.iac_p.event;
+package com.hainabaichuan75.iac_p.core.event;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.vehicle.VehicleClientSystem;
-import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
-import com.hainabaichuan75.iac_p.vehicle.VehicleSystems;
+import com.hainabaichuan75.iac_p.core.system.VehicleClientSystem;
+import com.hainabaichuan75.iac_p.core.system.VehicleSystems;
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import dev.ryanhcode.sable.api.sublevel.ClientSubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import net.minecraft.client.multiplayer.ClientLevel;

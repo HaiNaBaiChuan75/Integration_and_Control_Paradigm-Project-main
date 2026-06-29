@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.test_system;
 
-import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
-import com.hainabaichuan75.iac_p.vehicle.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.core.system.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.util.Mth;
 import org.joml.Vector3d;
@@ -17,7 +17,7 @@ public class RandomAimVehicleSystem implements VehicleTickSystem {
 
         for (VehiclePartBlockEntity vehiclePartBlockEntity : parts) {
             if (vehiclePartBlockEntity instanceof Aimable aimable) {
-                aimable.aimAt((vehiclePartBlockEntity.getAbsPosition(subLevel).add(relativeTarget, new Vector3d())));
+                aimable.aimAt((vehiclePartBlockEntity.getAnchor().add(relativeTarget, new Vector3d())));
             }
         }
     }

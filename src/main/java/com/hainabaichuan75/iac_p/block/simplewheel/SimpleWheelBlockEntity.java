@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.block.simplewheel;
 
+import com.hainabaichuan75.iac_p.core.vehicle.VehiclePartBlockEntity;
 import com.hainabaichuan75.iac_p.registry.IACPBlockEntities;
-import com.hainabaichuan75.iac_p.vehicle.VehiclePartBlockEntity;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.physics.force.ForceGroups;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
@@ -42,7 +42,7 @@ public class SimpleWheelBlockEntity extends VehiclePartBlockEntity {
         final Direction facing = this.getBlockState().getValue(SimpleWheelBlock.FACING);
         SimpleWheelBlock block = (SimpleWheelBlock) this.getBlockState().getBlock();
         Vector3dc normalD = pose.transformNormal(new Vector3d(facing.step()).mul(block.thick));
-        Vector3dc logicCenter = getAbsPosition(subLevel);
+        Vector3dc logicCenter = getAnchor();
         final Vec3 wheelPosCenter = new Vec3(logicCenter.x(), logicCenter.y(), logicCenter.z());
         double minExtension = SUSPENSION_TRAVEL;
         Direction minNormal = Direction.UP;
@@ -119,7 +119,7 @@ public class SimpleWheelBlockEntity extends VehiclePartBlockEntity {
     public void sable$physicsTick(ServerSubLevel subLevel, RigidBodyHandle handle, double timeStep) {
         final BlockState blockState = getBlockState();
         final SimpleWheelBlock block = (SimpleWheelBlock) blockState.getBlock();
-        final Vector3dc position = getAbsPosition(subLevel);
+        final Vector3dc position = getAnchor();
         final Pose3dc pose = subLevel.logicalPose();
         final Vector3dc upward = (new Vector3d(0, 1, 0));
 
@@ -139,12 +139,12 @@ public class SimpleWheelBlockEntity extends VehiclePartBlockEntity {
 
     /* ==================== 轮心偏移 ==================== */
 
-    @Override
-    public Vector3dc getLogicCenter() {
-        BlockState blockState = getBlockState();
-        SimpleWheelBlock block = (SimpleWheelBlock) blockState.getBlock();
-        return block.getWheelCenter(blockState);
-    }
+    //    @Override
+    //    public Vector3dc getLocalAnchor() {
+    //        BlockState blockState = getBlockState();
+    //        SimpleWheelBlock block = (SimpleWheelBlock) blockState.getBlock();
+    //        return block.getWheelCenter(blockState);
+    //    }
 
     // ==================== 内部记录 ====================
 
