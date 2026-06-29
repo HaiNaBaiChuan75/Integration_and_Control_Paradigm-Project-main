@@ -42,7 +42,7 @@ public abstract class PartBlockEntity extends BlockEntity implements BlockEntity
      * @see Pose3d
      */
     @NotNull
-    public Pose3d localPose() {
+    public Pose3d worldPose() {
         Pose3d subPose = getSubLevelPose();
         Vector3d subScale = subPose.scale();
         double sx = subScale.x, sy = subScale.y, sz = subScale.z;

@@ -114,7 +114,7 @@ public class ShotGunBlockEntity extends PartBlockEntity implements Aimable, GeoB
 
         if (targetAbsPoint == null) return;
 
-        Vector3d target = localPose().transformPositionInverse(new Vector3d(targetAbsPoint));
+        Vector3d target = worldPose().transformPositionInverse(new Vector3d(targetAbsPoint));
 
         double dx = (target).x();
         double dy = (target).y();

@@ -4,6 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **重要: 此分支只开发core包, 其他部分均为测试用途**
 
+## AI Documentation
+
+AI-facing documentation lives in [`docs/ai/`](docs/ai/). Before writing new code, read the relevant docs:
+
+- [`docs/ai/01-core-architecture.md`](docs/ai/01-core-architecture.md) — Systems 架构说明、如何添加 System 和 Part、包结构、约定
+
 ## Project Overview
 
 IAC-P is a **Minecraft 1.21.1 NeoForge mod** — a "glue layer" that adds vehicle controls, weapons, and HUD on top of the [Sable](https://github.com/ryanhcode/sable) physics engine (Rapier rigid-body simulation) and [Create](https://github.com/Creators-of-Create/Create) mechanical power network. It does not provide its own physics; it **coordinates** existing systems into a playable vehicle experience.
