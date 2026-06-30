@@ -6,6 +6,7 @@ import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
+
 import java.util.UUID;
 
 /**
@@ -36,6 +37,14 @@ import java.util.UUID;
  *     }
  * }
  * }</pre>
+ * <p>
+ * <b>可靠性保证</b>：由于 {@link Sable#HELPER}.getContaining(be) 可能在 BE 刚创建时返回 null
+ * （SubLevel 容器尚未就绪），注册可能静默失败。本接口提供<b>延迟重试机制</b>：
+ * <ol>
+ * <li>{@link #registerComponent} 首次失败时将条目加入 {@link DeferredRegistration} 队列</li>
+ * <li>实现类在 {@code tick()} 中调用 {@link DeferredRegistration#tick(BlockEntity)} 自动重试</li>
+ * <li>超过最大重试次数后放弃并输出 WARNING 日志</li>
+ * </ol>
  */
 public interface ComponentHost {
 
@@ -51,6 +60,10 @@ public interface ComponentHost {
      * 注册一个方块到 {@link ComponentRegistry}。
      * <p>
      * 仅在服务端执行。如果方块不在任何 SubLevel 中（主世界自由放置）， 则跳过注册。
+     * <p>
+     * <b>可靠性</b>：如果因 SubLevel 容器未就绪导致注册失败，自动加入
+     * {@link DeferredRegistration} 延迟队列。调用方只需在 {@code tick()} 中
+     * 调用 {@link DeferredRegistration#tick(BlockEntity)}。
      *
      * @param be 方块实体
      * @param role 功能角色
@@ -67,7 +80,9 @@ public interface ComponentHost {
         BlockPos pos = be.getBlockPos();
         SubLevel subLevel = Sable.HELPER.getContaining(be);
         if (subLevel == null) {
-            // 主世界放置的方块不注册到 SubLevel 部件系统
+            // SubLevel 尚未就绪 → 加入延迟队列，稍后重试
+            DeferredRegistration.add(pos, role);
+            IACP.LOGGER.debug("[ComponentHost] 注册推迟 (SubLevel 未就绪): {} role={}", pos, role);
             return;
         }
 
@@ -89,6 +104,8 @@ public interface ComponentHost {
         if (be == null) {
             return;
         }
+        // 清理延迟队列（防止已放弃注册的条目残留）
+        DeferredRegistration.remove(be.getBlockPos());
         ComponentRegistry.unregister(be.getBlockPos());
         IACP.LOGGER.debug("[ComponentHost] 注销: {}", be.getBlockPos());
     }
@@ -109,6 +126,8 @@ public interface ComponentHost {
 
         SubLevel subLevel = Sable.HELPER.getContaining(be);
         if (subLevel == null) {
+            // 加入延迟重试队列
+            registerComponent(be, role);
             return;
         }
 

@@ -12,6 +12,7 @@ import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -45,6 +46,7 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants.*;
 
@@ -537,9 +539,9 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         // 悬挂方块的 throttleForward/Backward 字段，零时序冲突。
         // 转向：left/right 互斥，同时按下时回中
         if (left && !right) {
-            setTargetSteeringYaw(Math.toRadians(MAX_STEERING_ANGLE));
+            setTargetSteeringYaw(MAX_STEERING_ANGLE_RAD);
         } else if (right && !left) {
-            setTargetSteeringYaw(Math.toRadians(-MAX_STEERING_ANGLE));
+            setTargetSteeringYaw(MINUS_MAX_STEERING_ANGLE_RAD);
         } else {
             setTargetSteeringYaw(0.0);
         }
@@ -626,7 +628,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
      * 设置外部目标转向角（弧度）。由 WASD 控制等外部系统调用。 值会被钳制在 ±MAX_STEERING_ANGLE 范围内。
      */
     public void setTargetSteeringYaw(double radians) {
-        this.targetSteeringYaw = Mth.clamp(radians, Math.toRadians(-MAX_STEERING_ANGLE), Math.toRadians(MAX_STEERING_ANGLE));
+        this.targetSteeringYaw = Mth.clamp(radians, MINUS_MAX_STEERING_ANGLE_RAD, MAX_STEERING_ANGLE_RAD);
     }
 
     @Override
@@ -832,7 +834,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
                     }
                     double signedTorque = torqueMag * direction;
                     double driveForceN = signedTorque / Math.max(rad, 0.01);
-                    double driveImpulse = driveForceN * com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants.DT;
+                    double driveImpulse = driveForceN * PowertrainConstants.DT;
 
                     // 最大抓地冲量 = μ × 法向冲量（始终正数）
                     double maxGripImpulse = mu * frictionBasis;
@@ -891,7 +893,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
 
                 // 4b. 主动驱动：P 控制器追踪目标车速 v = ω × r
                 if (Math.abs(targetRpm) > 0.1) {
-                    double targetSpeed = targetRpm * Math.PI * 2.0 / 60.0 * rad; // m/s
+                    double targetSpeed = targetRpm * RPM_TO_RAD_PER_S * rad; // m/s
                     double speedError = targetSpeed - forwardSpeed;               // m/s
                     double baseGain = torqueGain * 0.2 * dt;
                     double rawPCmd = speedError * baseGain * nm;
@@ -1027,6 +1029,11 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     // ===== 客户端 tick（含转向与轮子旋转） =====
     @Override
     public void tick() {
+        super.tick();
+
+        // ── 延迟注册重试（SubLevel 未就绪时排队注册） ──
+        com.hainabaichuan75.iac_p.affiliation.DeferredRegistration.tick(this);
+
         // === 油门状态由 CockpitBE.tick() 直接扫描 throttleForward/Backward 字段获取 ===
         // 不再使用共享 Map，消除 putIfAbsent 导致的状态覆盖时序问题。
         SubLevel sl = Sable.HELPER.getContaining(this);
@@ -1064,7 +1071,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
 
         // 匀速转向：每 tick 最多转动 STEERING_SPEED 度
         double yawDiff = target - this.chasingYaw;
-        double maxStep = Math.toRadians(STEERING_SPEED);
+        double maxStep = STEERING_SPEED_RAD;
         if (Math.abs(yawDiff) <= maxStep) {
             this.chasingYaw = target;
         } else {
@@ -1096,7 +1103,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         if (sl == null || this.lifted) {
             // 悬空时：仅主动 RPM 驱动旋转
             // 取负以匹配渲染器的符号约定（renderer 使用 -angle，正 RPM 应产生正向视觉旋转）
-            double rpmAV = -visualRpm * Math.PI * 2.0 / 60.0 / 20.0;
+            double rpmAV = -visualRpm * RPM_TO_RAD_PER_TICK;
             this.angVel = rpmAV;
             this.lastAngle = this.angle;
             this.angle += this.angVel;
@@ -1108,13 +1115,13 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         Vector3dc fwdD = rotPerp(f.getAxis());
 
         double trans = lv.dot(fwdD);
-        double circ = Math.PI * rad * 2.0;
+        double circ = TWO_PI * rad;
         // 被动摩擦滚动产生的角增量（地面相对速度 / 周长 × 2π）
-        double frictionDelta = -trans / circ * Math.PI * 2.0;
+        double frictionDelta = -trans / circ * TWO_PI;
 
         // 主动 RPM 产生的角增量（从动力系统读取）
         // 取负以匹配渲染器的符号约定（renderer 使用 -angle，正 RPM 应产生正向视觉旋转）
-        double rpmDelta = -visualRpm * Math.PI * 2.0 / 60.0 / 20.0;
+        double rpmDelta = -visualRpm * RPM_TO_RAD_PER_TICK;
 
         // 视觉轮子旋转：
         //   - 刹车时：轮子锁死，不旋转（combinedDelta=0），车辆靠滑动摩擦减速
@@ -1235,8 +1242,10 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     /**
-     * 在当前 SubLevel 中查找驾驶舱的 BlockEntity。 遍历 SubLevel 的所有已加载 chunk，寻找
-     * CockpitBlock。
+     * 在当前 SubLevel 中查找驾驶舱的 BlockEntity。
+     * <p>
+     * 优先使用 {@link ComponentRegistry} 的 O(1) 查询，仅当注册表为空时
+     * 回退到 SubLevel 全量扫描（并利用扫描结果回填注册表）。
      */
     @Nullable
     private CockpitBlockEntity findCockpitInSubLevel(SubLevel sl) {
@@ -1249,13 +1258,28 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             this.cachedCockpit = null;
         }
 
+        // ═══ 优先使用 ComponentRegistry O(1) 查询 ═══
+        UUID subUUID = sl.getUniqueId();
+        var cockpitEntries = com.hainabaichuan75.iac_p.affiliation.ComponentRegistry.getComponents(
+                subUUID, com.hainabaichuan75.iac_p.affiliation.ComponentRole.COCKPIT);
+        if (!cockpitEntries.isEmpty()) {
+            var first = cockpitEntries.get(0);
+            if (first.blockEntity() instanceof CockpitBlockEntity cockpit && !cockpit.isRemoved()) {
+                this.cachedCockpit = cockpit;
+                return cockpit;
+            }
+        }
+
+        // ═══ 降级：全量 SubLevel 扫描 ═══
         SubLevelScanner.forEachBlock(sl, level, (worldPos, state, be) -> {
             if (this.cachedCockpit != null) {
                 return; // 已找到，跳过
-
             }
             if (state.getBlock() instanceof CockpitBlock && be instanceof CockpitBlockEntity cockpit) {
                 this.cachedCockpit = cockpit;
+                // 回填注册表：确保下次查询走 O(1) 路径
+                com.hainabaichuan75.iac_p.affiliation.ComponentHost.registerComponent(
+                        cockpit, com.hainabaichuan75.iac_p.affiliation.ComponentRole.COCKPIT);
             }
         });
 
