@@ -230,7 +230,8 @@ public class PlayerMountTracker {
      */
     private static final Set<Block> GROUP_GENERAL = Set.of(
             ModBlocks.COCKPIT.get(),
-            ModBlocks.COCKPIT_UPPER.get()
+            ModBlocks.COCKPIT_UPPER.get(),
+            ModBlocks.BASE_CABIN.get()
     );
     private static final Set<Block> GROUP_CORE_0 = Set.of(
             ModBlocks.SEAT.get()
@@ -257,7 +258,8 @@ public class PlayerMountTracker {
     private static final Set<Block> CORE_LOWER_HALVES = Set.of(
             ModBlocks.COCKPIT.get(),
             ModBlocks.SEAT.get(),
-            ModBlocks.COCKPIT_LIGHT_LINEAR_0.get()
+            ModBlocks.COCKPIT_LIGHT_LINEAR_0.get(),
+            ModBlocks.BASE_CABIN.get()
     );
 
     /**

@@ -13,6 +13,9 @@ public class ModItems {
     // === 旧核心 ===
     public static final DeferredItem<BlockItem> SEAT = ITEMS.registerSimpleBlockItem(ModBlocks.SEAT);
 
+    // === 基础座舱（GeckoLib 单格驾驶舱） ===
+    public static final DeferredItem<BlockItem> BASE_CABIN = ITEMS.registerSimpleBlockItem(ModBlocks.BASE_CABIN);
+
     // === 通用驾驶舱（仅下格有物品，上格无物品） ===
     /**
      * 驾驶舱物品：放置后生成下格 + 上格的双方块结构

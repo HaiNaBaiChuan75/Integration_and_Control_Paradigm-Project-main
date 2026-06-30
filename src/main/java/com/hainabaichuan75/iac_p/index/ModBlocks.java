@@ -1,6 +1,7 @@
 package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitUpperBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
@@ -30,6 +31,14 @@ public class ModBlocks {
             SeatBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(0.5f)
+                    .noOcclusion());
+
+    // === 基础座舱（GeckoLib 单格驾驶舱） ===
+    public static final DeferredBlock<BaseCabinBlock> BASE_CABIN = BLOCKS.registerBlock("base_cabin",
+            BaseCabinBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0f, 3.0f)
+                    .sound(SoundType.METAL)
                     .noOcclusion());
 
     // === 通用驾驶舱（多方块结构，下格 + 上格） ===

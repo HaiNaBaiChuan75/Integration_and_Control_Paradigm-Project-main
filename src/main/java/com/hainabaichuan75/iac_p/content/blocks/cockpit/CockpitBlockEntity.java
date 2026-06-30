@@ -19,6 +19,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -139,6 +140,14 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     // ── 换挡状态 ──
     public CockpitBlockEntity(BlockPos pos, BlockState state) {
         super(ModCockpitBlockEntityTypes.COCKPIT.get(), pos, state);
+    }
+
+    /**
+     * 供子类使用的保护构造器（如 {@link com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockEntity}），
+     * 允许使用不同的 BlockEntityType。
+     */
+    protected CockpitBlockEntity(BlockEntityType<? extends CockpitBlockEntity> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
     }
 
     @Override

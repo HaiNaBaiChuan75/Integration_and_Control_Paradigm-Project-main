@@ -21,6 +21,7 @@ public class ModCreativeModeTabs {
             .title(Component.translatable("itemGroup.iac_p"))
             .displayItems((parameters, output) -> {
 
+                output.accept(ModBlocks.BASE_CABIN.asItem());
                 output.accept(ModBlocks.COCKPIT.asItem());
                 output.accept(ModBlocks.COCKPIT_LIGHT_LINEAR_0.asItem());
                 output.accept(ModBlocks.SHOTGUN_BASE.asItem());
