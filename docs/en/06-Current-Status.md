@@ -1,6 +1,6 @@
 # Current Status & Roadmap
 
-> Last updated: 2026-06-27 (Arcade Mode Powertrain simplification)
+> Last updated: 2026-06-30 (WG branch porting + Physics Assembler)
 
 ## ✅ Completed Features
 
@@ -10,6 +10,8 @@ All features across all subsystems are completed. See [Feature Overview](02-Feat
 - **06-17**: Arcade mode powertrain — throttle-direct RPM, Binary Grip, pure-ratio transmission. Removed: friction circle, load transfer, brush tire, quadratic drag, clutch state machine.
 - **06-19**: Multiplayer fixes — player hiding, sound broadcasting, particle sync, chunk-watch crack resend.
 - **06-27**: Engine simplification — removed torque curve, mass-adaptive torque, load factor. Torque is now throttle-linear only.
+- **06-30**: WG branch porting — BaseCabinBlock (GeckoLib single-block cockpit), Shotgun turret system.
+- **06-30**: Physics Assembler — Ctrl+Right Click to assemble (BFS → SubLevel) or disassemble (PD servo alignment → safety check → tick-based placement).
 
 ## ⚠️ Active Issues
 
@@ -22,6 +24,9 @@ All features across all subsystems are completed. See [Feature Overview](02-Feat
 | Tire types not differentiated | Medium | 4 tire types share same physics properties |
 | Player hiding incomplete | Medium | Some scenarios where mounted player is still visible |
 | Engine rpm thread safety | Low | Dual-read/write without sync (no observed issues) |
+| PhysicsAssembler no affiliation registration | Low | Assembled SubLevel not registered in AffiliationRegistry → self-damage not excluded |
+| PhysicsAssembler no player feedback | Low | No chat message on assemble/disassemble success/failure |
+| PhysicsAssembler multiplayer untested | Medium | BFS + PD servo alignment behavior under >1 player not verified |
 
 ## ✅ Recently Resolved
 
@@ -33,6 +38,9 @@ All features across all subsystems are completed. See [Feature Overview](02-Feat
 | Other players visible on vehicle | setInvisible + RenderPlayerEvent.Pre + RenderNameTagEvent |
 | Sound not heard by other players | Server-side level.playSound() broadcast |
 | Adaptive camera height jitter | Use renderPos.y() instead of bbox.maxY() |
+| Disassembly flicker re-assemble | Player cooldown (PLAYER_COOLDOWNS, 20 ticks) |
+| Right Alt key Ctrl detection | Check both LEFT_ALT and RIGHT_ALT |
+| Gear shift Q/E not working | Fixed rising edge detection in ClientEvents |
 
 ## 📋 Roadmap
 
@@ -73,4 +81,4 @@ All features across all subsystems are completed. See [Feature Overview](02-Feat
 
 **Asset strategy** — Don't make official FX/sound/texture packs. Build an import framework and let the community contribute.
 
-See `《中控载具工坊：范式》管理文档4.0/5-技术参考/5.4-设计哲学与路线图/` (Chinese) for the full design philosophy.
+See `《中控载具工坊：范式》管理文档3.0/5-技术参考/5.4-设计哲学与路线图/` (Chinese) for the full design philosophy.

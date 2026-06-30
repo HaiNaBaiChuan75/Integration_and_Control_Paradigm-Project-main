@@ -13,6 +13,9 @@ public class ModItems {
     // === 旧核心 ===
     public static final DeferredItem<BlockItem> SEAT = ITEMS.registerSimpleBlockItem(ModBlocks.SEAT);
 
+    // === 基础座舱（GeckoLib 单格驾驶舱） ===
+    public static final DeferredItem<BlockItem> BASE_CABIN = ITEMS.registerSimpleBlockItem(ModBlocks.BASE_CABIN);
+
     // === 通用驾驶舱（仅下格有物品，上格无物品） ===
     /**
      * 驾驶舱物品：放置后生成下格 + 上格的双方块结构
@@ -25,6 +28,7 @@ public class ModItems {
 
     // === 霰弹枪底座方块 ===
     public static final DeferredItem<BlockItem> SHOTGUN_BASE = ITEMS.registerSimpleBlockItem(ModBlocks.SHOTGUN_BASE);
+    public static final DeferredItem<BlockItem> SHOTGUN_TURRET = ITEMS.registerSimpleBlockItem(ModBlocks.SHOTGUN_TURRET);
 
     // === 机枪底座方块 ===
     public static final DeferredItem<BlockItem> MACHINE_GUN_BASE = ITEMS.registerSimpleBlockItem(ModBlocks.MACHINE_GUN_BASE);

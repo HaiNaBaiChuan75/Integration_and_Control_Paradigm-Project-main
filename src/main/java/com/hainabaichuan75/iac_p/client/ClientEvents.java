@@ -4,6 +4,7 @@ import com.hainabaichuan75.iac_p.client.screen.GrindstoneConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.StructureInfoScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleKeyConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleOrientationScreen;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
@@ -15,6 +16,7 @@ import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.DebugGearToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.DebugSwivelToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.GearShiftC2SPacket;
+import com.hainabaichuan75.iac_p.network.packets.PhysicsAssembleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.SeatMountC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.MachineGunTargetC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleControlC2SPacket;
@@ -133,6 +135,11 @@ public class ClientEvents {
      * 持续射线检测冷却（每 2 tick 执行一次以降低性能开销）
      */
     private static int raycastCooldown = 0;
+
+    /**
+     * Ctrl+右键 物理装配上升沿检测
+     */
+    private static boolean ctrlRightClickWasDown = false;
 
     /**
      * 返回挂载/卸载键位映射，用于注册。
@@ -271,7 +278,8 @@ public class ClientEvents {
 
             BlockPos hitPos = hitResult.getBlockPos();
             BlockState hitState = mc.level.getBlockState(hitPos);
-            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block)) {
+            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block
+                    || hitState.getBlock() instanceof BaseCabinBlock)) {
                 return false;
             }
 
@@ -346,7 +354,8 @@ public class ClientEvents {
 
             BlockPos hitPos = hitResult.getBlockPos();
             BlockState hitState = mc.level.getBlockState(hitPos);
-            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block)) {
+            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block
+                    || hitState.getBlock() instanceof BaseCabinBlock)) {
                 return false;
             }
 
@@ -528,20 +537,20 @@ public class ClientEvents {
             // ===== 衰减弹道渲染计数 =====
             WeaponOverlay.tickFireTrail();
 
-            // ===== 换挡操作（PageUp 升档 / PageDown 降档） =====
+            // ===== 换挡操作（Q 升档 / E 降档） =====
             {
                 long window = mc.getWindow().getWindow();
-                boolean pgUp = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_PAGE_UP);
-                boolean pgDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_PAGE_DOWN);
+                boolean gearUp = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_Q);
+                boolean gearDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_E);
 
-                if (pgUp && !gearUpKeyWasDown) {
+                if (gearUp && !gearUpKeyWasDown) {
                     ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.UP));
                 }
-                if (pgDown && !gearDownKeyWasDown) {
+                if (gearDown && !gearDownKeyWasDown) {
                     ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.DOWN));
                 }
-                gearUpKeyWasDown = pgUp;
-                gearDownKeyWasDown = pgDown;
+                gearUpKeyWasDown = gearUp;
+                gearDownKeyWasDown = gearDown;
             }
 
         } else {
@@ -550,6 +559,22 @@ public class ClientEvents {
                 // 重置换挡按键状态
                 gearUpKeyWasDown = false;
                 gearDownKeyWasDown = false;
+
+                // ===== Ctrl+右键 → 物理装配/拆解 =====
+                {
+                    long window = mc.getWindow().getWindow();
+                    boolean ctrlDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
+                            || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+                    boolean rightClick = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
+                    boolean ctrlRightClick = ctrlDown && rightClick;
+
+                    if (ctrlRightClick && !ctrlRightClickWasDown) {
+                        // 发送装配信号到服务端，服务端做完整的 SubLevel 感知射线检测
+                        ModNetworking.sendToServer(new PhysicsAssembleC2SPacket());
+                        IACP.LOGGER.info("[ClientEvents] Ctrl+右键 → 发送装配信号");
+                    }
+                    ctrlRightClickWasDown = ctrlRightClick;
+                }
             }
         }
     }
@@ -567,6 +592,31 @@ public class ClientEvents {
     static boolean debugThrottleUp = false;
     /** 最近检测到的 ↓ 键状态（供覆盖层读取） */
     static boolean debugThrottleDown = false;
+    // ==================================================================
+    //  发送节流缓存：仅在按键状态变化时发包，减少网络开销
+    // ==================================================================
+    /**
+     * 上次发送的油门方向（初值取不可能值确保首次强制发送）。
+     */
+    private static int lastSentThrottleDir = Integer.MAX_VALUE;
+
+    /**
+     * 上次发送的悬挂输入条目序列化摘要。每个条目 5 个布尔打包为一个 byte。
+     * 初值为空数组，首次运行时自动触发发送。
+     */
+    private static byte[] lastSentEntriesDigest = new byte[0];
+
+    /**
+     * 自上次发送以来的 tick 计数。超过 MAX_SILENT_TICKS 时强制发送一次心跳包，
+     * 防止服务端因丢包卡死。
+     */
+    private static int ticksSinceLastSend = 0;
+
+    /**
+     * 最大静默 tick 数。超过此值未发送任何包时强制发送心跳。
+     * 10 ticks = 0.5 秒，在节省带宽和响应及时之间取得平衡。
+     */
+    private static final int MAX_SILENT_TICKS = 10;
 
     private static void sendVehicleControlInput(Minecraft mc) {
         long window = mc.getWindow().getWindow();
@@ -604,8 +654,50 @@ public class ClientEvents {
             }
         }
 
-        // 每次发送最新状态（2 tick 冷却由调用者控制）
-        ModNetworking.sendToServer(new VehicleControlC2SPacket(entries, throttleDirection));
+        // ── 发送节流：仅在状态变化或心跳到期时发送 ──
+        // 检测状态是否变化
+        boolean changed = false;
+
+        // 1) 油门方向变化？
+        if (throttleDirection != lastSentThrottleDir) {
+            changed = true;
+        }
+
+        // 2) 条目数量变化？
+        if (!changed && entries.size() != lastSentEntriesDigest.length) {
+            changed = true;
+        }
+
+        // 3) 条目内容变化？
+        if (!changed) {
+            for (int i = 0; i < entries.size(); i++) {
+                var e = entries.get(i);
+                byte dig = (byte)((e.forward() ? 1 : 0) | (e.backward() ? 2 : 0)
+                        | (e.left() ? 4 : 0) | (e.right() ? 8 : 0) | (e.brake() ? 16 : 0));
+                if (dig != lastSentEntriesDigest[i]) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        // 4) 心跳：连续无发送超过 MAX_SILENT_TICKS 次调用时强制发
+        ticksSinceLastSend++;
+        boolean heartbeat = ticksSinceLastSend >= MAX_SILENT_TICKS;
+
+        if (changed || heartbeat) {
+            // 更新缓存
+            lastSentThrottleDir = throttleDirection;
+            lastSentEntriesDigest = new byte[entries.size()];
+            for (int i = 0; i < entries.size(); i++) {
+                var e = entries.get(i);
+                lastSentEntriesDigest[i] = (byte)((e.forward() ? 1 : 0) | (e.backward() ? 2 : 0)
+                        | (e.left() ? 4 : 0) | (e.right() ? 8 : 0) | (e.brake() ? 16 : 0));
+            }
+            ticksSinceLastSend = 0;
+
+            ModNetworking.sendToServer(new VehicleControlC2SPacket(entries, throttleDirection));
+        }
     }
 
     /** 检查命名按键（如 "key.keyboard.w"）是否被按下。 */

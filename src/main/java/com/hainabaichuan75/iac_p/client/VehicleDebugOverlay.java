@@ -38,9 +38,10 @@ import java.util.List;
 public class VehicleDebugOverlay {
 
     /**
-     * 数据刷新间隔（tick）—— 每 tick 采集，从缓存读取，不再需要等 3 tick 的批处理间隔
+     * 数据刷新间隔（tick）。降低频率以减少 SubLevel chunk 扫描开销。
+     * 缓存数据（发动机 RPM/车速等）由服务端推送独立更新，不受此间隔影响。
      */
-    private static final int UPDATE_INTERVAL = 1;
+    private static final int UPDATE_INTERVAL = 5;
     private static int updateCooldown = 0;
 
     // ===== 缓存数据 =====

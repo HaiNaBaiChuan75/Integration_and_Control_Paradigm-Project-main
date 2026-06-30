@@ -1,5 +1,6 @@
 package com.hainabaichuan75.iac_p.index;
 
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.IACP;
 import net.minecraft.core.registries.Registries;
@@ -21,5 +22,12 @@ public class ModCockpitBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             CockpitBlockEntity::new,
                             ModBlocks.COCKPIT.get()
+                    ).build(null));
+
+    public static final Supplier<BlockEntityType<BaseCabinBlockEntity>> BASE_CABIN =
+            BLOCK_ENTITY_TYPES.register("base_cabin",
+                    () -> BlockEntityType.Builder.of(
+                            BaseCabinBlockEntity::new,
+                            ModBlocks.BASE_CABIN.get()
                     ).build(null));
 }

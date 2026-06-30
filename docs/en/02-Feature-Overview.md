@@ -1,6 +1,6 @@
 # Feature Overview
 
-> Complete list of all features organized by subsystem.
+> Complete list of all features organized by subsystem. This is an English summary; see `《中控载具工坊：范式》管理文档3.0/2-功能清单/2.1-功能总表.md` for the full Chinese reference.
 
 ## 1. Mounting System (3C Control: Cockpit, Camera, Control)
 
@@ -15,6 +15,7 @@
 | 7 | Adaptive Camera | ✅ | Auto-adjust distance & height based on vehicle bounds |
 | 8 | Safe Dismount | ✅ | F-key/disconnect/death/teleport — all handled |
 | 9 | Player Hiding | ✅ | Complete player model/particle hiding while mounted |
+| 101 | Base Cabin Block | ✅ | GeckoLib ENTITYBLOCK_ANIMATED single-block cockpit, ComponentHost (COCKPIT role) |
 
 ### Comparison: SuspensionTestBlock vs Offroad WheelMountBlock
 
@@ -80,6 +81,8 @@
 | 49 | CockpitLight | ✅ | 2×2 compact cockpit structure, ComponentHost without shift/skill systems |
 | 50 | Hold-to-Fire | ✅ | Left mouse down, 3-tick cooldown |
 | 51 | Bypass Immunity Frames | ✅ | `entity.invulnerableTime = 0` before hurt |
+| 54 | Shotgun Base | ✅ | Shotgun base block + BE, ComponentHost (MACHINE_GUN_BASE) |
+| 55 | Shotgun Turret | ✅ | GeckoLib ENTITYBLOCK_ANIMATED shotgun turret, ComponentHost (TURRET_TEST), driveImmediate() |
 
 ## 5. Debugging & Monitoring
 
@@ -110,6 +113,10 @@
 |---|---------|--------|-------------|
 | 65 | SubLevel Chunk Scan | ✅ | Using `plot.getLoadedChunks()` for internal block access |
 | 66 | Build Dependency Extraction | ✅ | Auto-extract nested JARs from Create/Simulated |
+| 102 | SubLevelUtil | ✅ | getSubLevelAt() ChunkPos quick-lookup, collectBlocks() block gathering |
+| 103 | AssemblyUtil | ✅ | assemble() BFS → SubLevel, disassembleSubLevel() back to world |
+| 104 | Physics Assembler | ✅ | Ctrl+Right Click → ray-trace cockpit → BFS assembly; hit SubLevel → PD servo alignment → safety check → disassemble. 20-tick player cooldown |
+| 107 | AxisRenderSystem | 🟡 | Stub for future WG Part/System integration |
 
 ## Design Philosophy
 

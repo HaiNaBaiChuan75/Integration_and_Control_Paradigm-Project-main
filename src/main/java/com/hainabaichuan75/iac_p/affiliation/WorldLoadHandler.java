@@ -32,6 +32,7 @@ public final class WorldLoadHandler {
             PartDamageCache.onWorldLoad(level);
         }
         WeaponOverlay.onWorldLoad();
+        DeferredRegistration.clearAll();
         IACP.LOGGER.info("[WorldLoadHandler] 世界加载，已清空所有运行时缓存");
     }
 }

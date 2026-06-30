@@ -1,6 +1,7 @@
 package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitUpperBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
@@ -11,6 +12,7 @@ import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlock;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
@@ -30,6 +32,14 @@ public class ModBlocks {
             SeatBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(0.5f)
+                    .noOcclusion());
+
+    // === 基础座舱（GeckoLib 单格驾驶舱） ===
+    public static final DeferredBlock<BaseCabinBlock> BASE_CABIN = BLOCKS.registerBlock("base_cabin",
+            BaseCabinBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(3.0f, 3.0f)
+                    .sound(SoundType.METAL)
                     .noOcclusion());
 
     // === 通用驾驶舱（多方块结构，下格 + 上格） ===
@@ -125,6 +135,14 @@ public class ModBlocks {
                     .sound(SoundType.WOOL)
                     .noOcclusion()
                     .isRedstoneConductor((s, l, p) -> false));
+
+    // === 霰弹枪炮塔（GeckoLib 单方块架构） ===
+    public static final DeferredBlock<ShotGunBlock> SHOTGUN_TURRET = BLOCKS.registerBlock("shotgun_turret",
+            ShotGunBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(2.0f, 3.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
 
     // === 机枪底座方块 ===
     public static final DeferredBlock<MachineGunBaseBlock> MACHINE_GUN_BASE = BLOCKS.registerBlock("machine_gun_base",

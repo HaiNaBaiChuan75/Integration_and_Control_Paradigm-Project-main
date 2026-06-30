@@ -103,26 +103,6 @@ public final class SuspensionConstants {
      */
     public static final double NO_WHEEL_EXT = 0.5;
 
-    // ---- 降级回退参数 ----
-    /**
-     * 无驾驶舱时的回退驱动 RPM。
-     */
-    public static final double FALLBACK_DRIVE_RPM = 400.0;
-    /**
-     * 无驾驶舱时的回退驱动扭矩。
-     */
-    public static final double FALLBACK_DRIVE_TORQUE = 80.0;
-
-    // ---- 横移参数（NS 朝向轮，Q/E 控制） ----
-    /**
-     * 横移轮目标 RPM（与变速箱解耦的独立值）。
-     */
-    public static final double STRAFE_RPM = 150.0;
-    /**
-     * 横移轮单轮可用扭矩（Nm），横移不需要大扭矩。
-     */
-    public static final double STRAFE_TORQUE = 8.0;
-
     // ---- 轮胎与地面摩擦 ----
     /**
      * 轮胎摩擦系数。最终摩擦力 = TIRE_FRICTION_COEFFICIENT × 地面摩擦系数 × 法向冲量 2026-06-26: 0.9
@@ -144,20 +124,9 @@ public final class SuspensionConstants {
 
     // ---- 侧偏参数 ----
     /**
-     * 侧偏刚度系数（Brush 轮胎模型）。06-08 从 10 改为 20。
-     */
-    public static final double CORNERING_STIFFNESS = 20.0;
-
-    /**
      * 侧滑阻尼系数（仅极低速时使用）。6.0 × 0.05 = 每 tick 衰减 30%。
      */
     public static final double SIDE_SLIP_DAMPING = 6.0;
-
-    // ---- 二次方速度阻尼 ----
-    /**
-     * 二次方速度阻尼系数（每轮）。06-08 标定到 0.0045 使极速 ≈120 km/h。
-     */
-    public static final double DRAG_COEFFICIENT = 0.0045;
 
     // ---- 转向参数 ----
     /**
@@ -184,18 +153,6 @@ public final class SuspensionConstants {
     public static final double DIFFERENTIAL_RATIO = 0.37;
 
     // ---- 载荷转移参数 ----
-    /**
-     * 载荷转移灵敏度：每 g 加速度转移的载荷比例。
-     */
-    public static final double LOAD_TRANSFER_SENSITIVITY = 0.3;
-    /**
-     * 估算重心高度（格）。
-     */
-    public static final double COG_HEIGHT = 0.8;
-    /**
-     * 估算半轴距（格）。
-     */
-    public static final double HALF_WHEELBASE = 1.5;
     /**
      * 估算半轮距（格）。
      */
@@ -242,8 +199,34 @@ public final class SuspensionConstants {
     public static final String DEFAULT_KEY_RIGHT = "key.keyboard.d";
     public static final String DEFAULT_KEY_BRAKE = "key.keyboard.space";
 
-    // ====================================================================
-    //  渲染器访问器（供 SuspensionTestRenderer 使用）
+    // ====================================================================    //  预计算常量（避免 hot path 重复运行时转换）
+    // ==================================================================
+    /**
+     * MAX_STEERING_ANGLE 的弧度值。预计算避免每 tick 重复 Math.toRadians()。
+     */
+    public static final double MAX_STEERING_ANGLE_RAD = Math.toRadians(MAX_STEERING_ANGLE);
+    /**
+     * -MAX_STEERING_ANGLE 的弧度值。
+     */
+    public static final double MINUS_MAX_STEERING_ANGLE_RAD = Math.toRadians(-MAX_STEERING_ANGLE);
+    /**
+     * STEERING_SPEED 的弧度值。预计算避免每 tick 重复 Math.toRadians()。
+     */
+    public static final double STEERING_SPEED_RAD = Math.toRadians(STEERING_SPEED);
+    /**
+     * 2π（预计算避免重复 Math.PI * 2.0）。
+     */
+    public static final double TWO_PI = Math.PI * 2.0;
+    /**
+     * RPM → rad/s 转换因子：2π / 60。
+     */
+    public static final double RPM_TO_RAD_PER_S = Math.PI * 2.0 / 60.0;
+    /**
+     * RPM → rad/tick 转换因子：2π / 60 / 20（1 tick = 1/20 秒）。
+     */
+    public static final double RPM_TO_RAD_PER_TICK = Math.PI * 2.0 / 60.0 / 20.0;
+
+    // ==================================================================    //  渲染器访问器（供 SuspensionTestRenderer 使用）
     // ====================================================================
     // 弹簧
     public static double springBlockX() {
