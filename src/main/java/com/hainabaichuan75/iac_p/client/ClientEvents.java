@@ -4,6 +4,7 @@ import com.hainabaichuan75.iac_p.client.screen.GrindstoneConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.StructureInfoScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleKeyConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleOrientationScreen;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
@@ -15,6 +16,7 @@ import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.DebugGearToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.DebugSwivelToggleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.GearShiftC2SPacket;
+import com.hainabaichuan75.iac_p.network.packets.PhysicsAssembleC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.SeatMountC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.MachineGunTargetC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleControlC2SPacket;
@@ -133,6 +135,11 @@ public class ClientEvents {
      * 持续射线检测冷却（每 2 tick 执行一次以降低性能开销）
      */
     private static int raycastCooldown = 0;
+
+    /**
+     * Ctrl+右键 物理装配上升沿检测
+     */
+    private static boolean ctrlRightClickWasDown = false;
 
     /**
      * 返回挂载/卸载键位映射，用于注册。
@@ -271,7 +278,8 @@ public class ClientEvents {
 
             BlockPos hitPos = hitResult.getBlockPos();
             BlockState hitState = mc.level.getBlockState(hitPos);
-            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block)) {
+            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block
+                    || hitState.getBlock() instanceof BaseCabinBlock)) {
                 return false;
             }
 
@@ -346,7 +354,8 @@ public class ClientEvents {
 
             BlockPos hitPos = hitResult.getBlockPos();
             BlockState hitState = mc.level.getBlockState(hitPos);
-            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block)) {
+            if (!(hitState.getBlock() instanceof CockpitBlock || hitState.getBlock() instanceof CockpitLightLinear0Block
+                    || hitState.getBlock() instanceof BaseCabinBlock)) {
                 return false;
             }
 
@@ -528,20 +537,20 @@ public class ClientEvents {
             // ===== 衰减弹道渲染计数 =====
             WeaponOverlay.tickFireTrail();
 
-            // ===== 换挡操作（PageUp 升档 / PageDown 降档） =====
+            // ===== 换挡操作（Q 升档 / E 降档） =====
             {
                 long window = mc.getWindow().getWindow();
-                boolean pgUp = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_PAGE_UP);
-                boolean pgDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_PAGE_DOWN);
+                boolean gearUp = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_Q);
+                boolean gearDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_E);
 
-                if (pgUp && !gearUpKeyWasDown) {
+                if (gearUp && !gearUpKeyWasDown) {
                     ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.UP));
                 }
-                if (pgDown && !gearDownKeyWasDown) {
+                if (gearDown && !gearDownKeyWasDown) {
                     ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.DOWN));
                 }
-                gearUpKeyWasDown = pgUp;
-                gearDownKeyWasDown = pgDown;
+                gearUpKeyWasDown = gearUp;
+                gearDownKeyWasDown = gearDown;
             }
 
         } else {
@@ -550,6 +559,22 @@ public class ClientEvents {
                 // 重置换挡按键状态
                 gearUpKeyWasDown = false;
                 gearDownKeyWasDown = false;
+
+                // ===== Ctrl+右键 → 物理装配/拆解 =====
+                {
+                    long window = mc.getWindow().getWindow();
+                    boolean ctrlDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
+                            || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+                    boolean rightClick = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
+                    boolean ctrlRightClick = ctrlDown && rightClick;
+
+                    if (ctrlRightClick && !ctrlRightClickWasDown) {
+                        // 发送装配信号到服务端，服务端做完整的 SubLevel 感知射线检测
+                        ModNetworking.sendToServer(new PhysicsAssembleC2SPacket());
+                        IACP.LOGGER.info("[ClientEvents] Ctrl+右键 → 发送装配信号");
+                    }
+                    ctrlRightClickWasDown = ctrlRightClick;
+                }
             }
         }
     }

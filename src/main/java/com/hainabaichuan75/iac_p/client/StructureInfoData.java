@@ -2,6 +2,7 @@ package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
@@ -95,7 +96,8 @@ public record StructureInfoData(
             typeCountMap.merge(registryName, 1, Integer::sum);
 
             // 检测驾驶舱
-            if (!foundCockpit[0] && (block instanceof CockpitBlock || block instanceof CockpitLightLinear0Block)) {
+            if (!foundCockpit[0] && (block instanceof CockpitBlock || block instanceof CockpitLightLinear0Block
+                    || block instanceof BaseCabinBlock)) {
                 foundCockpit[0] = true;
             }
         });

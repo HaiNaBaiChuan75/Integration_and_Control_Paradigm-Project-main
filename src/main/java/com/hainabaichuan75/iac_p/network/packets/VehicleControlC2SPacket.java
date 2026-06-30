@@ -1,7 +1,6 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
@@ -147,7 +146,7 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
         CockpitBlockEntity[] result = {null};
         SubLevelScanner.forEachBlock(subLevel, level, (worldPos, state, be) -> {
             if (result[0] != null) return;
-            if (state.getBlock() instanceof CockpitBlock && be instanceof CockpitBlockEntity cockpit) {
+            if (be instanceof CockpitBlockEntity cockpit) {
                 result[0] = cockpit;
             }
         });

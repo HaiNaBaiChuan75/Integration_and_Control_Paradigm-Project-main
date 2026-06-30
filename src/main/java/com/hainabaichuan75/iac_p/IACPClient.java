@@ -10,6 +10,7 @@ import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlockRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestRenderer;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
@@ -69,5 +70,9 @@ public class IACPClient {
         // GeckoLib 基础座舱（静态骨骼模型）
         event.registerBlockEntityRenderer(ModCockpitBlockEntityTypes.BASE_CABIN.get(),
                 BaseCabinBlockRenderer::new);
+
+        // GeckoLib 霰弹枪炮塔
+        event.registerBlockEntityRenderer(ModBlockEntityTypes.SHOTGUN_TURRET.get(),
+                ShotGunBlockRenderer::new);
     }
 }

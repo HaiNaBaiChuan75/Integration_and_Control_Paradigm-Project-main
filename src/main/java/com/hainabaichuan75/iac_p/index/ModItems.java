@@ -28,6 +28,7 @@ public class ModItems {
 
     // === 霰弹枪底座方块 ===
     public static final DeferredItem<BlockItem> SHOTGUN_BASE = ITEMS.registerSimpleBlockItem(ModBlocks.SHOTGUN_BASE);
+    public static final DeferredItem<BlockItem> SHOTGUN_TURRET = ITEMS.registerSimpleBlockItem(ModBlocks.SHOTGUN_TURRET);
 
     // === 机枪底座方块 ===
     public static final DeferredItem<BlockItem> MACHINE_GUN_BASE = ITEMS.registerSimpleBlockItem(ModBlocks.MACHINE_GUN_BASE);

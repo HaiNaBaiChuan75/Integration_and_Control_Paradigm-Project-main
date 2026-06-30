@@ -1,7 +1,7 @@
 # CLAUDE.md
-(update 2026/6/27)
+(update 2026/6/30)
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-Full project documentation: `《中控载具工坊：范式》管理文档4.0/` (Chinese, comprehensive).
+Full project documentation: `《中控载具工坊：范式》管理文档3.0/` (Chinese, comprehensive).
 Removed/simplified features (arcade mode): `2-功能清单/2.6-已移除功能.md`.
 
 ## Project Overview
@@ -64,6 +64,18 @@ All dependency versions are set in `gradle.properties`.
 - Rolling resistance, tire deflection, burst detection, pressure sensitivity
 - Uses Offroad's `TireLike` data component for tire properties
 
+**Physics Assembler (`PhysicsAssembleHandler`):**
+- Ctrl+Right Click to assemble/disassemble vehicle structures
+- Assembly: BFS flood fill (radius 16, max 30000 blocks) → `SubLevelAssemblyHelper.assembleBlocks()`
+- Disassembly: FreeConstraint PD servo alignment → safety checks (height, velocity, mid-air) → tick-based placement
+- 20-tick player cooldown to prevent re-assembly flicker
+- Server-side raycast using `SableBlockHelper.rayTraceSubLevels()` for SubLevel-aware detection
+
+**BaseCabin & Shotgun:**
+- `BaseCabinBlock`: GeckoLib ENTITYBLOCK_ANIMATED single-block cockpit, ComponentHost (COCKPIT role)
+- `ShotGunBlock`: GeckoLib ENTITYBLOCK_ANIMATED shotgun turret with base block
+- Both use `driveImmediate()` direct angle drive pattern
+
 **SubLevel Scanning (`SubLevelScanner`):**
 - Central utility for iterating all blocks within a SubLevel's loaded chunks
 - Eliminates repeated triple-nested loop boilerplate across the codebase
@@ -77,7 +89,7 @@ All dependency versions are set in `gradle.properties`.
 
 **Weapons System:**
 - Turret: `TurretTestBlock` — Crossout-style single-block turret using GeckoLib `ENTITYBLOCK_ANIMATED` with yaw/pitch bone rotation. No separate SubLevels, no physical constraints. Replaces the old 2-SubLevel grindstone+lightning-rod architecture (files deleted 06-27).
-- Machine Gun + Shotgun: Barrel-origin damage rays, multi-turret support, hold-to-fire, bypasses immunity frames. Bullet trail rendering on client.
+- Machine Gun + Shotgun (base + turret): Barrel-origin damage rays, multi-turret support, hold-to-fire, bypasses immunity frames. Bullet trail rendering on client. Shotgun uses GeckoLib ENTITYBLOCK_ANIMATED.
 - Aim controller uses immediate servo drive (packet handler → `driveImmediate()`) to eliminate one server tick of latency.
 
 **Client Systems:**
@@ -86,7 +98,7 @@ All dependency versions are set in `gradle.properties`.
 - `VehicleDebugOverlay`: F3-style HUD showing weight, RPM, torque, gear, speed, friction budget.
 
 **Networking (`ModNetworking`):**
-- NeoForge `PayloadRegistrar`-based custom packets. 14 packet types covering: mount, player input, gear shift, tire config, turret targeting, weapon fire, vehicle state sync, anchor config, smart map toggle.
+- NeoForge `PayloadRegistrar`-based custom packets. 17 packet types covering: mount, player input, gear shift, tire config, turret targeting, weapon fire, vehicle state sync, anchor config, smart map toggle, weapon sound, debug gear/swivel toggles, physics assemble.
 
 ### Config
 

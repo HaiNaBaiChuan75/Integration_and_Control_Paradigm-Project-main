@@ -12,6 +12,7 @@ import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlock;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
@@ -134,6 +135,14 @@ public class ModBlocks {
                     .sound(SoundType.WOOL)
                     .noOcclusion()
                     .isRedstoneConductor((s, l, p) -> false));
+
+    // === 霰弹枪炮塔（GeckoLib 单方块架构） ===
+    public static final DeferredBlock<ShotGunBlock> SHOTGUN_TURRET = BLOCKS.registerBlock("shotgun_turret",
+            ShotGunBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(2.0f, 3.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
 
     // === 机枪底座方块 ===
     public static final DeferredBlock<MachineGunBaseBlock> MACHINE_GUN_BASE = BLOCKS.registerBlock("machine_gun_base",

@@ -2,6 +2,7 @@ package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
@@ -46,6 +47,13 @@ public class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             ShotgunBaseBlockEntity::new,
                             ModBlocks.SHOTGUN_BASE.get()
+                    ).build(null));
+
+    public static final Supplier<BlockEntityType<ShotGunBlockEntity>> SHOTGUN_TURRET =
+            BLOCK_ENTITY_TYPES.register("shotgun_turret",
+                    () -> BlockEntityType.Builder.of(
+                            ShotGunBlockEntity::new,
+                            ModBlocks.SHOTGUN_TURRET.get()
                     ).build(null));
 
     // ===== 以下从旧独立注册类合并而来 =====

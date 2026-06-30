@@ -1,6 +1,5 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
@@ -116,11 +115,9 @@ public class GearShiftC2SPacket implements CustomPacketPayload {
                         BlockPos worldPos = new BlockPos(x + chunkMinX, y, z + chunkMinZ);
                         BlockState state = level.getBlockState(worldPos);
 
-                        if (state.getBlock() instanceof CockpitBlock) {
-                            BlockEntity be = level.getBlockEntity(worldPos);
-                            if (be instanceof CockpitBlockEntity cockpit) {
-                                return cockpit;
-                            }
+                        BlockEntity be = level.getBlockEntity(worldPos);
+                        if (be instanceof CockpitBlockEntity cockpit) {
+                            return cockpit;
                         }
                     }
                 }

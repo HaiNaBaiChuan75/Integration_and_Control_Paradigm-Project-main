@@ -10,7 +10,6 @@ package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
@@ -1275,7 +1274,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             if (this.cachedCockpit != null) {
                 return; // 已找到，跳过
             }
-            if (state.getBlock() instanceof CockpitBlock && be instanceof CockpitBlockEntity cockpit) {
+            if (be instanceof CockpitBlockEntity cockpit) {
                 this.cachedCockpit = cockpit;
                 // 回填注册表：确保下次查询走 O(1) 路径
                 com.hainabaichuan75.iac_p.affiliation.ComponentHost.registerComponent(

@@ -133,7 +133,7 @@ All dependency versions are managed in `gradle.properties`.
 | [Troubleshooting](docs/en/05-Troubleshooting.md) | Everyone |
 | [Current Status & Roadmap](docs/en/06-Current-Status.md) | Everyone |
 
-> **Chinese documentation (comprehensive)**: `《中控载具工坊：范式》管理文档4.0/` — the single source of truth. Includes complete feature list with status tracking, subsystem deep-dives, architecture & code index, current status with active/resolved/frozen issues, troubleshooting index (50+ entries), performance analysis, design philosophy, full development history, and developer guides. `《中控载具工坊：范式》管理文档3.0/` is an older version kept for reference.
+> **Chinese documentation (comprehensive)**: `《中控载具工坊：范式》管理文档3.0/` — the single source of truth. Includes complete feature list with status tracking, subsystem deep-dives, architecture & code index, current status with active/resolved/frozen issues, troubleshooting index (50+ entries), performance analysis, design philosophy, full development history, and developer guides.
 
 ---
 

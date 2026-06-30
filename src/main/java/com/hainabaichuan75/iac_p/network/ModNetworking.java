@@ -17,6 +17,7 @@ import com.hainabaichuan75.iac_p.network.packets.SmartMapC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleControlC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleStateS2CPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleKeyConfigC2SPacket;
+import com.hainabaichuan75.iac_p.network.packets.PhysicsAssembleC2SPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -112,6 +113,11 @@ public class ModNetworking {
                 VehicleStateS2CPacket.TYPE,
                 VehicleStateS2CPacket.STREAM_CODEC,
                 VehicleStateS2CPacket::handle
+        );
+        registrar.playToServer(
+                PhysicsAssembleC2SPacket.TYPE,
+                PhysicsAssembleC2SPacket.STREAM_CODEC,
+                PhysicsAssembleC2SPacket::handle
         );
 
     }

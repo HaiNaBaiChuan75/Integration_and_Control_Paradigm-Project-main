@@ -25,6 +25,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.COCKPIT.asItem());
                 output.accept(ModBlocks.COCKPIT_LIGHT_LINEAR_0.asItem());
                 output.accept(ModBlocks.SHOTGUN_BASE.asItem());
+                output.accept(ModBlocks.SHOTGUN_TURRET.asItem());
                 output.accept(ModBlocks.MACHINE_GUN_BASE.asItem());
                 output.accept(ModBlocks.SUSPENSION_TEST.asItem());
                 output.accept(ModBlocks.DEBUG_GEAR.asItem());
