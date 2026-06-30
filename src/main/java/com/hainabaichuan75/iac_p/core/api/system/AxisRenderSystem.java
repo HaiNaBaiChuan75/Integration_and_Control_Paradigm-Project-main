@@ -1,40 +1,12 @@
 package com.hainabaichuan75.iac_p.core.api.system;
 
-import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.core.system.VehicleClientSystem;
-import dev.ryanhcode.sable.companion.math.Pose3d;
-import dev.ryanhcode.sable.sublevel.ClientSubLevel;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.particles.DustParticleOptions;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
-import org.joml.Vector3f;
-
-import java.util.List;
-
-public class AxisRenderSystem implements VehicleClientSystem {
-    @Override
-    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
-        if (!Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
-            return;
-        }
-        Vector3f red = new Vector3f(1.0F, 0.0F, 0.0F);   // X - 红
-        Vector3f green = new Vector3f(0.0F, 1.0F, 0.0F); // Y - 绿
-        Vector3f blue = new Vector3f(0.0F, 0.0F, 1.0F);  // Z - 蓝
-        ClientLevel level = subLevel.getLevel();
-        for (PartBlockEntity part : parts) {
-            Pose3d pose = part.worldPose();
-            // 粒子效果
-            for (double i = 0; i <= 1.5; i += 0.1) {
-
-                Vector3d posX = pose.transformPosition(new Vector3d(i, 0, 0));
-                Vector3d posY = pose.transformPosition(new Vector3d(0, i, 0));
-                Vector3d posZ = pose.transformPosition(new Vector3d(0, 0, i));
-                level.addParticle(new DustParticleOptions(red, .5F), posX.x, posX.y, posX.z, 0, 0, 0);
-                level.addParticle(new DustParticleOptions(green, .5F), posY.x, posY.y, posY.z, 0, 0, 0);
-                level.addParticle(new DustParticleOptions(blue, .5F), posZ.x, posZ.y, posZ.z, 0, 0, 0);
-            }
-        }
-    }
+/**
+ * 轴渲染系统 —— 调试用，在 F3 调试界面开启时通过粒子显示 SubLevel 坐标轴。
+ * <p>
+ * 当前为桩实现，预留接口供未来独立集成。
+ * 完整功能依赖于 WG 分支的 Part/System 架构，待统一后启用。
+ */
+public class AxisRenderSystem {
+    // 当前为空实现。完整逻辑需要 WG 的 PartBlockEntity 和 VehicleClientSystem
+    // 体系支撑，待 ET 与 WG 架构统一后移植。
 }
