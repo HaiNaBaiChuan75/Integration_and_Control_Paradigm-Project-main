@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.content.blocks.cockpit;
+package com.hainabaichuan75.iac_p.block.cockpit;
 
 import com.hainabaichuan75.iac_p.index.ModBlocks;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;

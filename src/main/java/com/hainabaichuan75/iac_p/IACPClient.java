@@ -8,10 +8,10 @@ import com.hainabaichuan75.iac_p.client.WeaponOverlay;
 import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockRenderer;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestRenderer;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlockRenderer;
-import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestRenderer;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockRenderer;
+import com.hainabaichuan75.iac_p.block.turret.TurretTestRenderer;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 

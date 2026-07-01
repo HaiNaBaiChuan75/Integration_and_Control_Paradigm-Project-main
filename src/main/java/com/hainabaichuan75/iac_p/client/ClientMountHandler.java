@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.Sable;
 
@@ -16,7 +16,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -252,8 +251,8 @@ public class ClientMountHandler {
         activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
 
         SubLevelScanner.forEachBlock(subLevel, level, (worldPos, state, be) -> {
-            if (state.getBlock() instanceof com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock
-                    && be instanceof com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity cockpit) {
+            if (state.getBlock() instanceof com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock
+                    && be instanceof com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity cockpit) {
                 smartMappingActive = cockpit.isSmartMappingActive();
                 autoShiftEnabled = cockpit.isAutoShiftEnabled();
                 String skillId = cockpit.getActiveSkillId();

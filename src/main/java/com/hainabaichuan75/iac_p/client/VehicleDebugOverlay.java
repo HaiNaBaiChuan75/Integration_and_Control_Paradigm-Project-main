@@ -1,9 +1,9 @@
 package com.hainabaichuan75.iac_p.client;
 
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 
 import dev.ryanhcode.offroad.index.OffroadDataComponents;
 import dev.ryanhcode.sable.Sable;

@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;

@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
+package com.hainabaichuan75.iac_p.block.suspension_test;
 
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.foundation.block.IBE;

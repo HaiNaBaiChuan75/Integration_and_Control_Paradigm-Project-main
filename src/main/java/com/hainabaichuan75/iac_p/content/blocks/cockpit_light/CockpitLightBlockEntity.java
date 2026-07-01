@@ -1,8 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.cockpit_light;
 
 import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
 import com.hainabaichuan75.iac_p.index.ModLightCockpitBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -31,7 +29,7 @@ import java.util.List;
  *   <li>每 tick 引擎计算</li>
  *   <li>S2C 状态同步包</li>
  * </ul>
- * 以上功能由专用座舱类型（如 {@link com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity}）提供。
+ * 以上功能由专用座舱类型（如 {@link com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity}）提供。
  */
 public class CockpitLightBlockEntity extends SmartBlockEntity implements ComponentHost {
 

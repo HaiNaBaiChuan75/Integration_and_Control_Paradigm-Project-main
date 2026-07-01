@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * BaseCabinBlock —— 基础座舱方块（GeckoLib 渲染的单格驾驶舱）。
  * <p>
- * 功能上与 {@link com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock} 等效，
+ * 功能上与 {@link com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock} 等效，
  * 但仅占一格高度，使用 GeckoLib 骨骼动画模型渲染。
  * 视觉上作为"通用驾驶舱 2.0"，提供同样的载具驾驶功能。
  */

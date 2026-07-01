@@ -18,7 +18,7 @@
  *
  * 参考：iRacing / Assetto Corsa / rFactor 2 均采用锁止离合器 + 轮胎滑移限扭架构。
  */
-package com.hainabaichuan75.iac_p.content.blocks.cockpit;
+package com.hainabaichuan75.iac_p.block.cockpit;
 
 /**
  * 动力系统所有编译时常量的集中存放处。

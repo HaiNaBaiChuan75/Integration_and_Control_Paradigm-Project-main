@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.client.renderer;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.core.BlockPos;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -18,11 +18,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
-import org.joml.Quaterniond;
 import org.joml.Vector3d;
-
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * AxisLineRenderer —— 在世界中渲染三色轴线。

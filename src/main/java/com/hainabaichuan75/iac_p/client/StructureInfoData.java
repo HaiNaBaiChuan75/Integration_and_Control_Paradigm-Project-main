@@ -1,10 +1,10 @@
 package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.sublevel.SubLevel;

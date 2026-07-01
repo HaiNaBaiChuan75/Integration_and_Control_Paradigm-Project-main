@@ -7,10 +7,10 @@ import org.joml.Vector3d;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunAimController;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunAimController;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
 
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
@@ -144,7 +144,7 @@ public record MachineGunTargetC2SPacket(
                 : (float) -Math.toDegrees(Math.atan2(dx, dz));
         float pitch = (float) Math.toDegrees(Math.atan2(dy, Math.max(horiz, 0.001)));
 
-        com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunAimController.driveAnglesImmediate(sb, yaw, pitch);
+        com.hainabaichuan75.iac_p.block.shotgun.ShotgunAimController.driveAnglesImmediate(sb, yaw, pitch);
     }
 
     /**

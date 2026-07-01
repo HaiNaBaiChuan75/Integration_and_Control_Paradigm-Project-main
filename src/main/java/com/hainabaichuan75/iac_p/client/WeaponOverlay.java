@@ -2,8 +2,8 @@ package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;

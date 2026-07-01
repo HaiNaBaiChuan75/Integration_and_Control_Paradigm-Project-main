@@ -18,7 +18,7 @@ import org.joml.Vector3d;
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.assembly_barrier.AssemblyBarrierBlock;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.util.SubLevelUtil;
 
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;

@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.IACP;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;

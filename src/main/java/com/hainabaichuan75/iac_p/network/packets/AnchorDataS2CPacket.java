@@ -1,9 +1,8 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;

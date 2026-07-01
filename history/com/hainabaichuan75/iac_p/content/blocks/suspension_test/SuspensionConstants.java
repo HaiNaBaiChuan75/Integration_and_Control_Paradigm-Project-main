@@ -10,7 +10,7 @@
  *   Z = 纵深（沿 facing 方向向外为正）
  * 单位：格（1 格 = 1.0，如 7/16 = 0.4375）
  */
-package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
+package com.hainabaichuan75.iac_p.block.suspension_test;
 
 /**
  * 悬挂系统所有编译时常量和渲染器访问器的集中存放处。

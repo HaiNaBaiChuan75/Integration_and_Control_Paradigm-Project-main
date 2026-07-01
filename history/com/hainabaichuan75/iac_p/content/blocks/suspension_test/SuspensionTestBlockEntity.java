@@ -5,13 +5,13 @@
  * 轮胎物理计算已提取到 {@link TirePhysicsCalculator}。
  * Brush 侧偏模型已提取到 {@link BrushTireModel}。
  */
-package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
+package com.hainabaichuan75.iac_p.block.suspension_test;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -51,7 +51,7 @@ import org.joml.Vector3dc;
 
 import java.util.List;
 
-import static com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants.*;
+import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants.*;
 
 public class SuspensionTestBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, ComponentHost {
 
@@ -919,7 +919,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
                     }
                     double signedTorque = torqueMag * direction;
                     double driveForceN = signedTorque / Math.max(rad, 0.01);
-                    double driveImpulse = driveForceN * com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants.DT;
+                    double driveImpulse = driveForceN * com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.DT;
 
                     // 最大抓地冲量 = μ × 法向冲量（始终正数）
                     double maxGripImpulse = mu * frictionBasis;

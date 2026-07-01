@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;

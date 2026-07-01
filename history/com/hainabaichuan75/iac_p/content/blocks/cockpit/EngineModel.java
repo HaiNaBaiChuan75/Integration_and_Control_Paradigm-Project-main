@@ -13,7 +13,7 @@
  *   - 熄火从物理定律中涌现，而非游戏规则
  *   - 与车辆质量解耦：轻车加速快、重车加速慢
  */
-package com.hainabaichuan75.iac_p.content.blocks.cockpit;
+package com.hainabaichuan75.iac_p.block.cockpit;
 
 import net.minecraft.util.Mth;
 

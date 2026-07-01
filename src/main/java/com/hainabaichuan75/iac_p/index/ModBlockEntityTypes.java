@@ -1,14 +1,14 @@
 package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockEntity;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.turret.TurretTestBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredRegister;

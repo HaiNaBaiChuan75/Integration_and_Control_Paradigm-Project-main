@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.network.packets;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;

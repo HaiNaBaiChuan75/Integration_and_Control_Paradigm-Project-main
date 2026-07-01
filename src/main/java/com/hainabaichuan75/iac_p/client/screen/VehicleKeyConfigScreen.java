@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.client.screen;
 
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.TireConfigC2SPacket;
 import com.hainabaichuan75.iac_p.network.packets.VehicleKeyConfigC2SPacket;

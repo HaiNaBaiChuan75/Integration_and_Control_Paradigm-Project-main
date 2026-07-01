@@ -1,12 +1,12 @@
-package com.hainabaichuan75.iac_p.content.blocks.cockpit;
+package com.hainabaichuan75.iac_p.block.cockpit;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants.*;
+import static com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.*;
 
 /**
  * 驾驶舱方块实体 —— 载具动力系统的状态管理和编排。
