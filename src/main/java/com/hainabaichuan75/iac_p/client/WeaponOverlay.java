@@ -1,9 +1,10 @@
 package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.affiliation.ComponentEntry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.core.part.PartQuery;
+import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
@@ -229,11 +230,11 @@ public class WeaponOverlay {
 
         activeFires.clear();
 
-        // ---- 首选：通过 ComponentRegistry 查询武器底座 ----
-        var turretEntries = ComponentRegistry.getComponents(mountedUUID, ComponentRole.MACHINE_GUN_BASE);
-        var shotgunEntries = ComponentRegistry.getComponents(mountedUUID, ComponentRole.SHOTGUN_BASE);
-        if (!turretEntries.isEmpty() || !shotgunEntries.isEmpty()) {
-            fireFromRegistry(mc, container, mountedUUID, partialTick, vehicleVel, turretEntries, shotgunEntries);
+        // ---- 通过 PartQuery 扫描武器底座 ----
+        var machineGuns = PartQuery.findPartsByUUID(mc.level, mountedUUID, MachineGunBaseBlockEntity.class);
+        var shotguns = PartQuery.findPartsByUUID(mc.level, mountedUUID, ShotgunBaseBlockEntity.class);
+        if (!machineGuns.isEmpty() || !shotguns.isEmpty()) {
+            fireFromPartQuery(mc, container, mountedUUID, partialTick, vehicleVel, machineGuns, shotguns);
             return;
         }
 
@@ -284,12 +285,12 @@ public class WeaponOverlay {
     }
 
     /**
-     * 从注册表数据开火（炮塔 + 霰弹枪）。
+     * 从 PartQuery 扫描结果开火（炮塔 + 霰弹枪）。
      */
-    private static void fireFromRegistry(Minecraft mc, SubLevelContainer container,
+    private static void fireFromPartQuery(Minecraft mc, SubLevelContainer container,
             UUID mountedUUID, float partialTick, Vec3 vehicleVel,
-            List<ComponentEntry> turretEntries,
-            List<ComponentEntry> shotgunEntries) {
+            List<MachineGunBaseBlockEntity> turretEntries,
+            List<ShotgunBaseBlockEntity> shotgunEntries) {
         // ════════════════════════════════════════════════════════════════
         //  本地音效（零延迟）：在发送网络包之前立即播放，
         //  消除服务端广播带来的网络往返延迟。
@@ -300,19 +301,17 @@ public class WeaponOverlay {
         Vec3 playerPos = mc.player != null ? mc.player.position()
                 : new Vec3(0, 0, 0);
 
-        for (var entry : turretEntries) {
-            BlockEntity be = entry.blockEntity();
-            if (be instanceof MachineGunBaseBlockEntity tb && tb.isAssembled()) {
-                if (!playedTurretSound) {
-                    mc.level.playLocalSound(
-                            playerPos.x, playerPos.y, playerPos.z,
-                            ModSounds.MACHINE_GUN_FIRE.get(),
-                            SoundSource.PLAYERS,
-                            1.0f, 1.0f, false);
-                    playedTurretSound = true;
-                }
-                fireSingleTurret(mc, container, mountedUUID, partialTick, vehicleVel, tb);
+        for (MachineGunBaseBlockEntity tb : turretEntries) {
+            if (!tb.isAssembled()) continue;
+            if (!playedTurretSound) {
+                mc.level.playLocalSound(
+                        playerPos.x, playerPos.y, playerPos.z,
+                        ModSounds.MACHINE_GUN_FIRE.get(),
+                        SoundSource.PLAYERS,
+                        1.0f, 1.0f, false);
+                playedTurretSound = true;
             }
+            fireSingleTurret(mc, container, mountedUUID, partialTick, vehicleVel, tb);
         }
 
         // 霰弹枪组冷却：统一在 tick 级别检查，确保多枪同时开火
@@ -324,19 +323,16 @@ public class WeaponOverlay {
             lastShotgunFireTick = currentTick;
         }
 
-        for (var entry : shotgunEntries) {
-            BlockEntity be = entry.blockEntity();
-            if (be instanceof ShotgunBaseBlockEntity sb && sb.isAssembled()) {
-                if (!playedShotgunSound) {
-                    mc.level.playLocalSound(
-                            playerPos.x, playerPos.y, playerPos.z,
-                            ModSounds.SHOTGUN_FIRE.get(),
-                            SoundSource.PLAYERS,
-                            1.5f, 1.0f, false);
-                    playedShotgunSound = true;
-                }
-                fireSingleShotgun(mc, container, mountedUUID, partialTick, vehicleVel, sb);
+        for (ShotgunBaseBlockEntity sb : shotgunEntries) {
+            if (!playedShotgunSound) {
+                mc.level.playLocalSound(
+                        playerPos.x, playerPos.y, playerPos.z,
+                        ModSounds.SHOTGUN_FIRE.get(),
+                        SoundSource.PLAYERS,
+                        1.5f, 1.0f, false);
+                playedShotgunSound = true;
             }
+            fireSingleShotgun(mc, container, mountedUUID, partialTick, vehicleVel, sb);
         }
     }
 

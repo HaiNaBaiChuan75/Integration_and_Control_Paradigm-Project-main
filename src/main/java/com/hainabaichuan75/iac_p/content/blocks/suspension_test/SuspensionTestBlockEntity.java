@@ -8,8 +8,7 @@
 package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+// ComponentHost/ComponentRegistry 已移除，使用 PartBlockEntity + PartQuery
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
@@ -49,26 +48,12 @@ import java.util.UUID;
 
 import static com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants.*;
 
-public class SuspensionTestBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, ComponentHost {
+public class SuspensionTestBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor {
 
     // ==================================================================
-    //  ComponentHost 实现
-    // ==================================================================
-    @Override
-    public ComponentRole getComponentRole() {
-        return ComponentRole.SUSPENSION;
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
-        ComponentHost.registerComponent(this, getComponentRole());
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        ComponentHost.unregisterComponent(this);
-        super.onChunkUnloaded();
     }
 
     // ====================================================================
@@ -1030,9 +1015,6 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     public void tick() {
         super.tick();
 
-        // ── 延迟注册重试（SubLevel 未就绪时排队注册） ──
-        com.hainabaichuan75.iac_p.affiliation.DeferredRegistration.tick(this);
-
         // === 油门状态由 CockpitBE.tick() 直接扫描 throttleForward/Backward 字段获取 ===
         // 不再使用共享 Map，消除 putIfAbsent 导致的状态覆盖时序问题。
         SubLevel sl = Sable.HELPER.getContaining(this);
@@ -1257,13 +1239,13 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             this.cachedCockpit = null;
         }
 
-        // ═══ 优先使用 ComponentRegistry O(1) 查询 ═══
+        // ═══ 使用 PartQuery 扫描查询 ═══
         UUID subUUID = sl.getUniqueId();
-        var cockpitEntries = com.hainabaichuan75.iac_p.affiliation.ComponentRegistry.getComponents(
-                subUUID, com.hainabaichuan75.iac_p.affiliation.ComponentRole.COCKPIT);
-        if (!cockpitEntries.isEmpty()) {
-            var first = cockpitEntries.get(0);
-            if (first.blockEntity() instanceof CockpitBlockEntity cockpit && !cockpit.isRemoved()) {
+        var cockpits = com.hainabaichuan75.iac_p.core.part.PartQuery.findPartsByUUID(level, subUUID,
+                CockpitBlockEntity.class);
+        if (!cockpits.isEmpty()) {
+            var cockpit = cockpits.get(0);
+            if (!cockpit.isRemoved()) {
                 this.cachedCockpit = cockpit;
                 return cockpit;
             }
@@ -1277,8 +1259,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
             if (be instanceof CockpitBlockEntity cockpit) {
                 this.cachedCockpit = cockpit;
                 // 回填注册表：确保下次查询走 O(1) 路径
-                com.hainabaichuan75.iac_p.affiliation.ComponentHost.registerComponent(
-                        cockpit, com.hainabaichuan75.iac_p.affiliation.ComponentRole.COCKPIT);
+                // ComponentHost 已移除，不再需要注册
             }
         });
 

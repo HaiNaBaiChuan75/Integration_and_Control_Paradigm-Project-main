@@ -1,7 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.turret;
 
-import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -41,7 +40,7 @@ import java.util.Set;
  * <li>右键切换自动旋转（通过 BlockState 属性自动同步到客户端），潜行+右键重置</li>
  * </ul>
  */
-public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity, ComponentHost {
+public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     // 动画定义（仅用于激活 GeckoLib 动画系统，实际旋转由渲染器覆盖）
     private static final RawAnimation MAIN_ANIM = RawAnimation.begin().thenLoop("main");
@@ -123,25 +122,13 @@ public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity
         super(ModBlockEntityTypes.TURRET_TEST.get(), pos, state);
     }
 
-    // ==================================================================
-    //  ComponentHost 实现 → 注册到瞄准系统
-    // ==================================================================
-    @Override
-    public ComponentRole getComponentRole() {
-        return ComponentRole.TURRET_TEST;
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide()) {
-            ComponentHost.registerComponent(this, getComponentRole());
-        }
     }
 
     @Override
     public void setRemoved() {
-        ComponentHost.unregisterComponent(this);
         super.setRemoved();
     }
 

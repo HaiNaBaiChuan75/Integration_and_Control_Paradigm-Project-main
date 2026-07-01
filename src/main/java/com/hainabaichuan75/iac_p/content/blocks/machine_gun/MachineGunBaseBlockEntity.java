@@ -279,18 +279,9 @@ public class MachineGunBaseBlockEntity extends KineticBlockEntity implements com
         return Config.MACHINE_GUN_PITCH_SPEED_DPS.get() / 20.0;
     }
 
-    // ==================================================================
-    //  ComponentHost 实现
-    // ==================================================================
-    @Override
-    public com.hainabaichuan75.iac_p.affiliation.ComponentRole getComponentRole() {
-        return com.hainabaichuan75.iac_p.affiliation.ComponentRole.MACHINE_GUN_BASE;
-    }
-
     @Override
     public void onChunkUnloaded() {
         cleanupStaticMaps();
-        com.hainabaichuan75.iac_p.affiliation.ComponentHost.unregisterComponent(this);
         super.onChunkUnloaded();
     }
 
@@ -309,8 +300,6 @@ public class MachineGunBaseBlockEntity extends KineticBlockEntity implements com
     @Override
     public void onLoad() {
         super.onLoad();
-        // 注册到 ComponentRegistry
-        com.hainabaichuan75.iac_p.affiliation.ComponentHost.registerComponent(this, getComponentRole());
         if (this.level != null && !this.level.isClientSide && this.assembled
                 && this.grindstoneSubLevelId != null) {
             if (this.swivelBearingHandle == null) {

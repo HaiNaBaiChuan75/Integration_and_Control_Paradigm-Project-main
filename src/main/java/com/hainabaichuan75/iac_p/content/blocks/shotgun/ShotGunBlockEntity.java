@@ -137,24 +137,13 @@ public class ShotGunBlockEntity extends BlockEntity implements GeoBlockEntity, C
     }
 
     // ==================================================================
-    //  ComponentHost 实现 → 注册到武器系统
-    // ==================================================================
-    @Override
-    public ComponentRole getComponentRole() {
-        return ComponentRole.SHOTGUN_BASE;
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide()) {
-            ComponentHost.registerComponent(this, getComponentRole());
-        }
     }
 
     @Override
     public void setRemoved() {
-        ComponentHost.unregisterComponent(this);
         super.setRemoved();
     }
 

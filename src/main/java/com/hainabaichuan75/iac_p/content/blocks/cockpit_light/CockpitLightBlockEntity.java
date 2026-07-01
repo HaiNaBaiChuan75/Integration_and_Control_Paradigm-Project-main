@@ -37,24 +37,10 @@ public class CockpitLightBlockEntity extends SmartBlockEntity implements Compone
 
     // ==================================================================
     //  ComponentHost 实现
-    // ==================================================================
-
-    @Override
-    public ComponentRole getComponentRole() {
-        return ComponentRole.COCKPIT;
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
-        ComponentHost.registerComponent(this, getComponentRole());
         this.throttleLevel = 0.0;
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        ComponentHost.unregisterComponent(this);
-        super.onChunkUnloaded();
     }
 
     // ==================================================================

@@ -2,6 +2,7 @@ package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
+import com.hainabaichuan75.iac_p.content.blocks.assembly_barrier.AssemblyBarrierBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitUpperBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
@@ -108,6 +109,15 @@ public class ModBlocks {
                             .strength(3.0f, 3.0f)
                             .sound(SoundType.METAL)
                             .noOcclusion());
+
+    // === 装配扫描屏障方块（车库地板，BFS 黑名单） ===
+    public static final DeferredBlock<AssemblyBarrierBlock> ASSEMBLY_BARRIER =
+            BLOCKS.registerBlock("assembly_barrier",
+                    AssemblyBarrierBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .strength(2.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .requiresCorrectToolForDrops());
 
     // === 炮塔测试方块（GeckoLib 动态骨骼旋转测试） ===
     public static final DeferredBlock<TurretTestBlock> TURRET_TEST =

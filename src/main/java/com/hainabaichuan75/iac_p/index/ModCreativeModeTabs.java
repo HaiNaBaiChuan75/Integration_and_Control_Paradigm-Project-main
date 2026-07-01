@@ -28,6 +28,7 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.SHOTGUN_TURRET.asItem());
                 output.accept(ModBlocks.MACHINE_GUN_BASE.asItem());
                 output.accept(ModBlocks.SUSPENSION_TEST.asItem());
+                output.accept(ModBlocks.ASSEMBLY_BARRIER.asItem());
                 output.accept(ModBlocks.DEBUG_GEAR.asItem());
                 output.accept(ModBlocks.DEBUG_SWIVEL_BEARING.asItem());
                 // TEST_CONTROLLER 是 GeckoLib 测试方块，用 /give @s iac_p:test_controller 获取

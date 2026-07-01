@@ -1,13 +1,12 @@
 package com.hainabaichuan75.iac_p.content.blocks.cockpit;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.core.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
+import net.minecraft.world.level.Level;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -52,29 +51,14 @@ import static com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstan
  *   摩擦圆约束决定实际地面驱动力（轮胎是唯一限幅器）
  * </pre>
  */
-public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHost {
-
-    // ==================================================================
-    //  ComponentHost 实现
-    // ==================================================================
-    @Override
-    public ComponentRole getComponentRole() {
-        return ComponentRole.COCKPIT;
-    }
+public class CockpitBlockEntity extends SmartBlockEntity {
 
     @Override
     public void onLoad() {
         super.onLoad();
-        ComponentHost.registerComponent(this, getComponentRole());
         // 油门始终 100%：引擎满扭矩恒备，WASD 只控制方向不控制油门深浅。
         this.throttleLevel = 1.0;
         this.rawThrottleDirection = 0;
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        ComponentHost.unregisterComponent(this);
-        super.onChunkUnloaded();
     }
 
     // ====================================================================
@@ -456,24 +440,24 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     private double revMatchTargetRpm = 0;
 
     // ==================================================================
-    //  本 tick 缓存：避免重复查询 ComponentRegistry
+    //  本 tick 缓存：避免重复扫描 SubLevel
     // ==================================================================
     /**
-     * 缓存的悬挂条目列表（本 tick 内复用）。 由 {@link #scanWheelRpm} 刷新，被 {@link #hasAnyThrottleInput}
+     * 缓存的悬挂部件列表（本 tick 内复用）。 由 {@link #scanWheelRpm} 刷新，被 {@link #hasAnyThrottleInput}
      * 和 {@link #hasAnySteeringInput} 等复用。
      */
     @Nullable
-    private List<com.hainabaichuan75.iac_p.affiliation.ComponentEntry> cachedSuspensionEntries = null;
+    private List<SuspensionTestBlockEntity> cachedSuspensions = null;
 
     /**
-     * 刷新本 tick 的悬挂条目缓存。
+     * 刷新本 tick 的悬挂部件缓存。
      */
-    private List<com.hainabaichuan75.iac_p.affiliation.ComponentEntry> getOrRefreshSuspensionEntries(UUID subUUID) {
-        if (this.cachedSuspensionEntries != null) {
-            return this.cachedSuspensionEntries;
+    private List<SuspensionTestBlockEntity> getOrRefreshSuspensions(SubLevel subLevel, Level level) {
+        if (this.cachedSuspensions != null) {
+            return this.cachedSuspensions;
         }
-        this.cachedSuspensionEntries = ComponentRegistry.getComponents(subUUID, ComponentRole.SUSPENSION);
-        return this.cachedSuspensionEntries;
+        this.cachedSuspensions = PartQuery.findParts(level, subLevel, SuspensionTestBlockEntity.class);
+        return this.cachedSuspensions;
     }
 
     @Override
@@ -484,7 +468,7 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
         }
 
         // ── 每 tick 重置缓存（下次 tick 重新获取） ──
-        this.cachedSuspensionEntries = null;
+        this.cachedSuspensions = null;
         super.tick();
         if (level == null) {
             return;
@@ -581,30 +565,25 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     }
 
     /**
-     * 扫描轮速。优先使用 {@link #cachedSuspensionEntries}（本 tick 内已缓存则不重新查询），
+     * 扫描轮速。优先使用缓存（本 tick 内已缓存则不重新查询），
      * 只在缓存为空时尝试 SubLevel 全量扫描。
      */
     private WheelScanResult scanWheelRpm(SubLevel sl) {
-        UUID subUUID = sl.getUniqueId();
-        var entries = getOrRefreshSuspensionEntries(subUUID);
+        var entries = getOrRefreshSuspensions(sl, level);
 
         if (!entries.isEmpty()) {
-            return scanRpmFromEntries(entries);
+            return scanRpmFromSuspensions(entries);
         }
 
-        // 降级：ComponentRegistry 为空 → 直接全量扫描
+        // 降级：缓存为空 → 直接全量扫描
         return scanRpmFallback(sl);
     }
 
-    private static WheelScanResult scanRpmFromEntries(
-            List<com.hainabaichuan75.iac_p.affiliation.ComponentEntry> entries) {
+    private static WheelScanResult scanRpmFromSuspensions(List<SuspensionTestBlockEntity> entries) {
         double totalRpm = 0;
         int count = 0;
 
-        for (var entry : entries) {
-            if (!(entry.blockEntity() instanceof SuspensionTestBlockEntity sbe)) {
-                continue;
-            }
+        for (var sbe : entries) {
             totalRpm += sbe.getCurrentWheelRpm();
             count++;
         }
@@ -628,27 +607,17 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
             count[0]++;
         });
 
-        // 如果扫描发现了悬挂，用这次结果回填 ComponentRegistry
-        if (count[0] > 0) {
-            UUID subUUID = sl.getUniqueId();
-            SubLevelScanner.forEachBlock(sl, level, (worldPos, state, be) -> {
-                if (state.getBlock() instanceof SuspensionTestBlock && be != null) {
-                    ComponentHost.registerComponent(be, ComponentRole.SUSPENSION);
-                }
-            });
-        }
-
         double avgRpm = count[0] > 0 ? totalRpm[0] / count[0] : 0;
         return new WheelScanResult(avgRpm, count[0]);
     }
 
     /**
-     * 检查是否有任何悬挂方块有驱动输入（W/S 按下）。 使用 {@link #cachedSuspensionEntries} 避免重复查询。
+     * 检查是否有任何悬挂方块有驱动输入（W/S 按下）。 使用缓存避免重复查询。
      */
     private boolean hasAnyThrottleInput(SubLevel sl) {
-        var entries = getOrRefreshSuspensionEntries(sl.getUniqueId());
-        for (var entry : entries) {
-            if (entry.blockEntity() instanceof SuspensionTestBlockEntity sbe && sbe.hasThrottle()) {
+        var entries = getOrRefreshSuspensions(sl, level);
+        for (var sbe : entries) {
+            if (sbe.hasThrottle()) {
                 return true;
             }
         }
@@ -656,13 +625,12 @@ public class CockpitBlockEntity extends SmartBlockEntity implements ComponentHos
     }
 
     /**
-     * 检查是否有任何悬挂方块有转向输入（A/D 按下）。 使用 {@link #cachedSuspensionEntries} 避免重复查询。
+     * 检查是否有任何悬挂方块有转向输入（A/D 按下）。 使用缓存避免重复查询。
      */
     private boolean hasAnySteeringInput(SubLevel sl) {
-        var entries = getOrRefreshSuspensionEntries(sl.getUniqueId());
-        for (var entry : entries) {
-            if (entry.blockEntity() instanceof SuspensionTestBlockEntity sbe
-                    && Math.abs(sbe.getTargetSteeringYaw()) > 0.01) {
+        var entries = getOrRefreshSuspensions(sl, level);
+        for (var sbe : entries) {
+            if (Math.abs(sbe.getTargetSteeringYaw()) > 0.01) {
                 return true;
             }
         }

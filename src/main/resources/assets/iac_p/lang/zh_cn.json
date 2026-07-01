@@ -11,6 +11,7 @@
   "block.iac_p.shotgun_turret": "霰弹枪炮塔",
   "block.iac_p.machine_gun_base": "机枪底座",
   "block.iac_p.suspension_test": "悬挂测试方块",
+  "block.iac_p.assembly_barrier": "装配屏障（车库地板）",
   "block.iac_p.debug_gear": "调试齿轮",
   "block.iac_p.test_controller": "测试控制器（GeckoLib）",
   "block.iac_p.debug_swivel_bearing": "调试 SwivelBearing",

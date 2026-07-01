@@ -569,9 +569,17 @@ public class ClientEvents {
                     boolean ctrlRightClick = ctrlDown && rightClick;
 
                     if (ctrlRightClick && !ctrlRightClickWasDown) {
-                        // 发送装配信号到服务端，服务端做完整的 SubLevel 感知射线检测
-                        ModNetworking.sendToServer(new PhysicsAssembleC2SPacket());
-                        IACP.LOGGER.info("[ClientEvents] Ctrl+右键 → 发送装配信号");
+                        // 读取 mc.hitResult，携带命中位置到服务端，避免服务端重复射线检测
+                        BlockPos hitPos = null;
+                        if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
+                            hitPos = ((BlockHitResult) mc.hitResult).getBlockPos();
+                        }
+                        ModNetworking.sendToServer(new PhysicsAssembleC2SPacket(hitPos));
+                        if (hitPos != null) {
+                            IACP.LOGGER.info("[ClientEvents] Ctrl+右键 → 发送装配信号 @ {}", hitPos);
+                        } else {
+                            IACP.LOGGER.info("[ClientEvents] Ctrl+右键 → 发送拆解信号（SubLevel 回退）");
+                        }
                     }
                     ctrlRightClickWasDown = ctrlRightClick;
                 }

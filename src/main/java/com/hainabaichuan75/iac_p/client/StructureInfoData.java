@@ -1,7 +1,9 @@
 package com.hainabaichuan75.iac_p.client;
 
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.core.part.PartQuery;
+import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
@@ -108,29 +110,23 @@ public record StructureInfoData(
                 .sorted(Comparator.comparingInt(BlockCountEntry::count).reversed())
                 .toList();
 
-        // ====== 2. 武器系统扫描（通过 ComponentRegistry） ======
+        // ====== 2. 武器系统扫描（通过 PartQuery） ======
         List<MachineGunInfo> machineGunInfos = new ArrayList<>();
 
-        // 炮塔
-        var machineGunEntries = ComponentRegistry.getComponents(subUUID, ComponentRole.MACHINE_GUN_BASE);
-        for (var entry : machineGunEntries) {
-            BlockEntity be = entry.blockEntity();
-            if (be instanceof MachineGunBaseBlockEntity machineGun) {
-                addMachineGunInfo(machineGunInfos, entry.blockPos(), machineGun.isAssembled(),
-                        machineGun.getGrindstoneSubLevelId(), machineGun.getLightningRodSubLevelId(),
-                        machineGun.getVehicleSubLevelId());
-            }
+        // 机枪底座
+        var machineGuns = PartQuery.findPartsByUUID(level, subUUID, MachineGunBaseBlockEntity.class);
+        for (var mg : machineGuns) {
+            addMachineGunInfo(machineGunInfos, mg.getBlockPos(), mg.isAssembled(),
+                    mg.getGrindstoneSubLevelId(), mg.getLightningRodSubLevelId(),
+                    mg.getVehicleSubLevelId());
         }
 
-        // 霰弹枪
-        var shotgunEntries = ComponentRegistry.getComponents(subUUID, ComponentRole.SHOTGUN_BASE);
-        for (var entry : shotgunEntries) {
-            BlockEntity be = entry.blockEntity();
-            if (be instanceof ShotgunBaseBlockEntity shotgun) {
-                addMachineGunInfo(machineGunInfos, entry.blockPos(), shotgun.isAssembled(),
-                        shotgun.getGrindstoneSubLevelId(), shotgun.getLightningRodSubLevelId(),
-                        shotgun.getVehicleSubLevelId());
-            }
+        // 霰弹枪底座
+        var shotguns = PartQuery.findPartsByUUID(level, subUUID, ShotgunBaseBlockEntity.class);
+        for (var sg : shotguns) {
+            addMachineGunInfo(machineGunInfos, sg.getBlockPos(), sg.isAssembled(),
+                    sg.getGrindstoneSubLevelId(), sg.getLightningRodSubLevelId(),
+                    sg.getVehicleSubLevelId());
         }
 
         return new StructureInfoData(

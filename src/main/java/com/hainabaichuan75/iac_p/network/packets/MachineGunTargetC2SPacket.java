@@ -6,8 +6,7 @@ import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.core.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunAimController;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
@@ -232,13 +231,10 @@ public record MachineGunTargetC2SPacket(
             //  换命中点到载具局部空间（只需做一次）
             var hitLocal = worldToLocal(vPose, vOrientInv, hitX, hitY, hitZ);
 
-            //  --- 首选：ComponentRegistry O(1) 查找 ----
+            //  --- 通过 PartQuery 实时扫描 ----
             // 机枪（MachineGun）
-            var machineGunEntries = ComponentRegistry.getComponents(vehicleUUID, ComponentRole.MACHINE_GUN_BASE);
-            for (var entry : machineGunEntries) {
-                if (!(entry.blockEntity() instanceof MachineGunBaseBlockEntity tb)) {
-                    continue;
-                }
+            var machineGuns = PartQuery.findPartsByUUID(level, vehicleUUID, MachineGunBaseBlockEntity.class);
+            for (MachineGunBaseBlockEntity tb : machineGuns) {
                 if (!tb.isAssembled()) {
                     continue;
                 }
@@ -256,11 +252,8 @@ public record MachineGunTargetC2SPacket(
             }
 
             // TurretTest（Crossout 风格炮塔测试块）
-            var turretTestEntries = ComponentRegistry.getComponents(vehicleUUID, ComponentRole.TURRET_TEST);
-            for (var entry : turretTestEntries) {
-                if (!(entry.blockEntity() instanceof TurretTestBlockEntity tt)) {
-                    continue;
-                }
+            var turretTests = PartQuery.findPartsByUUID(level, vehicleUUID, TurretTestBlockEntity.class);
+            for (TurretTestBlockEntity tt : turretTests) {
                 // 直接用 hitLocal（命中点在载具局部空间中的坐标）计算方向。
                 // 不引入 weaponLocal 的原因是 plot 底层坐标（大数目）与 hitWorld
                 // （玩家附近坐标）相减后旋转，会产生数值敏感的方向抖动。
@@ -269,11 +262,8 @@ public record MachineGunTargetC2SPacket(
             }
 
             // 霰弹枪（Shotgun）
-            var shotgunEntries = ComponentRegistry.getComponents(vehicleUUID, ComponentRole.SHOTGUN_BASE);
-            for (var entry : shotgunEntries) {
-                if (!(entry.blockEntity() instanceof ShotgunBaseBlockEntity sb)) {
-                    continue;
-                }
+            var shotguns = PartQuery.findPartsByUUID(level, vehicleUUID, ShotgunBaseBlockEntity.class);
+            for (ShotgunBaseBlockEntity sb : shotguns) {
                 if (!sb.isAssembled()) {
                     continue;
                 }
@@ -290,8 +280,8 @@ public record MachineGunTargetC2SPacket(
                 driveShotgunAtTarget(sb, hitLocal, weaponLocal);
             }
 
-            // 如果注册表中找到武器条目，跳过回退扫描
-            if (!machineGunEntries.isEmpty() || !turretTestEntries.isEmpty() || !shotgunEntries.isEmpty()) {
+            // 如果扫描找到武器条目，跳过回退扫描
+            if (!machineGuns.isEmpty() || !turretTests.isEmpty() || !shotguns.isEmpty()) {
                 return;
             }
 

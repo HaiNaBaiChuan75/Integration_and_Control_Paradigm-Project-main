@@ -2,6 +2,8 @@ package com.hainabaichuan75.iac_p;
 
 import com.hainabaichuan75.iac_p.affiliation.AffiliationCommand;
 import com.hainabaichuan75.iac_p.affiliation.WorldLoadHandler;
+import com.hainabaichuan75.iac_p.core.dispatch.VehicleSystemDispatcher;
+import com.hainabaichuan75.iac_p.core.system.VehicleSystemRegistry;
 import com.hainabaichuan75.iac_p.events.MountedProtectionHandler;
 import com.hainabaichuan75.iac_p.events.PartDamageCache;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
@@ -61,5 +63,13 @@ public class IACP {
 
         // 世界加载时清空归属/部件注册表（维度切换/重载时防止数据残留）
         NeoForge.EVENT_BUS.register(WorldLoadHandler.class);
+
+        // ============================================================
+        //  VehicleSystem 架构 — 将逻辑从 BE 中抽到 System
+        // ============================================================
+        // 注册所有内置 System
+        VehicleSystemRegistry.registerAll();
+        // 注册 System 调度器（将 NeoForge 事件路由到 System）
+        NeoForge.EVENT_BUS.register(new VehicleSystemDispatcher());
     }
 }
