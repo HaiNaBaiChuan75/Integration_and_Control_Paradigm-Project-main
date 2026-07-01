@@ -78,6 +78,43 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
   守护，防止单个 BE 异常导致整个渲染流程崩溃。
 - **错误处理**：渲染/叠加层代码静默吞异常（视觉瑕疵优于崩溃）。逻辑代码对无效输入抛出 `IllegalArgumentException`。无自定义受检异常。
 
+## 分包规范
+
+**原则："按类型分层，按功能分块"**。重构和新增代码必须遵守本节规则。根包为 `com.hainabaichuan75.iac_p`，主模组类 `IACP.java`
+置于根包下。
+
+### 标准分包
+
+| 包         | 职责       | 放什么                                                    |
+|-----------|----------|--------------------------------------------------------|
+| `block`   | 方块定义     | `Block` 子类、`BlockEntity` 子类                            |
+| `item`    | 物品定义     | `Item` 子类（工具、武器、护甲等）                                   |
+| `entity`  | 实体定义     | 生物实体                                                   |
+| `client`  | 客户端专用    | `renderer/`（渲染器）、`screen/`（GUI）、模型、粒子。**服务端不可引用此包**    |
+| `network` | 网络通信     | 数据包定义（`packets/`）、序列化、网络处理器注册                          |
+| `data`    | 数据生成     | DataGen 代码，与运行时代码严格分离。输出目录 `src/generated/resources/`  |
+| `index`   | 注册入口     | `DeferredRegister` 创建和注册调用（等同经典结构中的 `init`/`registry`） |
+| `mixin`   | Mixin 注入 | 对原版或第三方模组的 Mixin 注入类                                   |
+| `events`  | 事件处理     | 订阅 NeoForge 事件总线的处理器                                   |
+| `util`    | 工具类      | 无状态的辅助方法、数学工具、常量。**不在此放业务逻辑**                          |
+
+### 功能分包
+
+| 包      | 职责                                                      |
+|--------|---------------------------------------------------------|
+| `ecs/` | ECS 架构。子包：`dispatch/`（调度）、`part/`（组件）、`system/`（ECS 系统） |
+
+### 关键规则
+
+1. **客户端代码隔离**：`client/` 包下代码仅物理客户端执行，用 `@OnlyIn(Dist.CLIENT)` 或分发到客户端事件总线。**服务端代码绝不
+   import `client/` 包**。网络包定义归 `network/` 而非 `client/`。
+
+2. **DataGen 单独成包**：`data/` 中的 DataGen 代码不引用运行业务逻辑，运行时也不引用 `data/`。
+
+3. **事件订阅** 一般放在events包，且使用`@EventBusSubscriber class`和`@SubscribeEvent public static`
+
+4. **新增代码时**，必须按上述"标准分包"选择正确的包，优先改善而非恶化现有结构。**重构时**，逐步将代码朝目标方向迁移。
+
 ## 开发备注
 
 - 无单元测试——通过启动客户端（`./gradlew runClient`）在游戏中验证
