@@ -30,7 +30,7 @@ public class AxisRenderSystem implements VehicleClientSystem {
         Vector3f blue = new Vector3f(0.0F, 0.0F, 1.0F);  // Z - 蓝
         ClientLevel level = subLevel.getLevel();
         for (PartBlockEntity part : parts) {
-            Pose3d pose = part.worldPose();
+            Pose3d pose = part.partLogicalPose();
             // 粒子效果：沿三轴发射彩色粒子
             for (double i = 0; i <= 1.5; i += 0.1) {
                 Vector3d posX = pose.transformPosition(new Vector3d(i, 0, 0));

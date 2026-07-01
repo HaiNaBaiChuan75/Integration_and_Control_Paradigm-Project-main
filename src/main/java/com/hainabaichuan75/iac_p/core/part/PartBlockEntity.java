@@ -19,12 +19,27 @@ import org.joml.Vector3dc;
 
 /**
  * 载具部件的抽象基类。
- * <p>
  * 所有载具功能方块（悬挂、轮子、武器、驾驶舱）<b>必须</b>继承此类。
- * 基类封装了核心的<b>坐标系变换</b>方法 {@link #worldPose()}，
- * 用于将方块局部坐标转换到世界绝对坐标，是所有部件物理/渲染计算的基础。
+ * <p>
+ * <b>坐标系约定</b>
+ * <p>
+ * Sable 定义了双层坐标空间：
+ * <ul>
+ *   <li><b>SubLevel 内部坐标 (local)</b> — 方块在 SubLevel 内的 BlockPos，原点为其旋转中心</li>
+ *   <li><b>父 Level 坐标 (logical)</b> — 经 {@link SubLevel#logicalPose()} 缩放+旋转+平移后的世界坐标，
+ *       Sable 称为 "logical" 空间，是物理引擎的参考系</li>
+ * </ul>
+ * Part 与 SubLevel 一样位于 local 空间，需要同样的 logical 变换才能进入物理/渲染的坐标域：
+ * <pre>
+ *   Part local 坐标
+ *     → {@link #partLogicalPose()} = SubLevel logicalPose × orientation × blockCenterOffset
+ *     → logical 空间（父 Level 世界坐标）
+ * </pre>
+ * z- 方向为前方，x+ 为右方。
  * <p>
  * 继承 {@link BlockEntitySubLevelActor} 接口，自动获得与 Sable SubLevel 的关联。
+ *
+ * @see SubLevel#logicalPose()
  */
 public abstract class PartBlockEntity extends BlockEntity implements BlockEntitySubLevelActor {
 
@@ -63,24 +78,25 @@ public abstract class PartBlockEntity extends BlockEntity implements BlockEntity
     //  坐标系变换（核心）
     // ============================================================
     /**
-     * 返回一个组合变换 {@link Pose3d}，用于将方块实体自身局部空间中的坐标与世界绝对坐标转换。
+     * 返回此 Part 在父 Level 坐标系中的组合变换。
      * <p>
-     * 默认 z- 方向为前方，x+ 为右方。
+     * 与 {@link SubLevel#logicalPose()} 属同一层抽象：
+     * 名称中的 "logical" 遵循 Sable 的命名约定，指 SubLevel/Part 所在的父 Level 世界坐标空间。
      * <p>
      * 组合过程：
      * <ol>
-     *   <li>获取 SubLevel 的 {@code logicalPose()}（包含位置、朝向、缩放）</li>
+     *   <li>获取 SubLevel 的 {@link SubLevel#logicalPose()}（位置、朝向、缩放）</li>
      *   <li>将部件自身的 {@link #orientation()} 乘到 SubLevel 朝向上</li>
      *   <li>计算方块中心相对 SubLevel 旋转中心的偏移，应用均匀缩放</li>
-     *   <li>返回组合后的 Pose3d，可直接用于坐标变换</li>
+     *   <li>返回组合后的 Pose3d，可直接通过 {@link Pose3d#transformPosition} 将 local 坐标转为 logical 坐标</li>
      * </ol>
      *
-     * @return 组合 Pose3d
+     * @return 组合 Pose3d，将 Part local 坐标映射到父 Level logical 空间
      * @see SubLevel#logicalPose()
      * @see Pose3d
      */
     @NotNull
-    public Pose3d worldPose() {
+    public Pose3d partLogicalPose() {
         Pose3d subPose = getSubLevelPose();
         Vector3d subScale = subPose.scale();
         double sx = subScale.x, sy = subScale.y, sz = subScale.z;
