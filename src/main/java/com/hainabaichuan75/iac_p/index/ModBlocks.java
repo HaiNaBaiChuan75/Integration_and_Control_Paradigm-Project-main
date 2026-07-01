@@ -2,7 +2,6 @@ package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
-import com.hainabaichuan75.iac_p.content.blocks.assembly_barrier.AssemblyBarrierBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitUpperBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
@@ -11,11 +10,11 @@ import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear3Block;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
+import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotGunBlock;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlock;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlock;
+import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
 import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlock;
 import net.minecraft.world.level.block.Block;
@@ -111,9 +110,8 @@ public class ModBlocks {
                             .noOcclusion());
 
     // === 装配扫描屏障方块（车库地板，BFS 黑名单） ===
-    public static final DeferredBlock<AssemblyBarrierBlock> ASSEMBLY_BARRIER =
-            BLOCKS.registerBlock("assembly_barrier",
-                    AssemblyBarrierBlock::new,
+    public static final DeferredBlock<Block> ASSEMBLY_BARRIER =
+            BLOCKS.registerBlock("assembly_barrier", Block::new,
                     BlockBehaviour.Properties.of()
                             .strength(2.0f, 6.0f)
                             .sound(SoundType.METAL)
