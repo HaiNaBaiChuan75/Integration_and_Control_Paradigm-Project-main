@@ -8,23 +8,16 @@ import com.hainabaichuan75.iac_p.core.system.VehicleSystemRegistry;
 import com.hainabaichuan75.iac_p.core.system.VehicleTickSystem;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
-import dev.ryanhcode.sable.companion.math.BoundingBox3i;
-import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.neoforge.event.ForgeSablePostPhysicsTickEvent;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import dev.ryanhcode.sable.sublevel.plot.PlotChunkHolder;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,9 +56,10 @@ public class VehicleSystemDispatcher {
             if (container == null) continue;
 
             for (SubLevel sl : container.getAllSubLevels()) {
+                if (sl.isRemoved()) continue;
                 if (!(sl instanceof ServerSubLevel serverSL)) continue;
 
-                List<PartBlockEntity> parts = collectParts(serverSL, level);
+                List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(serverSL);
                 if (parts.isEmpty()) continue;
 
                 for (VehicleTickSystem system : systems) {
@@ -100,13 +94,13 @@ public class VehicleSystemDispatcher {
         if (container == null) return;
 
         for (SubLevel sl : container.getAllSubLevels()) {
+            if (sl.isRemoved()) continue;
             if (!(sl instanceof ServerSubLevel serverSL)) continue;
 
-            List<PartBlockEntity> parts = collectParts(serverSL, level);
+            List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(serverSL);
             if (parts.isEmpty()) continue;
 
             RigidBodyHandle handle = RigidBodyHandle.of(serverSL);
-            // 当前 Sable API 未暴露 timeStep，使用默认值 1/100 s（约 100Hz 物理步进）
             double timeStep = 0.01;
 
             for (VehiclePhysicsSystem system : systems) {
@@ -140,9 +134,10 @@ public class VehicleSystemDispatcher {
         if (container == null) return;
 
         for (SubLevel sl : container.getAllSubLevels()) {
+            if (sl.isRemoved()) continue;
             if (!(sl instanceof ClientSubLevel clientSL)) continue;
 
-            List<PartBlockEntity> parts = collectParts(clientSL, level);
+            List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(clientSL);
             if (parts.isEmpty()) continue;
 
             for (VehicleClientSystem system : systems) {
@@ -161,43 +156,4 @@ public class VehicleSystemDispatcher {
         }
     }
 
-    // ============================================================
-    //  工具方法：遍历 SubLevel chunks 收集 PartBlockEntity
-    // ============================================================
-    /**
-     * 遍历指定 SubLevel 的所有已加载 chunk，收集其中的 {@link PartBlockEntity}。
-     * <p>
-     * 不再使用 ComponentRegistry（已移除），直接通过 BlockEntity 类型检查。
-     *
-     * @param subLevel 目标 SubLevel
-     * @param level    所在世界
-     * @return PartBlockEntity 列表（可能为空）
-     */
-    private List<PartBlockEntity> collectParts(SubLevel subLevel, Level level) {
-        List<PartBlockEntity> parts = new ArrayList<>();
-        if (subLevel == null || subLevel.getPlot() == null) return parts;
-
-        var plot = subLevel.getPlot();
-        for (PlotChunkHolder chunk : plot.getLoadedChunks()) {
-            var chunkPos = chunk.getPos();
-            BoundingBox3ic localBounds = chunk.getBoundingBox();
-            if (localBounds == null || localBounds == BoundingBox3i.EMPTY) continue;
-
-            for (int x = localBounds.minX(); x <= localBounds.maxX(); x++) {
-                for (int y = localBounds.minY(); y <= localBounds.maxY(); y++) {
-                    for (int z = localBounds.minZ(); z <= localBounds.maxZ(); z++) {
-                        BlockPos pos = new BlockPos(
-                                x + chunkPos.getMinBlockX(), y, z + chunkPos.getMinBlockZ());
-                        BlockState state = level.getBlockState(pos);
-                        if (state.isAir()) continue;
-                        BlockEntity be = level.getBlockEntity(pos);
-                        if (be instanceof PartBlockEntity part) {
-                            parts.add(part);
-                        }
-                    }
-                }
-            }
-        }
-        return parts;
-    }
 }

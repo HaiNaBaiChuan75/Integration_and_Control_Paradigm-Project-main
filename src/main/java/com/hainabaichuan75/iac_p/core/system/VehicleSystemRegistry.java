@@ -1,6 +1,11 @@
 package com.hainabaichuan75.iac_p.core.system;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
+import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
+import dev.ryanhcode.sable.sublevel.SubLevel;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +59,31 @@ public final class VehicleSystemRegistry {
     public static void register(VehicleClientSystem system) {
         CLIENT_SYSTEMS.add(system);
         IACP.LOGGER.debug("Registered VehicleClientSystem: {}", system.getClass().getSimpleName());
+    }
+
+    // ============================================================
+    //  部件收集（遍历 Sable 内部 actor 列表，O(actors)）
+    // ============================================================
+    /**
+     * 收集指定 SubLevel 中的所有 {@link PartBlockEntity}。
+     * <p>
+     * 使用 Sable 的 {@code getBlockEntityActors()} 遍历，
+     * 只迭代实际注册的 BlockEntity Actor，避免 O(chunk_volume) 扫描。
+     *
+     * @param subLevel 目标 SubLevel
+     * @return PartBlockEntity 列表（可能为空，不可为 null）
+     */
+    @NotNull
+    public static List<PartBlockEntity> collectParts(@NotNull SubLevel subLevel) {
+        List<PartBlockEntity> parts = new ArrayList<>();
+        if (subLevel.getPlot() == null) return parts;
+
+        for (BlockEntitySubLevelActor actor : subLevel.getPlot().getBlockEntityActors()) {
+            if (actor instanceof PartBlockEntity part) {
+                parts.add(part);
+            }
+        }
+        return parts;
     }
 
     // ============================================================

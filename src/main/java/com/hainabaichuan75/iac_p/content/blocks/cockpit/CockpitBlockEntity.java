@@ -452,11 +452,11 @@ public class CockpitBlockEntity extends SmartBlockEntity {
     /**
      * 刷新本 tick 的悬挂部件缓存。
      */
-    private List<SuspensionTestBlockEntity> getOrRefreshSuspensions(SubLevel subLevel, Level level) {
+    private List<SuspensionTestBlockEntity> getOrRefreshSuspensions(SubLevel subLevel) {
         if (this.cachedSuspensions != null) {
             return this.cachedSuspensions;
         }
-        this.cachedSuspensions = PartQuery.findParts(level, subLevel, SuspensionTestBlockEntity.class);
+        this.cachedSuspensions = PartQuery.findParts(subLevel, SuspensionTestBlockEntity.class);
         return this.cachedSuspensions;
     }
 
@@ -569,7 +569,7 @@ public class CockpitBlockEntity extends SmartBlockEntity {
      * 只在缓存为空时尝试 SubLevel 全量扫描。
      */
     private WheelScanResult scanWheelRpm(SubLevel sl) {
-        var entries = getOrRefreshSuspensions(sl, level);
+        var entries = getOrRefreshSuspensions(sl);
 
         if (!entries.isEmpty()) {
             return scanRpmFromSuspensions(entries);
@@ -615,7 +615,7 @@ public class CockpitBlockEntity extends SmartBlockEntity {
      * 检查是否有任何悬挂方块有驱动输入（W/S 按下）。 使用缓存避免重复查询。
      */
     private boolean hasAnyThrottleInput(SubLevel sl) {
-        var entries = getOrRefreshSuspensions(sl, level);
+        var entries = getOrRefreshSuspensions(sl);
         for (var sbe : entries) {
             if (sbe.hasThrottle()) {
                 return true;
@@ -628,7 +628,7 @@ public class CockpitBlockEntity extends SmartBlockEntity {
      * 检查是否有任何悬挂方块有转向输入（A/D 按下）。 使用缓存避免重复查询。
      */
     private boolean hasAnySteeringInput(SubLevel sl) {
-        var entries = getOrRefreshSuspensions(sl, level);
+        var entries = getOrRefreshSuspensions(sl);
         for (var sbe : entries) {
             if (Math.abs(sbe.getTargetSteeringYaw()) > 0.01) {
                 return true;
