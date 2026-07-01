@@ -41,7 +41,7 @@ public class VehicleSystemDispatcher {
     //  逻辑 Tick（服务端 20Hz）
     // ============================================================
     @SubscribeEvent
-    public static void onServerTick(ServerTickEvent.Post event) {
+    public static void onServerTick(ServerTickEvent.Pre event) {
         List<VehicleTickSystem> systems = VehicleSystemRegistry.getTickSystems();
         if (systems.isEmpty()) return;
 
