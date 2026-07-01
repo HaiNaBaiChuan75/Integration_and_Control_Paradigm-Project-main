@@ -1,7 +1,7 @@
-package com.hainabaichuan75.iac_p.core.system;
+package com.hainabaichuan75.iac_p.ecs.system;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import org.jetbrains.annotations.NotNull;
@@ -11,15 +11,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * VehicleSystem 注册表 — 所有 System 在此注册，调度器从此读取。
+ * VehicleSystem 注册表——所有 System 在此注册，调度器从此读取。
  * <p>
- * 线程安全：注册仅在 Mod 构造阶段完成，运行时只读。
+ * <b>线程安全</b>：注册仅在 Mod 构造阶段（{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器}）
+ * 完成，运行时只读。无需同步机制。
  * <p>
- * 设计原则：
+ * <b>设计原则</b>：
  * <ul>
- * <li><b>注册与调度分离</b>：注册表只负责收集，调度器只负责执行</li>
- * <li><b>渐进采用</b>：现有 BE 无需立即迁移，新功能按 System 写即可</li>
- * <li><b>轻量</b>：无框架依赖，纯 Java 接口 + NeoForge 事件</li>
+ * <li><b>注册与调度分离</b>——注册表只负责收集，调度器只负责执行</li>
+ * <li><b>渐进采用</b>——现有 BE 无需立即迁移，新功能按 System 接口编写即可</li>
+ * <li><b>轻量</b>——纯 Java 接口 + 静态列表，无框架依赖</li>
  * </ul>
  */
 public final class VehicleSystemRegistry {
@@ -92,17 +93,17 @@ public final class VehicleSystemRegistry {
     /**
      * 注册所有内置 System。
      * <p>
-     * 调用位置：{@link IACP#IACP} 构造器中。
-     * 在此方法中添加新的 System 注册，而不是分散在各处。
+     * 调用位置：{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器}中。
+     * 在此方法中添加新的 System 注册，避免分散在各处。
+     * <p>
+     * 客户端专用 System（如 {@link com.hainabaichuan75.iac_p.system.AxisRenderSystem}）
+     * 不能在服务端注册——其注册在 {@code IACPClient} 中完成。
      */
     public static void registerAll() {
-        // 在此处添加所有 System 的注册
+        // 所有 System 在此统一注册
         // register(new WeaponAimSystem());
         // register(new SuspensionPhysicsSystem());
         // register(new SpeedHudSystem());
-
-        // ⚠️ AxisRenderSystem 使用 Minecraft 客户端类，需在客户端侧注册
-        // 见 IACPClient.java 中的对应注册
     }
 
     private VehicleSystemRegistry() {}

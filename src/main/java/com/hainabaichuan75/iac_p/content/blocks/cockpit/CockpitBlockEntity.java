@@ -1,12 +1,10 @@
 package com.hainabaichuan75.iac_p.content.blocks.cockpit;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.core.part.PartQuery;
-import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
-import net.minecraft.world.level.Level;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -17,14 +15,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.UUID;
 
 import static com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants.*;
 

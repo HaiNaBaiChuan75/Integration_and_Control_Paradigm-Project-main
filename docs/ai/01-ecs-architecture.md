@@ -1,17 +1,17 @@
-# Core Architecture — 载具框架使用说明
+# ECS 架构 — 载具 System/Part 协作范式
 
 ## 哲学：ECS 风格的 System / Part 架构
 
-core 包的核心思路是**将载具逻辑从 BlockEntity 中剥离，放入独立的 System 类**，BlockEntity 只保留状态和渲染。
+`ecs` 包的核心思路是**将载具逻辑从 BlockEntity 中剥离，放入独立的 System 类**。BlockEntity（Part）只保留状态和渲染。
 
 ```
-                    ┌─ VehicleTickSystem       (20Hz ─ 逻辑)
- Minecraft Tick ────┤─ VehiclePhysicsSystem    (物理步进前 ─ 力)
-                    └─ VehicleClientSystem     (20Hz ─ 客户端)
+                    ┌─ VehicleTickSystem       (20Hz — 逻辑)
+ Minecraft Tick ────┤─ VehiclePhysicsSystem    (物理步进后 — 力)
+                    └─ VehicleClientSystem     (20Hz — 客户端)
                               │
                               ▼
                     VehicleSystemRegistry
-                    (collectParts + 三个 List)
+                    (注册 + collectParts)
                               │
                               ▼
                     PartBlockEntity (instanceof 分发)
@@ -19,38 +19,34 @@ core 包的核心思路是**将载具逻辑从 BlockEntity 中剥离，放入独
 
 **核心规则：**
 
-- System **无状态**（stateless），所有运行时状态保留在 PartBlockEntity 或 SubLevel 上
+- System **无状态**——所有运行时状态保留在 Part 或 SubLevel 上
 - System 通过 `instanceof` 找到需要的 Part，再调用其方法
 - Part 不直接调用 System，不持有 System 引用
-- 注册在 `VehicleSystemRegistry.registerAll()` 中完成
+- 注册在 `VehicleSystemRegistry.registerAll()` 中完成（服务端），客户端专用 System 在 `IACPClient` 中注册
 
 ---
 
 ## 包结构
 
 ```
-core/
-  dispatch/
-    VehicleSystemDispatcher.java   NeoForge 事件 → System 的桥梁
-                                   一个 @EventBusSubscriber，监听三个事件
+ecs/
+  part/                                  ← C：部件契约
+    PartBlockEntity.java                所有载具方块的抽象基类
+    PartRenderer.java                   GeckoLib 渲染基类（客户端）
+    PartQuery.java                      @Deprecated 旧版部件查询工具
 
-  part/
-    PartBlockEntity.java           所有载具方块的基类
-    PartRenderer.java              GeckoLib 渲染基类（客户端）
+  system/                                ← S：系统契约
+    VehicleTickSystem.java              20Hz 逻辑 Tick 接口
+    VehiclePhysicsSystem.java           物理步进后 Tick 接口
+    VehicleClientSystem.java            客户端 Tick 接口
+    VehicleSystemRegistry.java          注册表 + collectParts() + registerAll()
 
-  system/
-    VehicleTickSystem.java         20Hz 逻辑 Tick 接口
-    VehiclePhysicsSystem.java      物理步进前 Tick 接口
-    VehicleClientSystem.java       客户端 Tick 接口
-    VehicleSystemRegistry.java     注册表 + collectParts()
-
-  util/
-    AssemblyUtil.java              载具组装 / 拆卸
-    SubLevelUtil.java              SubLevel 查询
-
-  api/system/
-    AxisRenderSystem.java          调试用坐标轴粒子（客户端）
+  dispatch/                              ← 调度：NeoForge ↔ System
+    VehicleSystemDispatcher.java        NeoForge 事件 → System 调用的桥梁
+                                        一个 @EventBusSubscriber，监听三种事件
 ```
+
+> **注意**：`AxisRenderSystem`（调试坐标轴粒子）已移至 `iac_p/system/` 包——它是 ECS 框架的消费者，不是框架本身。`AssemblyUtil` 和 `SubLevelUtil` 也已从 `ecs/` 移出至独立包。
 
 ---
 
@@ -58,8 +54,8 @@ core/
 
 | 阶段       | 接口                                     | 触发事件                            | 频率       | 典型用途             |
 |----------|----------------------------------------|---------------------------------|----------|------------------|
-| 逻辑 Tick  | `VehicleTickSystem.onTick()`           | `LevelTickEvent.Pre` (server)   | 20Hz     | 瞄准、控制输入、变速箱、状态更新 |
-| 物理 Tick  | `VehiclePhysicsSystem.onPhysicsTick()` | `ForgeSablePrePhysicsTickEvent` | Sable 步进 | 悬挂力、弹簧阻尼、推力      |
+| 逻辑 Tick  | `VehicleTickSystem.onTick()`           | `ServerTickEvent.Post` (server)   | 20Hz     | 瞄准、控制输入、变速箱、状态更新 |
+| 物理 Tick  | `VehiclePhysicsSystem.onPhysicsTick()` | `ForgeSablePostPhysicsTickEvent` | Sable 步进 | 悬挂力、弹簧阻尼、推力      |
 | 客户端 Tick | `VehicleClientSystem.onTick()`         | `LevelTickEvent.Pre` (client)   | 20Hz     | HUD、覆盖层、调试粒子     |
 
 注册表位置：`VehicleSystemRegistry` 中的三个 `static final List`。
@@ -86,9 +82,7 @@ public class WeaponAimSystem implements VehicleTickSystem {
 
 // 2. 注册
 // 在 VehicleSystemRegistry.registerAll() 中添加：
-TICK_SYSTEMS.
-
-add(new WeaponAimSystem());
+TICK_SYSTEMS.add(new WeaponAimSystem());
 ```
 
 ### 例 2：物理 Tick System
@@ -96,7 +90,8 @@ add(new WeaponAimSystem());
 ```java
 public class SuspensionSystem implements VehiclePhysicsSystem {
     @Override
-    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts, @NotNull RigidBodyHandle handle, double timeStepSeconds) {
+    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts,
+                              @NotNull RigidBodyHandle handle, double timeStepSeconds) {
         for (PartBlockEntity part : parts) {
             if (part instanceof WheelPart wheel) {
                 // 施加力
@@ -132,7 +127,7 @@ public class MyPartBlockEntity extends PartBlockEntity implements Aimable {
         return ORIENTATIONS.get(facingIndex);
     }
 
-    // sable$tick(): Part 级别的平滑和动画，不做逻辑
+    // sable$tick(): Part 级别的平滑和动画，不做跨 Part 逻辑
     // ⚠ ShotGunBlockEntity 当前在 sable$tick 中做瞄准计算是错误模式。
     // System 在整个 SubLevel 的 parts 列表上运行（协调多个 Part），
     // 而 sable$tick 是 Sable 为每个 PartBlockEntity 单独调用的，
@@ -162,21 +157,17 @@ public interface Aimable {
 
 ```java
 event.registerBlockEntityRenderer(IACPBlockEntities.MY_PART.get(),
-
-ctx ->new PartRenderer<>(new
-
-MyPartModel())
-        );
+    ctx -> new PartRenderer<>(new MyPartModel()));
 ```
 
 ---
 
 ## 现有 System 参考
 
-| System                   | 阶段     | 位置                 | 说明                           |
-|--------------------------|--------|--------------------|------------------------------|
-| `RandomAimVehicleSystem` | Tick   | `test_system/`     | 测试：让所有 Aimable 绕 Y 轴画圈跟踪目标   |
-| `AxisRenderSystem`       | Client | `core/api/system/` | 调试：F3 下显示每个 Part 的 XYZ 坐标轴粒子 |
+| System                   | 阶段     | 位置              | 说明                           |
+|--------------------------|--------|-----------------|------------------------------|
+| `RandomAimVehicleSystem` | Tick   | `test_system/`  | 测试：让所有 Aimable 绕 Y 轴画圈跟踪目标   |
+| `AxisRenderSystem`       | Client | `iac_p/system/` | 调试：F3 下显示每个 Part 的 XYZ 坐标轴粒子 |
 
 ---
 
@@ -207,13 +198,13 @@ SubLevel 逻辑坐标 (subLevel.logicalPose)
 
 - **z- = 前方，x+ = 右方**（Minecraft 世界标准，F3 调试界面显示的朝向）
 - `orientation()` 返回的四元数定义 Part 相对于 SubLevel 的朝向。默认返回 `IDENTITY_QUAT`（无旋转）
-- `worldPose()` 返回完整的局部→世界变换，包含 orientation + SubLevel 姿态的组合
+- `partLogicalPose()`（旧名 `worldPose()`）返回完整的局部→世界变换，包含 orientation + SubLevel 姿态的组合
 - `getCenterInWorld()` 返回 Part 方块中心的世界坐标，常用于瞄具目标计算
-- 在瞄准计算中，用 `worldPose().transformPositionInverse(target)` 将世界坐标转换到 Part 局部空间，再计算 yaw/pitch
+- 在瞄准计算中，用 `partLogicalPose().transformPositionInverse(target)` 将世界坐标转换到 Part 局部空间，再计算 yaw/pitch
 
 ```java
 // 将世界目标转换到 Part 局部空间 → 计算角度
-Vector3d target = worldPose().transformPositionInverse(new Vector3d(targetAbsPoint));
+Vector3d target = partLogicalPose().transformPositionInverse(new Vector3d(targetAbsPoint));
 double yaw = Math.toDegrees(Math.atan2(target.x(), target.z()));  // Minecraft ∠(x,z)
 double pitch = Math.toDegrees(Math.atan2(-target.y(), Math.sqrt(target.x() * target.x() + target.z() * target.z())));
 ```
@@ -245,9 +236,7 @@ GeckoLib geo 模型的坐标系必须与 Minecraft 世界坐标系一致：
 
 ```java
 REUSE_QUAT.set(animatable.orientation());
-        poseStack.
-
-mulPose(REUSE_QUAT);
+poseStack.mulPose(REUSE_QUAT);
 ```
 
 这意味着：
@@ -263,3 +252,4 @@ mulPose(REUSE_QUAT);
 - **System 本身不创建 Part**，只遍历 `parts` 参数
 - **Part 之间的数据共享**通过 PartBlockEntity 上的 public getter/setter 完成
 - **不要在 Part 中直接触发 System**，System 永远是从 Dispatcher 单向流向 Part
+- **EC 对等**：Part（C）和 System（S）在架构中地位对等，不存在谁服务于谁——Part 定义"是什么"，System 定义"做什么"

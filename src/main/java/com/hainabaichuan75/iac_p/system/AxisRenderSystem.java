@@ -1,7 +1,7 @@
-package com.hainabaichuan75.iac_p.core.api.system;
+package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.core.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.core.system.VehicleClientSystem;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.system.VehicleClientSystem;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import net.minecraft.client.Minecraft;

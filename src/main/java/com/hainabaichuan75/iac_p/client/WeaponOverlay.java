@@ -1,12 +1,9 @@
 package com.hainabaichuan75.iac_p.client;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.core.part.PartQuery;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;
@@ -42,9 +39,7 @@ import java.util.UUID;
 import com.hainabaichuan75.iac_p.index.ModSounds;
 import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.WeaponFireC2SPacket;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * 武器系统覆盖层 —— 上车时在屏幕中央渲染准星，并提供射线检测能力。

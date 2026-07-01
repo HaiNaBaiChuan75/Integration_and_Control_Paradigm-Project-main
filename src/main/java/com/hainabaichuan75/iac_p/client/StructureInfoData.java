@@ -1,20 +1,16 @@
 package com.hainabaichuan75.iac_p.client;
 
-import com.hainabaichuan75.iac_p.core.part.PartQuery;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
-import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.Comparator;

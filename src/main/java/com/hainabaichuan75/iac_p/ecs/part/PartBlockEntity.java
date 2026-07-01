@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.core.part;
+package com.hainabaichuan75.iac_p.ecs.part;
 
 import com.hainabaichuan75.iac_p.IACP;
 import dev.ryanhcode.sable.Sable;
@@ -54,7 +54,7 @@ public abstract class PartBlockEntity extends BlockEntity implements BlockEntity
     // ============================================================
     /**
      * 返回部件自身的朝向偏移四元数。默认返回单位四元数（无旋转）。
-     * 子类可重写此方法以提供特定的朝向偏移。
+     * 子类若具有方向则务必重写此方法以提供特定的朝向偏移。
      */
     @NotNull
     public Quaterniondc orientation() {

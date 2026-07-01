@@ -11,6 +11,7 @@ import com.hainabaichuan75.iac_p.IACP;
 // ComponentHost/ComponentRegistry 已移除，使用 PartBlockEntity + PartQuery
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -35,7 +36,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -1241,7 +1241,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
 
         // ═══ 使用 PartQuery 扫描查询 ═══
         UUID subUUID = sl.getUniqueId();
-        var cockpits = com.hainabaichuan75.iac_p.core.part.PartQuery.findPartsByUUID(level, subUUID,
+        var cockpits = PartQuery.findPartsByUUID(level, subUUID,
                 CockpitBlockEntity.class);
         if (!cockpits.isEmpty()) {
             var cockpit = cockpits.get(0);

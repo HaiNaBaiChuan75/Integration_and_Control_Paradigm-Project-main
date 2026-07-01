@@ -6,7 +6,7 @@ import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.core.part.PartQuery;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunAimController;
 import com.hainabaichuan75.iac_p.content.blocks.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.shotgun.ShotgunBaseBlockEntity;

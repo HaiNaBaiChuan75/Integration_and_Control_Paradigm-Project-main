@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.core.part;
+package com.hainabaichuan75.iac_p.ecs.part;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -18,13 +18,22 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
  * <p>
  * 在渲染时自动应用 {@link PartBlockEntity#orientation()} 的朝向偏移，
  * 使得部件的视觉旋转与物理/逻辑朝向保持一致。
+ * 覆盖 {@code getFacing()} 固定返回 {@link Direction#NORTH}——朝向由四元数处理，不依赖方块朝向。
  *
  * @param <BE> 部件 BE 类型，需同时实现 {@link PartBlockEntity} 和 {@link GeoAnimatable}
  */
 public class PartRenderer<BE extends PartBlockEntity & GeoAnimatable> extends GeoBlockRenderer<BE> {
 
+    /**
+     * 渲染时复用的临时四元数。避免每帧创建新对象导致的 GC 压力。
+     * <p>
+     * <b>注意</b>：仅在渲染线程使用，Minecraft 渲染管线天然单线程，无需同步。
+     */
     public static final Quaternionf REUSE_QUAT = new Quaternionf();
 
+    /**
+     * @param model 此 Part 对应的 GeckoLib 模型
+     */
     public PartRenderer(@NotNull GeoModel<BE> model) {
         super(model);
     }

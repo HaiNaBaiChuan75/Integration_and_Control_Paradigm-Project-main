@@ -2,8 +2,8 @@ package com.hainabaichuan75.iac_p;
 
 import com.hainabaichuan75.iac_p.affiliation.AffiliationCommand;
 import com.hainabaichuan75.iac_p.affiliation.WorldLoadHandler;
-import com.hainabaichuan75.iac_p.core.dispatch.VehicleSystemDispatcher;
-import com.hainabaichuan75.iac_p.core.system.VehicleSystemRegistry;
+import com.hainabaichuan75.iac_p.ecs.dispatch.VehicleSystemDispatcher;
+import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
 import com.hainabaichuan75.iac_p.events.MountedProtectionHandler;
 import com.hainabaichuan75.iac_p.events.PartDamageCache;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
@@ -69,7 +69,5 @@ public class IACP {
         // ============================================================
         // 注册所有内置 System
         VehicleSystemRegistry.registerAll();
-        // 注册 System 调度器（将 NeoForge 事件路由到 System）
-        NeoForge.EVENT_BUS.register(new VehicleSystemDispatcher());
     }
 }
