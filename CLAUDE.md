@@ -1,123 +1,87 @@
 # CLAUDE.md
-(update 2026/6/30)
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-Full project documentation: `《中控载具工坊：范式》管理文档3.0/` (Chinese, comprehensive).
-Removed/simplified features (arcade mode): `2-功能清单/2.6-已移除功能.md`.
 
-## Project Overview
+(更新于 2026/7/1)
 
-IAC-P is a **Minecraft 1.21.1 NeoForge mod** — a "glue layer" that adds vehicle controls, weapons, and HUD on top of the [Sable](https://github.com/ryanhcode/sable) physics engine (Rapier rigid-body simulation) and [Create](https://github.com/Creators-of-Create/Create) mechanical power network. It does not provide its own physics; it **coordinates** existing systems into a playable vehicle experience.
+本文件为 Claude Code 在此仓库中的编码指导（编码约定、设计原则、注释规范）。
+项目全局文档（架构设计、功能清单、技术参考、踩坑索引）见 `《中控载具工坊：范式》管理文档3.0/`。
 
-## Build Commands
+## 项目概述
+
+IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](https://github.com/ryanhcode/sable)
+物理引擎、[Create](https://github.com/Creators-of-Create/Create) 机械动力及其他第三方系统，提供载具操控、武器和 HUD。它是"
+胶水层"——不实现自己的物理。
+
+主要依赖：NeoForge、Create、Sable、Offroad、Simulated、Aeronautics、GeckoLib。所有版本号在 `gradle.properties` 中定义。
+
+## 构建命令
 
 ```bash
-./gradlew runClient       # Launch game client
-./gradlew runClient_alt   # Launch game client
-./gradlew runServer       # Launch dedicated server
-./gradlew compileJava     # Compile only
-./gradlew build           # Build mod JAR
+./gradlew runClient       # 启动游戏客户端
+./gradlew runClient_alt   # 启动游戏客户端（备用用户名）
+./gradlew runServer       # 启动专用服务器
+./gradlew compileJava     # 仅编译
+./gradlew build           # 构建模组 JAR
 ```
 
-- Java 21 required
-- First launch extracts nested JAR dependencies automatically
-- IDE runs: "Client", "Client 2" (alt username), "Server", "Data Generation"
+- 需要 Java 21
+- 首次启动会自动解压嵌套的 JAR 依赖
+- IDE 运行配置："Client"、"Client 2"（备用用户名）、"Server"、"Data Generation"
 
-## Key Dependencies
+## 需求分析与代码生成
 
-| Dependency | Gradle Property | Version |
-|---|---|---|
-| NeoForge | `neo_version` | 21.1.230 |
-| Create | `create_version` | 6.0.10-280 |
-| Sable | `sable_version` | 2.0.3 |
-| Offroad | `offroad_version` | 1.3.0 |
-| Simulated | `simulated_version` | 1.3.0 |
-| Aeronautics | `aeronautics_version` | 1.3.0 |
+在生成任何代码之前，先判断请求的性质，选择对应的处理方式。
 
-All dependency versions are set in `gradle.properties`.
+### 请求的两种形态
 
-## Architecture
+**结构型请求** — 请求中已包含明确的类/方法/接口划分、职责边界说明、或对扩展性的考量。此类请求可以直接进入编码，但仍需对照设计原则做最终检查。
 
-### Entry Points
+**场景型请求** — 请求以游戏内场景、空间关系、类比、或"想要什么效果"的方式呈现，而非以代码结构呈现。它准确描述了问题域，只是没有预设实现方案。场景型请求很常见，处理时需要额外的分解步骤：
 
-- **`IACP.java`** — Server/common mod class (`@Mod`). Registers all DeferredRegisters (blocks, items, entities, BE types, sounds, creative tabs) and game-bus event handlers: `PlayerMountTracker`, `MountedProtectionHandler`, `SubLevelProjectileHandler`, `PartDamageCache`, `SablePostPhysicsTickEvent`, `AffiliationCommand`, `WorldLoadHandler`.
-- **`IACPClient.java`** — Client-only mod class (`@Mod(dist = Dist.CLIENT)`). Registers key mappings, BlockEntity renderers, and game-bus handlers: `ClientMountGameHandler`, `ClientMountHandler`, `ClientEvents`, `VehicleDebugOverlay`, `WeaponOverlay`, `AxisLineRenderer`, `BulletTrailRenderer`.
+1. **先分解、再编码** — 将场景描述拆解为可独立变化的关注点（渲染、碰撞、数据存储、交互逻辑等），给出结构方案后再动手。不要对方说"做一个 X"就直接写一个 X 类——先想清楚 X 涉及哪些独立职责。
+2. **用游戏语言解释设计** — 用方块、实体、Tick、数据同步、模型加载等游戏中可见的概念解释设计决策，使用设计模式与设计原则要解释这是什么和为什么
+3. **识别表述中的设计意图** — 日常语言描述的痛点或需求，可能等价于一个精心设计的抽象。AI 的工作是发现这种等价关系，而非照字面堆砌代码。例如对方说"这样做管理会变灾难"，可能指向注册表模式或数据驱动方案。
+4. **先确认、再实现** — 给出组件划分和职责分配后，用一两句话向对方确认理解是否一致，再动手编码。
 
-### Core Systems
+### 通用底线
 
-**Mount/Dismount (`PlayerMountTracker` + `ServerMountHandler`):**
-- No entity riding — the player is teleported and pinned to a SubLevel world position each tick
-- Mount flow: ray-trace 3 blocks → check hit is in a SubLevel → scan for cockpit structure (unique, complete) → check occupancy → pin player, disable physics
-- Dismount: resets suspension inputs, chooses safe dismount position (ground near vehicle/handbrake, vehicle top/normal, or direct top/experimental)
-- Position sync raised to physics tick rate (~100Hz) via `SablePostPhysicsTickEvent`
+- **设计原则检查**：生成的所有代码必须逐条对照设计原则（见下方），不符合的部分标注并说明原因。
+- **替代方案优先于拒绝**：当对方的想法违反设计原则时，给出一个遵循原则的等价实现方案，并说明两者在职责分离、耦合度、可扩展性上的差异。不直接说"这样不行"。
+- **为"不适合编码"的需求找替代路径**：当需求本质上更适合用配置、数据驱动、脚本或非代码方式解决时，指出替代路径而非强行用 Java 类实现。
+- **解释"为什么"**：解释设计决策时使用方块、实体、Tick 等游戏内概念，使用设计模式与设计原则要解释这是什么和为什么。
 
-**Powertrain (`CockpitBlockEntity` + `EngineModel` + `TransmissionModel`):**
-- Throttle-direct RPM model: RPM = IDLE + throttle × (MAX - IDLE), engine always runs independently
-- Torque = TORQUE_MIN + throttle × (TORQUE_MAX - TORQUE_MIN) — throttle-linear, decoupled from RPM
-- 5-speed + reverse + neutral transmission: torque × gear ratio → torque per wheel
-- Shift sequence: 6-tick power interruption, rev-match on downshift
-- Auto-shift: detects speed/accel relative to gear-ideal speed, stalls prevention
+## 设计原则
 
-**Tire/Suspension Physics (`SuspensionTestBlockEntity` + `TirePhysicsCalculator`):**
-- Built on Sable's `BlockEntitySubLevelActor` — applies forces directly to Rapier rigid bodies
-- Binary Grip grip model (per-wheel, no friction circle sharing)
-- Dynamic load transfer during acceleration/braking/turning
-- Rolling resistance, tire deflection, burst detection, pressure sensitivity
-- Uses Offroad's `TireLike` data component for tire properties
+- SRP · OCP · LSP · ISP · DIP · 迪米特法则
+- 组合优于继承 · DRY · KISS · YAGNI · 封装变化
 
-**Physics Assembler (`PhysicsAssembleHandler`):**
-- Ctrl+Right Click to assemble/disassemble vehicle structures
-- Assembly: BFS flood fill (radius 16, max 30000 blocks) → `SubLevelAssemblyHelper.assembleBlocks()`
-- Disassembly: FreeConstraint PD servo alignment → safety checks (height, velocity, mid-air) → tick-based placement
-- 20-tick player cooldown to prevent re-assembly flicker
-- Server-side raycast using `SableBlockHelper.rayTraceSubLevels()` for SubLevel-aware detection
+## 注释与文档
 
-**BaseCabin & Shotgun:**
-- `BaseCabinBlock`: GeckoLib ENTITYBLOCK_ANIMATED single-block cockpit, ComponentHost (COCKPIT role)
-- `ShotGunBlock`: GeckoLib ENTITYBLOCK_ANIMATED shotgun turret with base block
-- Both use `driveImmediate()` direct angle drive pattern
+代码和代码注释是比项目文档**更权威**的真相来源——它们与代码同步演进，项目文档天然滞后。信息冲突时以代码为准。
 
-**SubLevel Scanning (`SubLevelScanner`):**
-- Central utility for iterating all blocks within a SubLevel's loaded chunks
-- Eliminates repeated triple-nested loop boilerplate across the codebase
-- Provides both full (BlockEntity-aware) and state-only variants
+### 原则
 
-**Affiliation System (`AffiliationRegistry` + `ComponentRegistry`):**
-- Runtime indexes (not persisted, rebuilt from NBT on world load) using ConcurrentHashMap
-- `AffiliationRegistry`: SubLevel ownership — tracks which SubLevels belong to which vehicle, player-vehicle bindings, faction system. Used for ray-trace exclusion (don't shoot your own turret).
-- `ComponentRegistry`: Functional component index — by SubLevel + ComponentRole (SUSPENSION, COCKPIT, TURRET_BASE, etc.). Enables O(1) queries instead of full SubLevel scans.
-- `RayPolicy`/`RayType`: Policy-based ray interaction resolution — decides whether rays penetrate, damage, or ignore SubLevel targets based on affiliation
+- **写意图不写行为** — 注释解释*为什么*（设计意图、性能权衡、边界条件），不重述代码做了什么
+- **公共 API 必须写** — `public`/`protected` 用 `/** ... */`，含 `@param`、`@return`、`@throws`
+- **不写**：复读机注释 · 过时注释（改代码时同步改，否则是谎言） · 无关信息
+- **需要注释**：复杂算法 · 反直觉决策 · 边界情况 · 核心领域模型 · 维护标记（`// TODO/FIXME/HACK`，需带上下文）
+- **不需要注释**：代码已自解释 · 简单 getter/setter · 可读性差时优先重构而非加注释
+- **注解即文档**：`@NotNull`/`@Nullable` 替代 null 相关 Javadoc（公开 API 强制使用）。`@Contract`（`"null -> false"`、`"null -> fail"`、`pure = true`）替代简单 `@throws` 和副作用描述。注解 + 签名足以表达契约时可省略对应 Javadoc 文字
 
-**Weapons System:**
-- Turret: `TurretTestBlock` — Crossout-style single-block turret using GeckoLib `ENTITYBLOCK_ANIMATED` with yaw/pitch bone rotation. No separate SubLevels, no physical constraints. Replaces the old 2-SubLevel grindstone+lightning-rod architecture (files deleted 06-27).
-- Machine Gun + Shotgun (base + turret): Barrel-origin damage rays, multi-turret support, hold-to-fire, bypasses immunity frames. Bullet trail rendering on client. Shotgun uses GeckoLib ENTITYBLOCK_ANIMATED.
-- Aim controller uses immediate servo drive (packet handler → `driveImmediate()`) to eliminate one server tick of latency.
+### 语言策略
 
-**Client Systems:**
-- `CameraMixin`: Orbital camera — when mounted, positions camera on a sphere around the SubLevel focus point. Adaptive height/distance based on bounding box. Supports sentinel (frozen position) mode.
-- `ClientEvents`: Key input handling — F (mount), C (config screens), N (debug), V (sentinel cam), WASD/arrow control forwarding to server, Q/E gear shift interception, hold-to-fire with raycast.
-- `VehicleDebugOverlay`: F3-style HUD showing weight, RPM, torque, gear, speed, friction budget.
+中文为主
 
-**Networking (`ModNetworking`):**
-- NeoForge `PayloadRegistrar`-based custom packets. 17 packet types covering: mount, player input, gear shift, tire config, turret targeting, weapon fire, vehicle state sync, anchor config, smart map toggle, weapon sound, debug gear/swivel toggles, physics assemble.
+## 编码约定
 
-### Config
+- **命名**：遵循标准 Java 约定。NBT 标签常量使用 `TAG_帕斯卡命名`。包 ID 使用 `蛇形命名`。
+- **日志**：使用 `IACP.LOGGER`（SLF4J）。error 级别慎用；非关键边界情况用 warn；调试信息用 info。渲染代码使用宽泛的 try-catch
+  守护，防止单个 BE 异常导致整个渲染流程崩溃。
+- **错误处理**：渲染/叠加层代码静默吞异常（视觉瑕疵优于崩溃）。逻辑代码对无效输入抛出 `IllegalArgumentException`。无自定义受检异常。
 
-- `Config.java` — Runtime `ModConfigSpec` (NeoForge 3-level GUI): camera settings, turret anchor offsets, machine gun calibration
-- `IACPConfig.java` — Compile-time constants: SubLevel scale (0.33×, requires custom Sable fork — currently disabled)
+## 开发备注
 
-### Mixins
-
-- `CameraMixin` — only mixin. Injects at `Camera.setup()` TAIL to implement orbital/sentinel camera when player is mounted.
-
-### Internationalization
-
-Full i18n with Chinese (`zh_cn.json`) and English (`en_us.json`) at `assets/iac_p/lang/`.
-
-## Development Notes
-
-- There are no unit tests — testing is done by launching the client (`runClient`) and verifying in-game
-- The mod requires all dependencies present at runtime (Create, Sable, Offroad, Simulated, Aeronautics)
-- Chinese comments are pervasive; key architectural comments are bilingual
-- `BlockEntity` types are split across multiple index classes (`ModBlockEntityTypes`, `ModCockpitBlockEntityTypes`, `ModDebugGearBlockEntityTypes`, etc.) rather than one monolithic registry
-- When adding a new BlockEntity, add its type to the appropriate index class and register in `IACP.java`
-- New packets need: a packet class, registration in `ModNetworking.register()`, and a handler method
+- 无单元测试——通过启动客户端（`./gradlew runClient`）在游戏中验证
+- 模组运行时需要所有依赖存在（Create、Sable、Offroad、Simulated、Aeronautics）
+- `BlockEntity` 类型分散在多个索引类中而非单一注册表——按职责选择正确的索引类
+- 数据生成输出目录：`src/generated/resources/`
+- Access Transformer：无
