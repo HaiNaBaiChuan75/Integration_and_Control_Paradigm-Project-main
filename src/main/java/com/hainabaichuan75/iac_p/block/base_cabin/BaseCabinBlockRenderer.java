@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
+import com.hainabaichuan75.iac_p.ecs.part.PartRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.phys.AABB;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
  * BaseCabinBlockRenderer —— 基础座舱方块的 GeckoLib 渲染器。
@@ -10,7 +10,7 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
  * 使用 {@link BaseCabinBlockModel} 驱动骨骼模型渲染，
  * 座舱本身为静态模型，不涉及动态骨骼旋转（区别于炮塔类方块）。
  */
-public class BaseCabinBlockRenderer extends GeoBlockRenderer<BaseCabinBlockEntity> {
+public class BaseCabinBlockRenderer extends PartRenderer<BaseCabinBlockEntity> {
 
     public BaseCabinBlockRenderer(BlockEntityRendererProvider.Context ctx) {
         super(new BaseCabinBlockModel());

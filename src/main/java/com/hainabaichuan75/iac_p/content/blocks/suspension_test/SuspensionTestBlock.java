@@ -1,7 +1,5 @@
 package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
 
-import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -14,8 +12,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -26,7 +28,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-public class SuspensionTestBlock extends Block implements IBE<SuspensionTestBlockEntity> {
+public class SuspensionTestBlock extends Block implements EntityBlock {
 
     public static final DirectionProperty HORIZONTAL_FACING = HorizontalDirectionalBlock.FACING;
 
@@ -100,6 +102,20 @@ public class SuspensionTestBlock extends Block implements IBE<SuspensionTestBloc
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    @Override public Class<SuspensionTestBlockEntity> getBlockEntityClass() { return SuspensionTestBlockEntity.class; }
-    @Override public BlockEntityType<? extends SuspensionTestBlockEntity> getBlockEntityType() { return ModBlockEntityTypes.SUSPENSION_TEST.get(); }
+    // ====== BlockEntity ======
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new SuspensionTestBlockEntity(pos, state);
+    }
+
+    @Override
+    public <S extends BlockEntity> BlockEntityTicker<S> getTicker(Level level, BlockState state, BlockEntityType<S> type) {
+        return (l, p, s, be) -> {
+            if (be instanceof SuspensionTestBlockEntity suspension) {
+                suspension.tick();
+            }
+        };
+    }
 }

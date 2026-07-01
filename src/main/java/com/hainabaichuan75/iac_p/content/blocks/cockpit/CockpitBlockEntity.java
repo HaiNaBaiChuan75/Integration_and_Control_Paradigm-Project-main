@@ -1,22 +1,24 @@
 package com.hainabaichuan75.iac_p.content.blocks.cockpit;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
-import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
-import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Quaterniond;
+import org.joml.Quaterniondc;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -46,7 +48,7 @@ import static com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstan
  *   摩擦圆约束决定实际地面驱动力（轮胎是唯一限幅器）
  * </pre>
  */
-public class CockpitBlockEntity extends SmartBlockEntity {
+public class CockpitBlockEntity extends PartBlockEntity {
 
     @Override
     public void onLoad() {
@@ -54,6 +56,36 @@ public class CockpitBlockEntity extends SmartBlockEntity {
         // 油门始终 100%：引擎满扭矩恒备，WASD 只控制方向不控制油门深浅。
         this.throttleLevel = 1.0;
         this.rawThrottleDirection = 0;
+    }
+
+    // ====================================================================
+    //  朝向（PartBlockEntity 覆写）
+    // ====================================================================
+    /** 朝北 — 模型默认朝向，单位四元数 */
+    private static final Quaterniond ORIENT_NORTH = new Quaterniond();
+    /** 朝南 — 绕 Y 轴旋转 180° */
+    private static final Quaterniond ORIENT_SOUTH = new Quaterniond().rotateY(Math.PI);
+    /** 朝东 — 绕 Y 轴旋转 +90° */
+    private static final Quaterniond ORIENT_EAST  = new Quaterniond().rotateY(-Math.PI / 2);
+    /** 朝西 — 绕 Y 轴旋转 -90° */
+    private static final Quaterniond ORIENT_WEST  = new Quaterniond().rotateY(Math.PI / 2);
+
+    /**
+     * 根据方块的 {@link CockpitBlock#FACING} 属性返回朝向四元数。
+     * 如果 BlockState 没有 FACING 属性（如 {@code BaseCabinBlock}），返回单位四元数。
+     */
+    @Override
+    public Quaterniondc orientation() {
+        BlockState state = getBlockState();
+        if (state.hasProperty(CockpitBlock.FACING)) {
+            switch (state.getValue(CockpitBlock.FACING)) {
+                case SOUTH: return ORIENT_SOUTH;
+                case EAST:  return ORIENT_EAST;
+                case WEST:  return ORIENT_WEST;
+                default:    return ORIENT_NORTH;
+            }
+        }
+        return ORIENT_NORTH;
     }
 
     // ====================================================================
@@ -127,10 +159,6 @@ public class CockpitBlockEntity extends SmartBlockEntity {
      */
     protected CockpitBlockEntity(BlockEntityType<? extends CockpitBlockEntity> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-    }
-
-    @Override
-    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
     }
 
     // ====================================================================
@@ -455,19 +483,13 @@ public class CockpitBlockEntity extends SmartBlockEntity {
         return this.cachedSuspensions;
     }
 
-    @Override
     public void tick() {
-        super.tick();
         if (level == null) {
             return;
         }
 
         // ── 每 tick 重置缓存（下次 tick 重新获取） ──
         this.cachedSuspensions = null;
-        super.tick();
-        if (level == null) {
-            return;
-        }
 
         // ── 延迟注册重试（SubLevel 未就绪时排队注册） ──
         com.hainabaichuan75.iac_p.affiliation.DeferredRegistration.tick(this);
@@ -830,8 +852,8 @@ public class CockpitBlockEntity extends SmartBlockEntity {
     private static final String TAG_STALLED = "Stalled";
 
     @Override
-    protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
-        super.write(tag, registries, clientPacket);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         tag.putInt(TAG_GEAR, this.currentGear);
         tag.putDouble(TAG_RPM, this.engineRpm);
         tag.putDouble(TAG_THROTTLE_LEVEL, this.throttleLevel);
@@ -843,8 +865,8 @@ public class CockpitBlockEntity extends SmartBlockEntity {
     }
 
     @Override
-    protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
-        super.read(tag, registries, clientPacket);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(TAG_GEAR)) {
             this.currentGear = tag.getInt(TAG_GEAR);
         }
@@ -878,8 +900,12 @@ public class CockpitBlockEntity extends SmartBlockEntity {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
+    /**
+     * 向客户端发送方块更新包（等同于 SmartBlockEntity.sendData()）。
+     */
+    private void sendData() {
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 }

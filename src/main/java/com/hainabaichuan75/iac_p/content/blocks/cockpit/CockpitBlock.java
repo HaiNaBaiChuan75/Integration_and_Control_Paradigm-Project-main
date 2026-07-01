@@ -1,8 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.cockpit;
 
 import com.hainabaichuan75.iac_p.index.ModBlocks;
-import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
-import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -13,6 +11,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -33,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * 参考木门的放置逻辑，但下方不需要支撑方块（可以浮空）。
  * 对着方块顶部或侧面放置均可，总是竖直向上延伸两格。
  */
-public class CockpitBlock extends Block implements IBE<CockpitBlockEntity> {
+public class CockpitBlock extends Block implements EntityBlock {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -64,14 +63,19 @@ public class CockpitBlock extends Block implements IBE<CockpitBlockEntity> {
 
     // ====== BlockEntity ======
 
+    @Nullable
     @Override
-    public Class<CockpitBlockEntity> getBlockEntityClass() {
-        return CockpitBlockEntity.class;
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new CockpitBlockEntity(pos, state);
     }
 
     @Override
-    public BlockEntityType<? extends CockpitBlockEntity> getBlockEntityType() {
-        return ModCockpitBlockEntityTypes.COCKPIT.get();
+    public <S extends BlockEntity> BlockEntityTicker<S> getTicker(Level level, BlockState state, BlockEntityType<S> type) {
+        return (l, p, s, be) -> {
+            if (be instanceof CockpitBlockEntity cockpit) {
+                cockpit.tick();
+            }
+        };
     }
 
     // ====== 放置逻辑 ======

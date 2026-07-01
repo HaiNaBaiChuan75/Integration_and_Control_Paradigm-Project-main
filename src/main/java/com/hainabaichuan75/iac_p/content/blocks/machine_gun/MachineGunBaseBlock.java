@@ -2,12 +2,8 @@ package com.hainabaichuan75.iac_p.content.blocks.machine_gun;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import com.simibubi.create.content.kinetics.base.KineticBlock;
-import com.simibubi.create.content.kinetics.base.IRotate;
-import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
-import com.simibubi.create.foundation.block.IBE;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -16,9 +12,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -29,14 +26,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * MachineGunBaseBlock —— 机枪底座方块（地毯状，Create 动力学方块）。
+ * MachineGunBaseBlock —— 机枪底座方块（地毯状）。
  * <p>
  * 放置时自动召唤砂轮 SubLevel（水平旋转/方向机）和避雷针 SubLevel（俯仰/高低机）。
  * 右键（空手）可切换拆卸/重新装配。形状类似地毯（1/16 格高），玩家可以站在上面。
- * <p>
- * 同时也是 Create 动力学方块 + 齿轮（ICogWheel）， 四个侧面可以接入齿轮驱动，RPM 通过约束电机驱动机枪旋转。
  */
-public class MachineGunBaseBlock extends KineticBlock implements IBE<MachineGunBaseBlockEntity>, ICogWheel {
+public class MachineGunBaseBlock extends Block implements EntityBlock {
 
     /**
      * 地毯形状：1/16 格高
@@ -56,30 +51,12 @@ public class MachineGunBaseBlock extends KineticBlock implements IBE<MachineGunB
         if (level.isClientSide) {
             return;
         }
-        this.withBlockEntityDo(level, pos, be -> {
+        if (level.getBlockEntity(pos) instanceof MachineGunBaseBlockEntity be) {
             if (!be.isAssembled()) {
                 IACP.LOGGER.info("[MachineGunBaseBlock] setPlacedBy: 自动装配 @ {}", pos);
                 be.assemble();
             }
-        });
-    }
-
-    @Override
-    public Direction.Axis getRotationAxis(BlockState state) {
-        // 机枪绕 Y 轴旋转（方向机）
-        return Direction.Axis.Y;
-    }
-
-    @Override
-    public boolean hasShaftTowards(LevelReader world, BlockPos pos, BlockState state, Direction face) {
-        // 无轴连接（仅齿轮啮合）
-        return false;
-    }
-
-    // ICogWheel: 本方块就是齿轮，四个侧面可接入齿轮
-    @Override
-    public boolean isLargeCog() {
-        return false; // 小齿轮
+        }
     }
 
     @Override
@@ -109,14 +86,14 @@ public class MachineGunBaseBlock extends KineticBlock implements IBE<MachineGunB
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        this.withBlockEntityDo(level, pos, be -> {
+        if (level.getBlockEntity(pos) instanceof MachineGunBaseBlockEntity be) {
             IACP.LOGGER.info("[MachineGunBaseBlock] 回调 BE：assembled={}", be.isAssembled());
             if (be.isAssembled()) {
                 be.disassemble();
             } else {
                 be.assemble();
             }
-        });
+        }
         return InteractionResult.SUCCESS;
     }
 
@@ -135,13 +112,25 @@ public class MachineGunBaseBlock extends KineticBlock implements IBE<MachineGunB
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
+    // ====== BlockEntity ======
+
+    @Nullable
     @Override
-    public Class<MachineGunBaseBlockEntity> getBlockEntityClass() {
-        return MachineGunBaseBlockEntity.class;
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineGunBaseBlockEntity(pos, state);
     }
 
     @Override
-    public BlockEntityType<? extends MachineGunBaseBlockEntity> getBlockEntityType() {
-        return ModBlockEntityTypes.MACHINE_GUN_BASE.get();
+    public <S extends BlockEntity> BlockEntityTicker<S> getTicker(Level level, BlockState state, BlockEntityType<S> type) {
+        return (l, p, s, be) -> {
+            if (be instanceof MachineGunBaseBlockEntity mg) {
+                mg.tick();
+            }
+        };
+    }
+
+    @Override
+    protected MapCodec<? extends Block> codec() {
+        return simpleCodec(MachineGunBaseBlock::new);
     }
 }

@@ -8,14 +8,12 @@
 package com.hainabaichuan75.iac_p.content.blocks.suspension_test;
 
 import com.hainabaichuan75.iac_p.IACP;
-// ComponentHost/ComponentRegistry 已移除，使用 PartBlockEntity + PartQuery
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit.PowertrainConstants;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
-import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import dev.ryanhcode.offroad.content.components.TireLike;
 import dev.ryanhcode.offroad.index.OffroadDataComponents;
 import dev.ryanhcode.sable.Sable;
@@ -30,6 +28,8 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import org.joml.Quaterniond;
+import org.joml.Quaterniondc;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -48,12 +48,38 @@ import java.util.UUID;
 
 import static com.hainabaichuan75.iac_p.content.blocks.suspension_test.SuspensionConstants.*;
 
-public class SuspensionTestBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor {
+public class SuspensionTestBlockEntity extends PartBlockEntity {
 
     // ==================================================================
     @Override
     public void onLoad() {
         super.onLoad();
+    }
+
+    // ====================================================================
+    //  朝向（PartBlockEntity 覆写）
+    // ====================================================================
+    /** 朝北 — 默认朝向 */
+    private static final Quaterniond ORIENT_NORTH = new Quaterniond();
+    /** 朝南 */
+    private static final Quaterniond ORIENT_SOUTH = new Quaterniond().rotateY(Math.PI);
+    /** 朝东 */
+    private static final Quaterniond ORIENT_EAST  = new Quaterniond().rotateY(-Math.PI / 2);
+    /** 朝西 */
+    private static final Quaterniond ORIENT_WEST  = new Quaterniond().rotateY(Math.PI / 2);
+
+    @Override
+    public Quaterniondc orientation() {
+        BlockState state = getBlockState();
+        if (state.hasProperty(SuspensionTestBlock.HORIZONTAL_FACING)) {
+            switch (state.getValue(SuspensionTestBlock.HORIZONTAL_FACING)) {
+                case SOUTH: return ORIENT_SOUTH;
+                case EAST:  return ORIENT_EAST;
+                case WEST:  return ORIENT_WEST;
+                default:    return ORIENT_NORTH;
+            }
+        }
+        return ORIENT_NORTH;
     }
 
     // ====================================================================
@@ -344,10 +370,6 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         super(ModBlockEntityTypes.SUSPENSION_TEST.get(), pos, state);
     }
 
-    @Override
-    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-    }
-
     // ===== 轮子物品 =====
     public ItemStack getHeldItem() {
         return heldItem;
@@ -564,8 +586,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     private static final String TAG_FRICTION_DEMAND_RATIO = "FrictionDemandRatio";
 
     @Override
-    protected void write(CompoundTag t, HolderLookup.Provider r, boolean cp) {
-        super.write(t, r, cp);
+    protected void saveAdditional(CompoundTag t, HolderLookup.Provider r) {
+        super.saveAdditional(t, r);
         t.put("HeldItem", this.heldItem.saveOptional(r));
         // 持久化按键绑定（委托 SmartKeyHandler）
         this.smartKeyHandler.writeToNbt(t);
@@ -577,8 +599,8 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     @Override
-    protected void read(CompoundTag t, HolderLookup.Provider r, boolean cp) {
-        super.read(t, r, cp);
+    protected void loadAdditional(CompoundTag t, HolderLookup.Provider r) {
+        super.loadAdditional(t, r);
         if (t.contains("HeldItem")) {
             this.heldItem = ItemStack.parseOptional(r, t.getCompound("HeldItem"));
         }
@@ -602,9 +624,13 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider r) {
-        return saveWithoutMetadata(r);
+    /**
+     * 向客户端发送方块更新包（等同于 SmartBlockEntity.sendData()）。
+     */
+    private void sendData() {
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     // ===== 物理 tick =====
@@ -1011,10 +1037,7 @@ public class SuspensionTestBlockEntity extends SmartBlockEntity implements Block
     }
 
     // ===== 客户端 tick（含转向与轮子旋转） =====
-    @Override
     public void tick() {
-        super.tick();
-
         // === 油门状态由 CockpitBE.tick() 直接扫描 throttleForward/Backward 字段获取 ===
         // 不再使用共享 Map，消除 putIfAbsent 导致的状态覆盖时序问题。
         SubLevel sl = Sable.HELPER.getContaining(this);

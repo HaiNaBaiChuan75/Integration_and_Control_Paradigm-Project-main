@@ -1,7 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.shotgun;
 
-import com.hainabaichuan75.iac_p.affiliation.ComponentHost;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -12,7 +11,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +41,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  *                   └── 炮管几何体
  * </pre>
  */
-public class ShotGunBlockEntity extends BlockEntity implements GeoBlockEntity, ComponentHost {
+public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntity {
 
     // ==================================================================
     //  朝向映射：facingIndex → 四元数
@@ -98,6 +96,7 @@ public class ShotGunBlockEntity extends BlockEntity implements GeoBlockEntity, C
     }
 
     /** 返回朝向对应的四元数（绕 Y 轴旋转） */
+    @Override
     public Quaterniondc orientation() {
         return ORIENTATIONS.get(facingIndex);
     }

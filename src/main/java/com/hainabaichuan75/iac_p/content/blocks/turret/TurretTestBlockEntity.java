@@ -1,5 +1,6 @@
 package com.hainabaichuan75.iac_p.content.blocks.turret;
 
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -7,7 +8,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -38,7 +38,7 @@ import java.util.List;
  * <li>右键切换自动旋转（通过 BlockState 属性自动同步到客户端），潜行+右键重置</li>
  * </ul>
  */
-public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity {
+public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEntity {
 
     // 动画定义（仅用于激活 GeckoLib 动画系统，实际旋转由渲染器覆盖）
     private static final RawAnimation MAIN_ANIM = RawAnimation.begin().thenLoop("main");
@@ -114,6 +114,11 @@ public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity
     private float[] clearanceClamp(float targetYaw, float targetPitch) {
         // 🔧 调试期间跳过 ClearanceSolver（避免 SubLevel 扫描性能问题）
         return new float[]{targetYaw, targetPitch};
+    }
+
+    @Override
+    public org.joml.Quaterniondc orientation() {
+        return PartBlockEntity.IDENTITY_QUAT;
     }
 
     public TurretTestBlockEntity(BlockPos pos, BlockState state) {
@@ -271,19 +276,18 @@ public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity
     }
 
     // ==================================================================
-    //  网络同步：服务端 → 客户端
+    //  NBT 持久化 & 网络同步
     // ==================================================================
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         tag.putDouble("yaw", this.yawDeg);
         tag.putDouble("pitch", this.pitchDeg);
-        return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        super.handleUpdateTag(tag, registries);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains("yaw")) {
             this.lastYawDeg = this.yawDeg;
             this.yawDeg = tag.getDouble("yaw");
@@ -296,13 +300,6 @@ public class TurretTestBlockEntity extends BlockEntity implements GeoBlockEntity
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        // 使用 getUpdateTag 构建同步数据包
         return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt,
-                             HolderLookup.Provider registries) {
-        handleUpdateTag(pkt.getTag(), registries);
     }
 }

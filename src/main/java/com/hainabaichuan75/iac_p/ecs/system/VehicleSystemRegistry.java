@@ -2,6 +2,7 @@ package com.hainabaichuan75.iac_p.ecs.system;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.system.AxisRenderSystem;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import org.jetbrains.annotations.NotNull;
@@ -100,10 +101,7 @@ public final class VehicleSystemRegistry {
      * 不能在服务端注册——其注册在 {@code IACPClient} 中完成。
      */
     public static void registerAll() {
-        // 所有 System 在此统一注册
-        // register(new WeaponAimSystem());
-        // register(new SuspensionPhysicsSystem());
-        // register(new SpeedHudSystem());
+        register(new AxisRenderSystem());
     }
 
     private VehicleSystemRegistry() {}
