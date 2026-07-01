@@ -9,6 +9,7 @@ package com.hainabaichuan75.iac_p.block.suspension_test;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
+import com.hainabaichuan75.iac_p.ecs.part.WheelPart;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
@@ -47,7 +48,7 @@ import java.util.UUID;
 
 import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants.*;
 
-public class SuspensionTestBlockEntity extends PartBlockEntity {
+public class SuspensionTestBlockEntity extends PartBlockEntity implements WheelPart {
 
     // ==================================================================
     @Override
@@ -576,6 +577,67 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
         return throttleForward || throttleBackward;
     }
 
+    // ====================================================================
+    //  WheelPart 接口实现
+    // ====================================================================
+    /**
+     * 轮端扭矩输入（Nm），由 EnginePowerSystem 每逻辑 tick 写入，SuspensionPhysicsSystem 读取。
+     */
+    private double torqueInput = 0.0;
+
+    @Override public double getTorqueInput() { return this.torqueInput; }
+    @Override public void setTorqueInput(double torque) { this.torqueInput = torque; }
+
+    @Override public double getSteeringAngle() { return this.chasingYaw; }
+    @Override public void setSteeringAngle(double angle) { this.chasingYaw = angle; }
+
+    @Override public double getExtension() { return this.extension; }
+    @Override public double getLastExtension() { return this.lastExt; }
+
+    /**
+     * 设置悬挂伸展量（由 SuspensionPhysicsSystem 写入）。
+     */
+    public void setExtension(double ext) { this.extension = ext; }
+
+    /**
+     * 设置本轮实际轮端 RPM（由 SuspensionPhysicsSystem 从物理速度推算写入）。
+     */
+    public void setCurrentWheelRpm(double rpm) { this.currentWheelRpm = rpm; }
+
+    @Override public double getAngle() { return this.angle; }
+    @Override public double getLastAngle() { return this.lastAngle; }
+    @Override public double getAngVel() { return this.angVel; }
+
+    /**
+     * 设置轮子旋转角视觉状态（由 WheelVisualSystem 每客户端 tick 写入）。
+     * 自动保存前一帧的值用于 partialTick 插值。
+     *
+     * @param delta 本轮角增量（弧度）
+     * @param angVel 本轮角速度（弧度/tick）
+     */
+    public void setAngleVisual(double delta, double angVel) {
+        this.lastAngle = this.angle;
+        this.angle += delta;
+        this.angVel = angVel;
+    }
+
+    /**
+     * 重置轮子旋转角（无轮子时调用）。
+     */
+    public void setAngleVisual(double last, double angle, double angVel) {
+        this.lastAngle = last;
+        this.angle = angle;
+        this.angVel = angVel;
+    }
+
+    /**
+     * 设置悬挂伸展量视觉值（由 WheelVisualSystem 每客户端 tick 写入）。
+     */
+    public void setExtensionVisual(double ext) {
+        this.lastExt = this.extension;
+        this.extension = ext;
+    }
+
     // ===== NBT =====
     // 横移轮标记 NBT 标签
     private static final String TAG_IS_STRAFE_WHEEL = "IsStrafeWheel";
@@ -1035,61 +1097,31 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
         handle.applyForcesAndReset(this.forceTotal);
     }
 
-    // ===== 客户端 tick（含转向与轮子旋转） =====
+    // ===== 客户端 tick（轮子旋转视觉效果） =====
+    /**
+     * 每 tick 更新。
+     * <p>
+     * <b>已迁移到 System</b>：
+     * <ul>
+     *   <li>转向逻辑（chasingYaw 插值）→ {@link com.hainabaichuan75.iac_p.system.SteeringSystem}</li>
+     *   <li>客户端轮子视觉 → {@link com.hainabaichuan75.iac_p.system.WheelVisualSystem}</li>
+     * </ul>
+     * 本方法保留客户端轮子旋转作为后备（与 WheelVisualSystem 共存）。
+     */
     public void tick() {
-        // === 油门状态由 CockpitBE.tick() 直接扫描 throttleForward/Backward 字段获取 ===
-        // 不再使用共享 Map，消除 putIfAbsent 导致的状态覆盖时序问题。
         SubLevel sl = Sable.HELPER.getContaining(this);
-
         TireLike tire = this.heldItem.get(OffroadDataComponents.TIRE);
 
-        // === 转向更新（服务端 + 客户端均执行） ===
-        this.lastChasingYaw = this.chasingYaw;
-
-        // 计算目标转向角：
-        // applyControlInput() 通过 setTargetSteeringYaw() 写入 targetSteeringYaw
-        // 当无转向输入时，targetSteeringYaw = 0，转向自动回中
-        double target = this.targetSteeringYaw;
-        if (target == 0.0 && !AUTO_CENTER) {
-            target = this.chasingYaw; // 保持当前角度
-        }
-
-        // ═══ 速度自适应转向 ═══
-        // 低速 (< 5 m/s) → 满舵 30°，高速 (> 20 m/s) → 最小角 10°，
-        // 中间线性过渡，防止高速转向失控。
-        double absRpm = Math.abs(this.currentWheelRpm);
-        double adaptiveMaxDeg;
-        if (absRpm < 100) {
-            adaptiveMaxDeg = SuspensionConstants.MAX_STEERING_ANGLE;
-        } else if (absRpm > 400) {
-            adaptiveMaxDeg = SuspensionConstants.MIN_STEERING_ANGLE;
-        } else {
-            double t = (absRpm - 100) / 300;
-            adaptiveMaxDeg = Mth.lerp(t,
-                    SuspensionConstants.MAX_STEERING_ANGLE,
-                    SuspensionConstants.MIN_STEERING_ANGLE);
-        }
-        double adaptiveMaxRad = Math.toRadians(adaptiveMaxDeg);
-        target = Mth.clamp(target, -adaptiveMaxRad, adaptiveMaxRad);
-
-        // 匀速转向：每 tick 最多转动 STEERING_SPEED 度
-        double yawDiff = target - this.chasingYaw;
-        double maxStep = STEERING_SPEED_RAD;
-        if (Math.abs(yawDiff) <= maxStep) {
-            this.chasingYaw = target;
-        } else {
-            this.chasingYaw += Math.signum(yawDiff) * maxStep;
-        }
-
-        // 服务端：转向已完成，其余视觉更新仅在客户端执行
-        if (!this.level.isClientSide) {
+        // 服务端：不再需要转向（SteeringSystem 处理），直接返回
+        if (this.level != null && !this.level.isClientSide) {
             return;
         }
 
-        // === 客户端视觉更新 ===
+        // === 客户端视觉更新（与 WheelVisualSystem 共存，互为后备） ===
         if (tire == null) {
+            this.lastAngle = this.angle;
             this.angle = 0;
-            this.lastAngle = 0;
+            this.angVel = 0;
             this.lastExt = this.extension;
             this.extension = Mth.lerp(0.6, this.extension, NO_WHEEL_EXT);
             return;
@@ -1097,15 +1129,12 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
 
         Direction f = getBlockState().getValue(SuspensionTestBlock.HORIZONTAL_FACING);
         float rad = tire.radius();
-        // sl 已在 tick() 开头定义，此处复用
         this.lastExt = this.extension;
         this.extension = Mth.lerp(0.7, this.extension, computeMaxExtensionLocal(rad));
 
-        // 轮子旋转：被动摩擦滚动 + 主动 RPM（从动力系统读取）
+        // 轮子旋转
         double visualRpm = getVisualRpm();
         if (sl == null || this.lifted) {
-            // 悬空时：仅主动 RPM 驱动旋转
-            // 取负以匹配渲染器的符号约定（renderer 使用 -angle，正 RPM 应产生正向视觉旋转）
             double rpmAV = -visualRpm * RPM_TO_RAD_PER_TICK;
             this.angVel = rpmAV;
             this.lastAngle = this.angle;
@@ -1119,24 +1148,16 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
 
         double trans = lv.dot(fwdD);
         double circ = TWO_PI * rad;
-        // 被动摩擦滚动产生的角增量（地面相对速度 / 周长 × 2π）
         double frictionDelta = -trans / circ * TWO_PI;
-
-        // 主动 RPM 产生的角增量（从动力系统读取）
-        // 取负以匹配渲染器的符号约定（renderer 使用 -angle，正 RPM 应产生正向视觉旋转）
         double rpmDelta = -visualRpm * RPM_TO_RAD_PER_TICK;
 
-        // 视觉轮子旋转：
-        //   - 刹车时：轮子锁死，不旋转（combinedDelta=0），车辆靠滑动摩擦减速
-        //   - 有主动驱动且未刹车：显示引擎转速（rpmDelta），表现加速中的正常滑转
-        //   - 无主动驱动（松油门/滑行）：纯地面摩擦滚动（frictionDelta）
         double combinedDelta;
         if (this.braking) {
-            combinedDelta = 0.0; // 手刹锁轮：轮子不转，车辆滑行
+            combinedDelta = 0.0;
         } else if (Math.abs(visualRpm) > 0.1) {
-            combinedDelta = rpmDelta; // 引擎驱动时轮子按引擎转速旋转
+            combinedDelta = rpmDelta;
         } else {
-            combinedDelta = frictionDelta; // 被动滑行时按地面速度滚动
+            combinedDelta = frictionDelta;
         }
 
         this.lastAngle = this.angle;

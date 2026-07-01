@@ -6,6 +6,7 @@ import com.hainabaichuan75.iac_p.affiliation.AffiliationRegistry;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationRole;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.WeaponMount;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import dev.ryanhcode.sable.api.physics.constraint.*;
 import net.createmod.catnip.math.AngleHelper;
@@ -40,7 +41,7 @@ import java.util.UUID;
 /**
  * ShotgunBaseBlockEntity —— 霰弹枪底座 BE。
  */
-public class ShotgunBaseBlockEntity extends PartBlockEntity {
+public class ShotgunBaseBlockEntity extends PartBlockEntity implements WeaponMount {
 
     private static final java.util.Map<java.util.UUID, BlockPos> SG_GRINDSTONE_OWNER_MAP = new java.util.HashMap<>();
     private static final java.util.Map<java.util.UUID, BlockPos> SG_ROD_OWNER_MAP = new java.util.HashMap<>();
@@ -142,6 +143,13 @@ public class ShotgunBaseBlockEntity extends PartBlockEntity {
 
     public void setTargetYawAbsolute(double degrees) { this.lastTargetAngleDegrees = this.targetAngleDegrees; this.targetAngleDegrees = degrees; }
     public double getTargetYawAngle() { return this.targetAngleDegrees; }
+
+    @Override public void setTargetYaw(double yaw) { setTargetYawAbsolute(yaw); }
+    @Override public void setTargetPitch(double pitch) { setTargetPitchAbsolute(pitch); }
+    @Override public double getTargetYaw() { return this.targetAngleDegrees; }
+    @Override public double getTargetPitch() { return this.targetPitchAngleDegrees; }
+    @Override public double getCurrentYaw() { return this.targetAngleDegrees; }
+    @Override public double getCurrentPitch() { return this.targetPitchAngleDegrees; }
 
     private void updatePitchServo() {
         if (!assembled || barrelPitchHandle == null || !barrelPitchHandle.isValid()) return;

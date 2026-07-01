@@ -7,6 +7,7 @@ import com.hainabaichuan75.iac_p.affiliation.AffiliationRegistry;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationRole;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.WeaponMount;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import dev.ryanhcode.sable.api.physics.constraint.*;
 import net.createmod.catnip.math.AngleHelper;
@@ -47,7 +48,7 @@ import java.util.UUID;
  * 装配流程：在底座附近生成砂轮 SubLevel（方向机/水平旋转）和 末地烛 SubLevel（高低机/俯仰），通过
  * RotaryConstraint（方向机） 和 GenericConstraint（高低机，ANGULAR_X 自由）约束连接。
  */
-public class MachineGunBaseBlockEntity extends PartBlockEntity {
+public class MachineGunBaseBlockEntity extends PartBlockEntity implements WeaponMount {
 
     // ==================================================================
     //  静态注册表
@@ -194,6 +195,13 @@ public class MachineGunBaseBlockEntity extends PartBlockEntity {
     }
 
     public double getTargetYawAngle() { return this.targetAngleDegrees; }
+
+    @Override public void setTargetYaw(double yaw) { setTargetYawAbsolute(yaw); }
+    @Override public void setTargetPitch(double pitch) { setTargetPitchAbsolute(pitch); }
+    @Override public double getTargetYaw() { return this.targetAngleDegrees; }
+    @Override public double getTargetPitch() { return this.targetPitchAngleDegrees; }
+    @Override public double getCurrentYaw() { return this.targetAngleDegrees; }
+    @Override public double getCurrentPitch() { return this.targetPitchAngleDegrees; }
 
     private void updatePitchServo() {
         if (!assembled || barrelPitchHandle == null || !barrelPitchHandle.isValid()) return;
