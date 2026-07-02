@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -117,7 +118,7 @@ public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEn
     }
 
     @Override
-    public org.joml.Quaterniondc orientation() {
+    public org.joml.@NotNull Quaterniondc orientation() {
         return IDENTITY_QUAT;
     }
 

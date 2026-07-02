@@ -16,6 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
@@ -75,7 +76,7 @@ public class CockpitBlockEntity extends PartBlockEntity {
      * 如果 BlockState 没有 FACING 属性（如 {@code BaseCabinBlock}），返回单位四元数。
      */
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         BlockState state = getBlockState();
         if (state.hasProperty(CockpitBlock.FACING)) {
             switch (state.getValue(CockpitBlock.FACING)) {

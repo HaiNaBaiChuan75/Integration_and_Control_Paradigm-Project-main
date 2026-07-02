@@ -31,6 +31,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
@@ -115,7 +116,7 @@ public class MachineGunBaseBlockEntity extends PartBlockEntity {
     }
 
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         return IDENTITY_QUAT;
     }
 

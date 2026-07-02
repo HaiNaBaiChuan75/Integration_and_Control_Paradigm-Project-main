@@ -1,14 +1,10 @@
 package com.hainabaichuan75.iac_p.ecs.part;
 
-import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Quaterniondc;
 
 /**
  * 载具部件的抽象便利基类。
@@ -44,33 +40,4 @@ public abstract class PartBlockEntity extends BlockEntity implements Part {
         super(type, pos, blockState);
     }
 
-    // ============================================================
-    //  朝向
-    // ============================================================
-    /**
-     * 返回部件自身的朝向偏移四元数。默认返回单位四元数（无旋转）。
-     * 子类若具有方向则务必重写此方法以提供特定的朝向偏移。
-     */
-    @NotNull
-    @Override
-    public Quaterniondc orientation() {
-        return IDENTITY_QUAT;
-    }
-
-    // ============================================================
-    //  SubLevel 关联
-    // ============================================================
-    /**
-     * 获取此部件所在的 SubLevel。
-     * <p>
-     * Sable 的 {@code getContaining()} 要求参数为 {@link BlockEntity} 或 {@link net.minecraft.world.entity.Entity}，
-     * 接口 {@link Part} 无法提供 {@code default} 实现，在此显式实现。
-     *
-     * @return SubLevel，如果尚未关联则返回 null
-     */
-    @Nullable
-    @Override
-    public SubLevel getSubLevel() {
-        return Sable.HELPER.getContaining(this);
-    }
 }

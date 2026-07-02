@@ -98,7 +98,7 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
 
     /** 返回朝向对应的四元数（绕 Y 轴旋转） */
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         return ORIENTATIONS.get(facingIndex);
     }
 

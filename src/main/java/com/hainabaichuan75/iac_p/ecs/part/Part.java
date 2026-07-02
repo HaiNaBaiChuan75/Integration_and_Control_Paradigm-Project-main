@@ -1,11 +1,12 @@
 package com.hainabaichuan75.iac_p.ecs.part;
 
 import com.hainabaichuan75.iac_p.IACP;
+import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
@@ -36,29 +37,23 @@ public interface Part extends BlockEntitySubLevelActor {
      */
     Quaterniond IDENTITY_QUAT = new Quaterniond();
 
-    // ============================================================
-    //  Abstract — 实现者必须提供
-    // ============================================================
-
     /**
      * 返回部件自身的朝向偏移四元数。默认返回单位四元数（无旋转）。
      * 子类若具有方向则务必重写此方法以提供特定的朝向偏移。
      */
-    @NotNull Quaterniondc orientation();
+    @NotNull
+    default Quaterniondc orientation() {
+        return IDENTITY_QUAT;
+    }
 
-    /**
-     * 返回此部件的方块坐标。
-     * <p>
-     * {@link net.minecraft.world.level.block.entity.BlockEntity#getBlockPos()} 已有此方法的 public 实现，
-     * 实现类无需额外编写。
-     *
-     * @return 方块坐标
-     */
-    @NotNull BlockPos getBlockPos();
+    ;
 
-    // ============================================================
-    //  Default — 基于 getBlockPos() + getSubLevel() 的默认实现
-    // ============================================================
+    @NotNull
+    default BlockEntity getBlockEntity() {
+        return (BlockEntity) this;
+    }
+
+    ;
 
     /**
      * 获取此部件所在的 SubLevel。
@@ -73,7 +68,10 @@ public interface Part extends BlockEntitySubLevelActor {
      *
      * @return SubLevel，如果尚未关联则返回 null
      */
-    @Nullable SubLevel getSubLevel();
+    @Nullable
+    default SubLevel getSubLevel() {
+        return Sable.HELPER.getContaining(getBlockEntity());
+    }
 
     /**
      * 获取 SubLevel 的逻辑姿态（local → logical 变换）。
@@ -119,7 +117,7 @@ public interface Part extends BlockEntitySubLevelActor {
         }
         Vector3d uniformScaleVec = new Vector3d(uniformScale);
         Quaterniond combinedOri = subPose.orientation().mul(orientation(), new Quaterniond());
-        Vector3d blockCenter = JOMLConversion.atCenterOf(getBlockPos());
+        Vector3d blockCenter = JOMLConversion.atCenterOf(getBlockEntity().getBlockPos());
         Vector3d offset = new Vector3d(blockCenter).sub(subPose.rotationPoint()).mul(uniformScale);
         subPose.orientation().transform(offset);
         offset.add(subPose.position());
@@ -133,6 +131,6 @@ public interface Part extends BlockEntitySubLevelActor {
      */
     @NotNull
     default Vector3dc getCenterInWorld() {
-        return getSubLevelPose().transformPosition(JOMLConversion.atCenterOf(getBlockPos()));
+        return getSubLevelPose().transformPosition(JOMLConversion.atCenterOf(getBlockEntity().getBlockPos()));
     }
 }

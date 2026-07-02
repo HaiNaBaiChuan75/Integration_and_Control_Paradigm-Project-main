@@ -68,7 +68,7 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
     private static final Quaterniond ORIENT_WEST  = new Quaterniond().rotateY(Math.PI / 2);
 
     @Override
-    public Quaterniondc orientation() {
+    public @NotNull Quaterniondc orientation() {
         BlockState state = getBlockState();
         if (state.hasProperty(SuspensionTestBlock.HORIZONTAL_FACING)) {
             switch (state.getValue(SuspensionTestBlock.HORIZONTAL_FACING)) {
