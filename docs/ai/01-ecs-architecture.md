@@ -2,7 +2,8 @@
 
 ## 哲学：ECS 风格的 System / Part 架构
 
-`ecs` 包的核心思路是**将载具逻辑从 BlockEntity 中剥离，放入独立的 System 类**。BlockEntity（Part）只保留**状态数据**、*
+`ecs` 包的核心思路是**将载具逻辑从 BlockEntity 中剥离，放入独立的 System 类**。Part（部件，在 MC 中通常是 BlockEntity）只保留
+**状态数据**、*
 *自洽的平滑插值**与**非车辆逻辑**（如动画触发、渲染状态）。
 
 ```
@@ -15,7 +16,7 @@
                     (注册 + collectParts)
                               │
                               ▼
-                    PartBlockEntity (instanceof 分发)
+                    Part 接口 (instanceof 分发)
 ```
 
 **核心规则：**
@@ -26,6 +27,9 @@
 - System 通过 `instanceof` 找到需要的 Part，读取其数据、计算、写回结果
 - Part 不直接调用 System，不持有 System 引用
 - 注册在 `VehicleSystemRegistry.registerAll()` 中完成（服务端），客户端专用 System 在 `IACPClient` 中注册
+- **`Part` 是接口而非类**：`Part` 定义为接口，扩展 Sable 的 `BlockEntitySubLevelActor`，提供 `orientation()`、
+  `partLogicalPose()`、`getCenterInWorld()` 等默认方法。`PartBlockEntity` 是便利抽象类（
+  `extends BlockEntity implements Part`），非强制使用——可直接实现 `Part` 接口。
 
 > **架构定位**：本实现是 Minecraft 环境下的**务实变体**，借鉴 ECS 的"System 驱动逻辑、Part 持有状态"哲学，但并非纯 ECS。Part
 > 保留行为接口仅限于**非车辆逻辑**（如动画状态机、GeckoLib 骨骼更新），所有车辆级算法（瞄准、动力、悬挂）必须在 System 中实现。在 ~
@@ -38,7 +42,8 @@
 ```
 ecs/
   part/                                  ← C：部件契约
-    PartBlockEntity.java                所有载具方块的抽象基类
+    Part.java                           部件核心接口（extends BlockEntitySubLevelActor）
+    PartBlockEntity.java                部件的便利抽象基类（extends BlockEntity implements Part）
     PartRenderer.java                   GeckoLib 渲染基类（客户端）
     PartQuery.java                      @Deprecated 旧版部件查询工具
 
@@ -74,13 +79,13 @@ ecs/
 ```java
 public class WeaponAimSystem implements VehicleTickSystem {
     @Override
-    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts) {
         // 1. 找到主控输入源（如玩家正在交互的控制器）
         Controller ctrl = findPrimaryController(parts);
         if (ctrl == null) return;
 
         // 2. 遍历武器挂载点，System 做全部瞄准计算
-        for (PartBlockEntity part : parts) {
+      for (Part part : parts) {
             if (part instanceof WeaponMount mount) {
                 // 坐标转换、角度解算 —— 这是车辆逻辑，必须在 System 中
                 Vector3d targetLocal = mount.partLogicalPose().transformPositionInverse(new Vector3d(ctrl.getAimTarget()));
@@ -101,10 +106,10 @@ public class WeaponAimSystem implements VehicleTickSystem {
 ```java
 public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
     @Override
-    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts,
+    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts,
                               @NotNull RigidBodyHandle handle, double timeStepSeconds) {
         // 读取引擎 System 上一逻辑 tick 写入的轮上扭矩
-        for (PartBlockEntity part : parts) {
+      for (Part part : parts) {
             if (part instanceof WheelPart wheel) {
                 double torque = wheel.getTorqueInput();  // 纯数据，WheelPart 不解释其含义
                 // 弹簧/阻尼/摩擦力计算 —— 车辆逻辑在 System
@@ -120,7 +125,7 @@ public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
 ```java
 public class SpeedHudSystem implements VehicleClientSystem {
     @Override
-    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<? extends Part> parts) {
         // 如果只在 F3 调试界面显示
         if (!Minecraft.getInstance().getDebugOverlay().showDebugScreen()) return;
         // 读取 Part 数据渲染 HUD
@@ -154,7 +159,7 @@ add(new ClientSyncSystem());     // 最后同步完整状态
 
 ## 如何添加一个新的载具方块（Part）
 
-1. **继承 `PartBlockEntity`**（取代直接继承 `BlockEntity`）
+1. **实现 `Part` 接口**（推荐继承 `PartBlockEntity` 以复用默认实现）
 
 ```java
 public class MyPartBlockEntity extends PartBlockEntity implements WeaponMount, Controller {
@@ -221,7 +226,7 @@ public interface Controller {
 
 3. **注册到 `IACPBlockEntities`** 和 `IACPBlocks`
 
-4. **注册渲染器** 在 `IACPClient` 中：
+4. **注册渲染器** 在 `IACPClient` 中（`BE` 类型参数需要满足 `BlockEntity & Part & GeoAnimatable`）：
 
 ```java
 event.registerBlockEntityRenderer(IACPBlockEntities.MY_PART.get(),
@@ -329,7 +334,8 @@ poseStack.mulPose(REUSE_QUAT);
   开销可忽略，无需预过滤或索引
 - **调度器无状态**：`VehicleSystemDispatcher` 每 tick 重新收集 Part，不缓存、不持有 Part 引用。SubLevel 由 Sable
   管理，本框架只读/只调用
-- **网络同步原生**：Part 继承 `BlockEntity`，状态变更与同步走 MC 原生机制（`setChanged()` + `getUpdatePacket`）。System
+- **网络同步原生**：Part 实现者（通常通过 `PartBlockEntity`）继承 `BlockEntity`，状态变更与同步走 MC 原生机制（
+  `setChanged()` + `getUpdatePacket`）。System
   不介入网络层
 - **System 无状态边界**：System 不持有运行时业务状态（如当前速度、装填进度），但可持有**配置常量**（如 PID 参数、最大转向角）。跨
   Tick 的连续计算状态若不属于单个 Part，可存放于 SubLevel 级（若 Sable 提供扩展点）或通过 Part 数据字段间接传递

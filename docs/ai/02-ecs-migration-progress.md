@@ -30,7 +30,7 @@ client visual update       →      WheelVisualSystem        (VehicleClientSyste
 
 | 层         | 状态                                                 |
 |-----------|----------------------------------------------------|
-| 基础设施      | ✅ PartBlockEntity / PartRenderer 就绪                |
+| 基础设施      | ✅ Part 接口 / PartBlockEntity 便利基类 / PartRenderer 就绪 |
 | System 接口 | ✅ 3 个 @FunctionalInterface 定义完毕                    |
 | 调度器       | ✅ VehicleSystemDispatcher 事件路由就绪                   |
 | 注册表       | ✅ 框架就绪，但 `TICK_SYSTEMS` 和 `PHYSICS_SYSTEMS` 为空     |
@@ -135,7 +135,7 @@ System 用 `instanceof` 找到需要的 Part，读取/写入其状态字段。�
 
 ---
 
-## 现有 PartBlockEntity 职责清单
+## 现有 Part 实现（BlockEntity）职责清单
 
 ### 当前逻辑分布
 
@@ -178,6 +178,7 @@ System 用 `instanceof` 找到需要的 Part，读取/写入其状态字段。�
 |------------|------------------------------------------|
 | 2026-07-02 | 基础设施就位：PartBlockEntity/PartRenderer 迁移完成 |
 | 2026-07-02 | 创建本重构笔记，规划提取计划                           |
+| 2026-07-02 | Part 重构为接口，PartBlockEntity 改为便利抽象基类      |
 
 ---
 
@@ -354,6 +355,7 @@ VehicleClientSystem:
 - System 接口定义: `ecs/system/`
 - 注册表: `ecs/system/VehicleSystemRegistry.java`
 - 调度器: `ecs/dispatch/VehicleSystemDispatcher.java`
-- Part 基类: `ecs/part/PartBlockEntity.java`, `ecs/part/PartRenderer.java`
+- Part 接口与基类: `ecs/part/Part.java`（接口）, `ecs/part/PartBlockEntity.java`（便利基类）, `ecs/part/PartRenderer.java`
+  （渲染基类）
 - BE 子类: `block/cockpit/`, `block/suspension_test/`, `block/turret/`, `block/shotgun/`, `block/machine_gun/`,
   `block/base_cabin/`
