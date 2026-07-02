@@ -1,37 +1,46 @@
 package com.hainabaichuan75.iac_p.part;
 
+import com.hainabaichuan75.iac_p.ecs.part.Part;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3dc;
 
 /**
- * 控制器 —— 提供玩家输入状态的纯数据接口。
+ * 控制器 —— 操作者的驾驶意图接口。
  * <p>
  * 任何可以作为载具输入源的 Part（驾驶舱、遥控终端、AI 核心）都应实现此接口。
  * System 通过 {@code instanceof Controller} 查找主控输入源。
  * <p>
  * <b>纯数据约束</b>：只暴露状态 getter，不暴露计算方法。
- * 油门/转向/瞄准目标均由外部（网络包）写入 Part 字段，System 只读。
+ * 各输入由外部（网络包）写入 Part 字段，System 只读。
  */
-public interface Controller {
+public interface Controller extends Part {
 
-    /** @return 是否有前进油门输入（W 键） */
-    boolean isThrottleForward();
+    /**
+     * 驾驶意图方向向量（SubLevel 局部空间）。
+     * <p>
+     * 零向量 = 无驾驶输入。向量长度表示输入强度（最大 1.0）。
+     * <p>
+     * <pre>
+     * z- = 前，z+ = 后
+     * x+ = 右，x- = 左
+     * </pre>
+     */
+    @NotNull Vector3dc getMovementIntent();
 
-    /** @return 是否有后退油门输入（S 键） */
-    boolean isThrottleBackward();
-
-    /** @return 刹车踏板是否踩下 */
+    /**
+     * @return 刹车是否踩下
+     */
     boolean isBraking();
 
-    /** @return 目标转向角（弧度），正值=左转 */
-    double getTargetSteeringYaw();
+    /**
+     * @return 是否正在开火
+     */
+    boolean isFiring();
 
     /**
      * @return 瞄准目标点的世界坐标（供武器瞄准 System 使用），
-     *         null 表示无瞄准目标
+     *         {@code null} 表示无瞄准目标
      */
     @Nullable Vector3dc getAimTarget();
-
-    /** @return 原始油门方向：+1=前进, -1=后退, 0=无输入 */
-    int getRawThrottleDirection();
 }

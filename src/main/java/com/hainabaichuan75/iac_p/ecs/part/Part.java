@@ -37,6 +37,34 @@ public interface Part extends BlockEntitySubLevelActor {
      */
     Quaterniond IDENTITY_QUAT = new Quaterniond();
 
+    // ========================
+    //  方向常量（SubLevel 局部坐标系）
+    // ========================
+    /**
+     * 前（z-）
+     */
+    Vector3dc FORWARD = new Vector3d(0, 0, -1);
+    /**
+     * 后（z+）
+     */
+    Vector3dc BACKWARD = new Vector3d(0, 0, 1);
+    /**
+     * 左（x-）
+     */
+    Vector3dc LEFT = new Vector3d(-1, 0, 0);
+    /**
+     * 右（x+）
+     */
+    Vector3dc RIGHT = new Vector3d(1, 0, 0);
+    /**
+     * 上（y+）
+     */
+    Vector3dc UP = new Vector3d(0, 1, 0);
+    /**
+     * 下（y-）
+     */
+    Vector3dc DOWN = new Vector3d(0, -1, 0);
+
     /**
      * 返回部件自身的朝向偏移四元数。默认返回单位四元数（无旋转）。
      * 子类若具有方向则务必重写此方法以提供特定的朝向偏移。

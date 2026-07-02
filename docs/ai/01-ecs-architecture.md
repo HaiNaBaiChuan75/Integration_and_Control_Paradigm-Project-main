@@ -34,6 +34,20 @@
 > **架构定位**：本实现是 Minecraft 环境下的**务实变体**，借鉴 ECS 的"System 驱动逻辑、Part 持有状态"哲学，但并非纯 ECS。Part
 > 保留行为接口仅限于**非车辆逻辑**（如动画状态机、GeckoLib 骨骼更新），所有车辆级算法（瞄准、动力、悬挂）必须在 System 中实现。在 ~
 > 20 个活跃部件的轻量场景下，这种混合模式比引入独立 Component 层更贴合 MC 的原生生命周期。
+>
+> **算法运行态为什么存 Part 上而非 System 上：**
+>
+> 理想情况下，System 跨 tick 的连续计算状态（PID 积分器、计时器、节流计数器等）应持有在 System 实例中，而不是泄漏到 Part
+> 的公共接口。但有两个外部约束使此路不通：
+>
+> 1. **System 是单例**——当前调度器为每个接口只注册一个 System 实例，该实例为所有车辆服务。实例字段会成为全局共享变量。
+> 2. **SubLevel 和 BlockEntity 生命周期不可控**——车辆（SubLevel）和部件（BlockEntity）由 Minecraft/Sable 管理创建和销毁，本模组
+     > **不接收 onCreate/onDestroy 回调**。System 不可能维护一个 `Map<UUID, State>` 而无泄漏风险。
+>
+> 相比之下，Part 即 `BlockEntity`，其生命周期完全由 Minecraft 管理（chunk 加载/卸载、方块破坏等），是唯一可依赖的状态宿体。
+> 因此，架构约定：**System 的算法运行时状态封装为 record（如 `AutoShiftState`），通过 Part 接口上的单一 getter/setter 对存取
+**。
+> 该状态不持久化（`saveAdditional`/`load` 中跳过）
 
 ---
 
