@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.ecs.system;
 
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import java.util.List;
@@ -24,6 +24,6 @@ public interface VehiclePhysicsSystem {
      * @param handle   刚体句柄，用于施加力/扭矩，不可为 null
      * @param timeStep 本步进的物理时间步长（秒）
      */
-    void onPhysicsTick(ServerSubLevel subLevel, List<PartBlockEntity> parts,
+    void onPhysicsTick(ServerSubLevel subLevel, List<? extends Part> parts,
                        RigidBodyHandle handle, double timeStep);
 }

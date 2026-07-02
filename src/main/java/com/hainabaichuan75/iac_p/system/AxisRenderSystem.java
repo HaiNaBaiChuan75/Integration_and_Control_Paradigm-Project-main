@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleClientSystem;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
@@ -21,7 +21,7 @@ import java.util.List;
 public class AxisRenderSystem implements VehicleClientSystem {
 
     @Override
-    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<? extends Part> parts) {
         if (!Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
             return;
         }
@@ -29,7 +29,7 @@ public class AxisRenderSystem implements VehicleClientSystem {
         Vector3f green = new Vector3f(0.0F, 1.0F, 0.0F); // Y - 绿
         Vector3f blue = new Vector3f(0.0F, 0.0F, 1.0F);  // Z - 蓝
         ClientLevel level = subLevel.getLevel();
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             Pose3d pose = part.partLogicalPose();
             // 粒子效果：沿三轴发射彩色粒子
             for (double i = 0; i <= 1.5; i += 0.1) {

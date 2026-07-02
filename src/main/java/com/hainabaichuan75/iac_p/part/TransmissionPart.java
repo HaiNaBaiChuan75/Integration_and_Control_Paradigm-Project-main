@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.part;
+package com.hainabaichuan75.iac_p.part;
 
 /**
  * 变速箱部件 —— 档位/传动状态的纯数据接口。

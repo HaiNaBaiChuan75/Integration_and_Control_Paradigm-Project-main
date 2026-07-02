@@ -1,7 +1,8 @@
 package com.hainabaichuan75.iac_p.ecs.system;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
+import com.hainabaichuan75.iac_p.system.AxisRenderSystem;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import org.jetbrains.annotations.NotNull;
@@ -66,21 +67,21 @@ public final class VehicleSystemRegistry {
     //  部件收集（遍历 Sable 内部 actor 列表，O(actors)）
     // ============================================================
     /**
-     * 收集指定 SubLevel 中的所有 {@link PartBlockEntity}。
+     * 收集指定 SubLevel 中的所有 {@link Part}。
      * <p>
      * 使用 Sable 的 {@code getBlockEntityActors()} 遍历，
      * 只迭代实际注册的 BlockEntity Actor，避免 O(chunk_volume) 扫描。
      *
      * @param subLevel 目标 SubLevel
-     * @return PartBlockEntity 列表（可能为空，不可为 null）
+     * @return Part 列表（可能为空，不可为 null）
      */
     @NotNull
-    public static List<PartBlockEntity> collectParts(@NotNull SubLevel subLevel) {
-        List<PartBlockEntity> parts = new ArrayList<>();
+    public static List<Part> collectParts(@NotNull SubLevel subLevel) {
+        List<Part> parts = new ArrayList<>();
         if (subLevel.getPlot() == null) return parts;
 
         for (BlockEntitySubLevelActor actor : subLevel.getPlot().getBlockEntityActors()) {
-            if (actor instanceof PartBlockEntity part) {
+            if (actor instanceof Part part) {
                 parts.add(part);
             }
         }
@@ -98,28 +99,9 @@ public final class VehicleSystemRegistry {
      * <p>
      * 客户端专用 System（如 {@link com.hainabaichuan75.iac_p.system.AxisRenderSystem}）
      * 不能在服务端注册——其注册在 {@code IACPClient} 中完成。
-     * <p>
-     * <b>注册顺序即执行顺序</b>：
-     * <ol>
-     *   <li>{@link com.hainabaichuan75.iac_p.system.SteeringSystem} — 转向（独立，无需等引擎）</li>
-     *   <li>{@link com.hainabaichuan75.iac_p.system.EnginePowerSystem} — 引擎（需要轮速，SteeringSystem 不影响）</li>
-     *   <li>{@link com.hainabaichuan75.iac_p.system.TurretAutoRotateSystem} — 炮塔自动旋转（独立）</li>
-     *   <li>{@link com.hainabaichuan75.iac_p.system.WeaponAimSystem} — 武器瞄准（独立）</li>
-     * </ol>
      */
     public static void registerAll() {
-        // ——逻辑 Tick System（按依赖顺序）——
-        register(new com.hainabaichuan75.iac_p.system.SteeringSystem());
-        register(new com.hainabaichuan75.iac_p.system.EnginePowerSystem());
-        register(new com.hainabaichuan75.iac_p.system.TurretAutoRotateSystem());
-        register(new com.hainabaichuan75.iac_p.system.WeaponAimSystem());
-
-        // ⚠ SuspensionPhysicsSystem 暂未注册：BE 的 sable$physicsTick() 仍由 Sable 直接调用，
-        // 若同时注册两者会导致力被双重施加。待 BE 物理逻辑清理后再启用。
-        // register(new com.hainabaichuan75.iac_p.system.SuspensionPhysicsSystem());
-
-        IACP.LOGGER.info("[Registry] 已注册 {} 个 VehicleTickSystem, {} 个 VehiclePhysicsSystem, {} 个 VehicleClientSystem",
-                TICK_SYSTEMS.size(), PHYSICS_SYSTEMS.size(), CLIENT_SYSTEMS.size());
+        register(new AxisRenderSystem());
     }
 
     private VehicleSystemRegistry() {}

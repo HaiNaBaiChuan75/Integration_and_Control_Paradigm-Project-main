@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.part;
+package com.hainabaichuan75.iac_p.part;
 
 /**
  * 发动机部件 —— 引擎状态的纯数据接口。

@@ -1,7 +1,7 @@
 package com.hainabaichuan75.iac_p.ecs.dispatch;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleClientSystem;
 import com.hainabaichuan75.iac_p.ecs.system.VehiclePhysicsSystem;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
@@ -54,7 +54,7 @@ public class VehicleSystemDispatcher {
                 if (sl.isRemoved()) continue;
                 if (!(sl instanceof ServerSubLevel serverSL)) continue;
 
-                List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(serverSL);
+                List<Part> parts = VehicleSystemRegistry.collectParts(serverSL);
                 if (parts.isEmpty()) continue;
 
                 for (VehicleTickSystem system : systems) {
@@ -92,7 +92,7 @@ public class VehicleSystemDispatcher {
             if (sl.isRemoved()) continue;
             if (!(sl instanceof ServerSubLevel serverSL)) continue;
 
-            List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(serverSL);
+            List<Part> parts = VehicleSystemRegistry.collectParts(serverSL);
             if (parts.isEmpty()) continue;
 
             RigidBodyHandle handle = RigidBodyHandle.of(serverSL);
@@ -132,7 +132,7 @@ public class VehicleSystemDispatcher {
             if (sl.isRemoved()) continue;
             if (!(sl instanceof ClientSubLevel clientSL)) continue;
 
-            List<PartBlockEntity> parts = VehicleSystemRegistry.collectParts(clientSL);
+            List<Part> parts = VehicleSystemRegistry.collectParts(clientSL);
             if (parts.isEmpty()) continue;
 
             for (VehicleClientSystem system : systems) {

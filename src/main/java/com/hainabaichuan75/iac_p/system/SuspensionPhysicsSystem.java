@@ -1,36 +1,14 @@
 package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants;
-import com.hainabaichuan75.iac_p.block.suspension_test.*;
-import com.hainabaichuan75.iac_p.ecs.part.EnginePart;
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.WheelPart;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehiclePhysicsSystem;
-import dev.ryanhcode.offroad.content.components.TireLike;
-import dev.ryanhcode.offroad.index.OffroadDataComponents;
-import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.api.physics.force.ForceTotal;
+import com.hainabaichuan75.iac_p.part.WheelPart;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
-import dev.ryanhcode.sable.api.physics.mass.MassData;
-import dev.ryanhcode.sable.companion.math.JOMLConversion;
-import dev.ryanhcode.sable.companion.math.Pose3dc;
-import dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertyHelper;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
-import org.joml.Vector3dc;
 
 import java.util.List;
-
-import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants.*;
 
 /**
  * 悬挂物理 System —— 弹簧/阻尼力、轮胎摩擦圆、Binary Grip 抓地、差速器扭矩偏置。
@@ -53,12 +31,12 @@ import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstant
 public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
 
     @Override
-    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts,
+    public void onPhysicsTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts,
                                @NotNull RigidBodyHandle handle, double dt) {
-        // 提取 EnginePart 引用（供运动学约束）
+     /*   // 提取 EnginePart 引用（供运动学约束）
         EnginePart engine = null;
         BlockPos cockpitPos = null;
-        for (PartBlockEntity p : parts) {
+        for (Part p : parts) {
             if (p instanceof EnginePart ep) {
                 engine = ep;
                 cockpitPos = p.getBlockPos();
@@ -66,7 +44,7 @@ public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
             }
         }
 
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             if (!(part instanceof WheelPart)) continue;
             if (!(part instanceof SuspensionTestBlockEntity sw)) continue;
 
@@ -86,7 +64,7 @@ public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
             float rad = tire.radius();
             double rest = MAX_EXT;
             MassData md = subLevel.getMassTracker();
-            BlockState blockState = part.getBlockState();
+            BlockState blockState = sw.getBlockState();
             Direction f = blockState.getValue(SuspensionTestBlock.HORIZONTAL_FACING);
             Vec3 lp = bp.relative(f).getCenter();
             Vector3d forcePos = new Vector3d(lp.x, lp.y, lp.z);
@@ -257,7 +235,7 @@ public class SuspensionPhysicsSystem implements VehiclePhysicsSystem {
             // 施加冲量
             ForceTotal forceTotal = new ForceTotal();
             forceTotal.applyImpulseAtPoint(subLevel, forcePos, forceVec);
-            handle.applyForcesAndReset(forceTotal);
-        }
+            handle.applyForcesAndReset(forceTotal);*/
+        //        }
     }
 }

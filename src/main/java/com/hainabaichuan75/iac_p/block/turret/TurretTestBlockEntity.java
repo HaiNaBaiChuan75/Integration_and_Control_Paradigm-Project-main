@@ -1,7 +1,6 @@
 package com.hainabaichuan75.iac_p.block.turret;
 
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.TurretPart;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -39,7 +38,7 @@ import java.util.List;
  * <li>右键切换自动旋转（通过 BlockState 属性自动同步到客户端），潜行+右键重置</li>
  * </ul>
  */
-public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEntity, TurretPart {
+public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEntity {
 
     // 动画定义（仅用于激活 GeckoLib 动画系统，实际旋转由渲染器覆盖）
     private static final RawAnimation MAIN_ANIM = RawAnimation.begin().thenLoop("main");
@@ -119,7 +118,7 @@ public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEn
 
     @Override
     public org.joml.Quaterniondc orientation() {
-        return PartBlockEntity.IDENTITY_QUAT;
+        return IDENTITY_QUAT;
     }
 
     public TurretTestBlockEntity(BlockPos pos, BlockState state) {
@@ -165,16 +164,16 @@ public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEn
     }
 
     // ==================================================================
-    //  Tick
+    //  Tick：自动旋转（双端运行，通过 BlockState 同步开关状态）
     // ==================================================================
-    /**
-     * 每 tick 更新。
-     * <p>
-     * 自动旋转逻辑已迁移至 {@link com.hainabaichuan75.iac_p.system.TurretAutoRotateSystem}。
-     * 本方法保留为空（未来可能添加炮塔专属的非车辆逻辑）。
-     */
     public void tick() {
-        // 自动旋转由 TurretAutoRotateSystem 在逻辑 Tick 中处理
+        if (level == null) {
+            return;
+        }
+        // 从 BlockState 读取自动旋转状态（服务端修改后自动同步到客户端）
+        if (level.getBlockState(worldPosition).getValue(TurretTestBlock.AUTO_ROTATE)) {
+            setYaw(yawDeg + AUTO_ROTATE_SPEED);
+        }
     }
 
     // ==================================================================
@@ -219,21 +218,6 @@ public class TurretTestBlockEntity extends PartBlockEntity implements GeoBlockEn
     public void setAngles(double yawDeg, double pitchDeg) {
         setYaw(yawDeg);
         setPitch(pitchDeg);
-    }
-
-    // ==================================================================
-    //  TurretPart 接口实现
-    // ==================================================================
-    @Override
-    public boolean isAutoRotate() {
-        if (level == null) return false;
-        return level.getBlockState(worldPosition).getValue(TurretTestBlock.AUTO_ROTATE);
-    }
-
-    @Override
-    public void setAutoRotate(boolean autoRotate) {
-        if (level == null) return;
-        level.setBlock(worldPosition, getBlockState().setValue(TurretTestBlock.AUTO_ROTATE, autoRotate), 3);
     }
 
     /**

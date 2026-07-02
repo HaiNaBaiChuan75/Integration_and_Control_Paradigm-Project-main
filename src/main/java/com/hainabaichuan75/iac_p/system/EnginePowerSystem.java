@@ -4,8 +4,12 @@ import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.cockpit.EngineModel;
 import com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.block.cockpit.TransmissionModel;
-import com.hainabaichuan75.iac_p.ecs.part.*;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.part.Controller;
+import com.hainabaichuan75.iac_p.part.EnginePart;
+import com.hainabaichuan75.iac_p.part.TransmissionPart;
+import com.hainabaichuan75.iac_p.part.WheelPart;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +36,7 @@ import java.util.List;
 public class EnginePowerSystem implements VehicleTickSystem {
 
     @Override
-    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts) {
         // 1. 找到关键部件
         Controller ctrl = findPart(parts, Controller.class);
         EnginePart engine = findPart(parts, EnginePart.class);
@@ -86,7 +90,7 @@ public class EnginePowerSystem implements VehicleTickSystem {
 
             // 写入各轮扭矩（正=前进方向，按 WASD 符号调整）
             double direction = getDirectionFromController(ctrl);
-            for (PartBlockEntity part : parts) {
+            for (Part part : parts) {
                 if (part instanceof WheelPart wheel) {
                     wheel.setTorqueInput(torquePerWheel * direction);
                 }
@@ -277,10 +281,10 @@ public class EnginePowerSystem implements VehicleTickSystem {
     /**
      * 扫描所有轮子的 RPM。
      */
-    private static WheelScanResult scanWheelRpm(List<PartBlockEntity> parts) {
+    private static WheelScanResult scanWheelRpm(List<? extends Part> parts) {
         double totalRpm = 0;
         int count = 0;
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             if (part instanceof WheelPart wheel) {
                 totalRpm += wheel.getCurrentWheelRpm();
                 count++;
@@ -294,10 +298,10 @@ public class EnginePowerSystem implements VehicleTickSystem {
      * <p>
      * 这是迁移期的桥接方法：待 SuspensionPhysicsSystem 启用后，此方法可移除。
      */
-    private static void setCockpitTorquePerWheel(List<PartBlockEntity> parts, double torque) {
-        for (PartBlockEntity part : parts) {
+    private static void setCockpitTorquePerWheel(List<? extends Part> parts, double torque) {
+        for (Part part : parts) {
             if (part instanceof com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity cockpit) {
-                cockpit.setTorquePerWheel(torque);
+                //                cockpit.setTorquePerWheel(torque);
                 return;
             }
         }
@@ -306,8 +310,8 @@ public class EnginePowerSystem implements VehicleTickSystem {
     /**
      * 设置所有轮子的扭矩输入。
      */
-    private static void setAllTorqueInput(List<PartBlockEntity> parts, double torque) {
-        for (PartBlockEntity part : parts) {
+    private static void setAllTorqueInput(List<? extends Part> parts, double torque) {
+        for (Part part : parts) {
             if (part instanceof WheelPart wheel) {
                 wheel.setTorqueInput(torque);
             }
@@ -318,8 +322,8 @@ public class EnginePowerSystem implements VehicleTickSystem {
      * 从 parts 列表中查找第一个指定类型的实例。
      */
     @Nullable
-    private static <T> T findPart(List<PartBlockEntity> parts, Class<T> type) {
-        for (PartBlockEntity part : parts) {
+    private static <T> T findPart(List<? extends Part> parts, Class<T> type) {
+        for (Part part : parts) {
             if (type.isInstance(part)) {
                 return type.cast(part);
             }

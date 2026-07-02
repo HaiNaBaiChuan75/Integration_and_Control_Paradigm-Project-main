@@ -1,24 +1,15 @@
 package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.*;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleClientSystem;
-import dev.ryanhcode.offroad.content.components.TireLike;
-import dev.ryanhcode.offroad.index.OffroadDataComponents;
-import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.companion.math.JOMLConversion;
+import com.hainabaichuan75.iac_p.part.EnginePart;
+import com.hainabaichuan75.iac_p.part.TransmissionPart;
+import com.hainabaichuan75.iac_p.part.WheelPart;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
-import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3d;
-import org.joml.Vector3dc;
 
 import java.util.List;
-
-import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants.*;
 
 /**
  * 轮子视觉 System —— 客户端轮子旋转角度和悬挂视觉更新。
@@ -37,16 +28,16 @@ import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstant
 public class WheelVisualSystem implements VehicleClientSystem {
 
     @Override
-    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
-        // 查找引擎/变速箱（用于视觉 RPM 计算）
+    public void onTick(@NotNull ClientSubLevel subLevel, @NotNull List<? extends Part> parts) {
+     /*   // 查找引擎/变速箱（用于视觉 RPM 计算）
         TransmissionPart transmission = null;
         EnginePart engine = null;
-        for (PartBlockEntity p : parts) {
+        for (Part p : parts) {
             if (p instanceof TransmissionPart tp) transmission = tp;
             if (p instanceof EnginePart ep) engine = ep;
         }
 
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             if (!(part instanceof WheelPart)) continue;
             if (!(part instanceof SuspensionTestBlockEntity sw)) continue;
 
@@ -103,7 +94,7 @@ public class WheelVisualSystem implements VehicleClientSystem {
 
                 sw.setAngleVisual(combinedDelta, combinedDelta);
             }
-        }
+        }*/
     }
 
     /**
@@ -129,6 +120,7 @@ public class WheelVisualSystem implements VehicleClientSystem {
 
     private static double computeMaxExtension(SuspensionTestBlockEntity sw, float rad) {
         // 简化的悬挂伸展计算 - 复用已有的 extension + lerp
-        return sw.getExtension();
+        return 0;
+        //        return sw.getExtension();
     }
 }

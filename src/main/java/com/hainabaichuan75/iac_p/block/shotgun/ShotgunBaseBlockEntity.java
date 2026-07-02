@@ -6,12 +6,11 @@ import com.hainabaichuan75.iac_p.affiliation.AffiliationRegistry;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationRole;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.WeaponMount;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import dev.ryanhcode.sable.api.physics.constraint.*;
-import net.createmod.catnip.math.AngleHelper;
+import com.hainabaichuan75.iac_p.network.packets.AnchorDataS2CPacket;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
+import dev.ryanhcode.sable.api.physics.constraint.*;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.Pose3d;
@@ -19,6 +18,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.plot.LevelPlot;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
+import net.createmod.catnip.math.AngleHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -26,10 +26,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
-import com.hainabaichuan75.iac_p.network.packets.AnchorDataS2CPacket;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
@@ -41,7 +40,7 @@ import java.util.UUID;
 /**
  * ShotgunBaseBlockEntity —— 霰弹枪底座 BE。
  */
-public class ShotgunBaseBlockEntity extends PartBlockEntity implements WeaponMount {
+public class ShotgunBaseBlockEntity extends PartBlockEntity {
 
     private static final java.util.Map<java.util.UUID, BlockPos> SG_GRINDSTONE_OWNER_MAP = new java.util.HashMap<>();
     private static final java.util.Map<java.util.UUID, BlockPos> SG_ROD_OWNER_MAP = new java.util.HashMap<>();
@@ -94,7 +93,7 @@ public class ShotgunBaseBlockEntity extends PartBlockEntity implements WeaponMou
     }
 
     @Override
-    public Quaterniondc orientation() { return PartBlockEntity.IDENTITY_QUAT; }
+    public Quaterniondc orientation() {return IDENTITY_QUAT;}
 
     @Override
     public void onLoad() {
@@ -143,13 +142,6 @@ public class ShotgunBaseBlockEntity extends PartBlockEntity implements WeaponMou
 
     public void setTargetYawAbsolute(double degrees) { this.lastTargetAngleDegrees = this.targetAngleDegrees; this.targetAngleDegrees = degrees; }
     public double getTargetYawAngle() { return this.targetAngleDegrees; }
-
-    @Override public void setTargetYaw(double yaw) { setTargetYawAbsolute(yaw); }
-    @Override public void setTargetPitch(double pitch) { setTargetPitchAbsolute(pitch); }
-    @Override public double getTargetYaw() { return this.targetAngleDegrees; }
-    @Override public double getTargetPitch() { return this.targetPitchAngleDegrees; }
-    @Override public double getCurrentYaw() { return this.targetAngleDegrees; }
-    @Override public double getCurrentPitch() { return this.targetPitchAngleDegrees; }
 
     private void updatePitchServo() {
         if (!assembled || barrelPitchHandle == null || !barrelPitchHandle.isValid()) return;

@@ -81,7 +81,7 @@ public class DebugSwivelBearingBlockEntity extends SwivelBearingBlockEntity {
         double actualDeg = Double.NaN;
         var slId = getSubLevelID();
         if (slId != null && level instanceof ServerLevel serverLevel) {
-            ServerSubLevelContainer container = (ServerSubLevelContainer) SubLevelContainer.getContainer(serverLevel);
+            ServerSubLevelContainer container = SubLevelContainer.getContainer(serverLevel);
             if (container != null) {
                 var sl = container.getSubLevel(slId);
                 if (sl instanceof ServerSubLevel ss && !ss.isRemoved()) {

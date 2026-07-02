@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.part;
+package com.hainabaichuan75.iac_p.part;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3dc;

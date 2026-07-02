@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.ecs.system;
 
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import java.util.List;
 
@@ -23,5 +23,5 @@ public interface VehicleClientSystem {
      * @param subLevel 当前 SubLevel（客户端），isRemoved() 已预先过滤
      * @param parts    该 SubLevel 内收集到的所有 Part，已过滤空列表
      */
-    void onTick(ClientSubLevel subLevel, List<PartBlockEntity> parts);
+    void onTick(ClientSubLevel subLevel, List<? extends Part> parts);
 }

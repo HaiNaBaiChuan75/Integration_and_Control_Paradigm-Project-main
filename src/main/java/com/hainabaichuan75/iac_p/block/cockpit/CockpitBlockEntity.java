@@ -1,11 +1,10 @@
 package com.hainabaichuan75.iac_p.block.cockpit;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.ecs.part.*;
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import dev.ryanhcode.sable.Sable;
@@ -17,14 +16,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
-import org.joml.Vector3dc;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import static com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.*;
+import static com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.ENGINE_IDLE_RPM;
+import static com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.ENGINE_MAX_RPM;
 
 /**
  * 驾驶舱方块实体 —— 载具动力系统的状态管理和编排。
@@ -49,7 +48,7 @@ import static com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants.*;
  *   摩擦圆约束决定实际地面驱动力（轮胎是唯一限幅器）
  * </pre>
  */
-public class CockpitBlockEntity extends PartBlockEntity implements Controller, EnginePart, TransmissionPart {
+public class CockpitBlockEntity extends PartBlockEntity {
 
     @Override
     public void onLoad() {
@@ -165,11 +164,6 @@ public class CockpitBlockEntity extends PartBlockEntity implements Controller, E
     // ====================================================================
     //  动力系统接口（供 SuspensionTestBlockEntity 查询）
     // ====================================================================
-    /**
-     * 设置每轮可用扭矩（由 EnginePowerSystem 写入，SuspensionPhysicsSystem 读取）。
-     */
-    public void setTorquePerWheel(double torque) { this.torquePerWheel = torque; }
-
     /**
      * @return 每轮可用扭矩（Nm）。空档或熄火时返回 0。
      */
@@ -330,95 +324,6 @@ public class CockpitBlockEntity extends PartBlockEntity implements Controller, E
         sendData();
     }
 
-    /**
-     * 瞄准目标点的世界坐标。由 TurretTargetC2SPacket 写入，供 WeaponAimSystem 读取。
-     */
-    @Nullable private Vector3dc aimTarget = null;
-
-    /**
-     * 刹车输入状态。由 VehicleControlC2SPacket 写入。
-     */
-    private boolean braking = false;
-
-    // ====================================================================
-    //  Controller 接口实现
-    // ====================================================================
-    @Override
-    public boolean isThrottleForward() { return this.rawThrottleDirection > 0; }
-
-    @Override
-    public boolean isThrottleBackward() { return this.rawThrottleDirection < 0; }
-
-    @Override
-    public boolean isBraking() { return this.braking; }
-
-    /** 设置刹车状态（由 VehicleControlC2SPacket 调用） */
-    public void setBraking(boolean braking) { this.braking = braking; }
-
-    @Override
-    public double getTargetSteeringYaw() {
-        // 从 SuspensionBE 读取转向输入（兼容现有数据流）
-        SubLevel sl = Sable.HELPER.getContaining(this);
-        if (sl != null) {
-            var entries = getOrRefreshSuspensions(sl);
-            for (var sbe : entries) {
-                if (Math.abs(sbe.getTargetSteeringYaw()) > 0.01) {
-                    return sbe.getTargetSteeringYaw();
-                }
-            }
-        }
-        return 0.0;
-    }
-
-    /**
-     * 设置瞄准目标点（由 TurretTargetC2SPacket 调用）。
-     */
-    public void setAimTarget(@Nullable Vector3dc target) { this.aimTarget = target; }
-
-    @Override @Nullable
-    public Vector3dc getAimTarget() { return this.aimTarget; }
-
-    @Override
-    public int getRawThrottleDirection() { return this.rawThrottleDirection; }
-
-    // ====================================================================
-    //  EnginePart 接口实现
-    // ====================================================================
-    @Override public double getRpm() { return this.engineRpm; }
-    @Override public void setRpm(double rpm) { setEngineRpm(rpm); }
-
-    @Override public double getTorque() { return this.effectiveTorque; }
-    @Override public void setTorque(double torque) { this.effectiveTorque = torque; }
-
-    @Override public void setStalled(boolean stalled) { this.stalled = stalled; }
-    // getThrottleLevel() 已存在于此类的第 ~300 行
-
-    // ====================================================================
-    //  TransmissionPart 接口实现
-    // ====================================================================
-    @Override public int getGear() { return this.currentGear; }
-    @Override public void setGear(int gear) { this.currentGear = gear; }
-
-    @Override public void setShifting(boolean shifting) { this.isShifting = shifting; }
-    @Override public int getShiftingTimer() { return this.shiftingTimer; }
-    @Override public void setShiftingTimer(int ticks) { this.shiftingTimer = ticks; }
-    @Override public int getTargetShiftGear() { return this.targetShiftGear; }
-    @Override public void setTargetShiftGear(int gear) { this.targetShiftGear = gear; }
-    @Override public double getRevMatchTargetRpm() { return this.revMatchTargetRpm; }
-    @Override public void setRevMatchTargetRpm(double rpm) { this.revMatchTargetRpm = rpm; }
-
-    @Override public int getLastWheelCount() { return this.lastWheelCount; }
-    @Override public void setLastWheelCount(int count) { this.lastWheelCount = count; }
-
-    @Override public int getUpshiftTimer() { return this.upshiftTimer; }
-    @Override public void setUpshiftTimer(int timer) { this.upshiftTimer = timer; }
-    @Override public double getLastUpshiftSpeed() { return this.lastUpshiftSpeed; }
-    @Override public void setLastUpshiftSpeed(double speed) { this.lastUpshiftSpeed = speed; }
-    @Override public int getDownshiftStallTimer() { return this.downshiftStallTimer; }
-    @Override public void setDownshiftStallTimer(int timer) { this.downshiftStallTimer = timer; }
-    @Override public int getLastShiftTick() { return this.lastShiftTick; }
-    @Override public void setLastShiftTick(int tick) { this.lastShiftTick = tick; }
-
     // ====================================================================
     //  控制输入
     // ====================================================================
@@ -578,14 +483,6 @@ public class CockpitBlockEntity extends PartBlockEntity implements Controller, E
         return this.cachedSuspensions;
     }
 
-    /**
-     * 每 tick 更新。
-     * <p>
-     * <b>已迁移到 EnginePowerSystem</b>：引擎计算、变速箱换挡、扭矩分配由
-     * {@link com.hainabaichuan75.iac_p.system.EnginePowerSystem} 在逻辑 Tick 中完成。
-     * <p>
-     * 本方法仅保留：延迟注册、物理质量读取（用于覆盖层显示）、状态同步到客户端。
-     */
     public void tick() {
         if (level == null) {
             return;
@@ -610,9 +507,57 @@ public class CockpitBlockEntity extends PartBlockEntity implements Controller, E
             }
         }
 
-        // ── 状态同步到客户端 ──
+        // ── 油门始终 100%（服务端才有 rawThrottleDirection，客户端跳过）──
+        this.throttleLevel = 1.0;
+
+        // ── 全部引擎计算仅服务端执行 ──
         if (sl instanceof ServerSubLevel serverSl) {
+            // ── 状态同步（引擎计算之前执行，确保提前返回也能发送）──
+            if (Math.abs(this.throttleLevel - this.lastSyncedThrottle) > 0.02) {
+                this.lastSyncedThrottle = this.throttleLevel;
+                setChanged();
+                sendData();
+            }
             trySyncStateToClient(serverSl);
+
+            // 熄火：切断扭矩输出
+            if (stalled) {
+                this.torquePerWheel = 0;
+                this.effectiveTorque = 0;
+                return;
+            }
+
+            // 换挡真空期
+            if (tryProcessShifting()) return;
+
+            // ═══ 正常行驶：发动机永远独立运行 ═══
+            var result = EngineModel.computeThrottleControlledRun(this.throttleLevel);
+            this.effectiveTorque = result.engineTorque();
+            this.engineRpm = result.rpm();
+
+            // 空档自动挂档
+            tryAutoEngageGear();
+
+            if (this.currentGear == 0) {
+                this.torquePerWheel = 0;
+            } else {
+                // 在档：变速箱做纯数学变换
+                WheelScanResult wheels = scanWheelRpm(sl);
+                this.lastWheelCount = wheels.wheelCount;
+                int wheelCount = Math.max(wheels.wheelCount, 1);
+                var gbOut = TransmissionModel.computeOutput(result.engineTorque(), result.rpm(), this.currentGear);
+                this.torquePerWheel = gbOut.torqueB() / wheelCount;
+
+                // 憋住救急
+                double curSpeed = Math.abs(wheels.avgWheelRpm()) * Math.PI * 2.0 / 60.0 * 0.5;
+                tryStallRescue(sl, curSpeed);
+
+                // 自动降档
+                tryAutoDownshift(sl, wheels);
+
+                // 自动升档
+                tryAutoUpshift(sl);
+            }
         }
     }
 

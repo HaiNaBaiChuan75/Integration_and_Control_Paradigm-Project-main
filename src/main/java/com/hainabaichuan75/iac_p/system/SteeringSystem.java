@@ -1,10 +1,10 @@
 package com.hainabaichuan75.iac_p.system;
 
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants;
-import com.hainabaichuan75.iac_p.ecs.part.Controller;
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.WheelPart;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.part.Controller;
+import com.hainabaichuan75.iac_p.part.WheelPart;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +27,7 @@ import java.util.List;
 public class SteeringSystem implements VehicleTickSystem {
 
     @Override
-    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts) {
         // 1. 找到主控输入源
         Controller controller = findPrimaryController(parts);
         if (controller == null) return;
@@ -35,7 +35,7 @@ public class SteeringSystem implements VehicleTickSystem {
         double rawTarget = controller.getTargetSteeringYaw();
 
         // 2. 遍历所有车轮，计算并写入转向角
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             if (!(part instanceof WheelPart wheel)) continue;
 
             double target = rawTarget;
@@ -80,8 +80,8 @@ public class SteeringSystem implements VehicleTickSystem {
      * 从 parts 列表中查找第一个主控 Controller。
      * 按字典序规则选举（目前取第一个出现的）。
      */
-    private static Controller findPrimaryController(List<PartBlockEntity> parts) {
-        for (PartBlockEntity part : parts) {
+    private static Controller findPrimaryController(List<? extends Part> parts) {
+        for (Part part : parts) {
             if (part instanceof Controller ctrl) {
                 return ctrl;
             }

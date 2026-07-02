@@ -1,26 +1,10 @@
 package com.hainabaichuan75.iac_p.events;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Quaterniond;
-import org.joml.Quaterniondc;
-import org.joml.Vector3d;
-
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
-import com.hainabaichuan75.iac_p.content.blocks.assembly_barrier.AssemblyBarrierBlock;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
+import com.hainabaichuan75.iac_p.index.ModBlocks;
 import com.hainabaichuan75.iac_p.util.SubLevelUtil;
-
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.physics.constraint.ConstraintJointAxis;
@@ -51,6 +35,13 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Quaterniond;
+import org.joml.Quaterniondc;
+import org.joml.Vector3d;
+
+import java.util.*;
 
 /**
  * 物理装配处理器 —— 将主世界中的方块群装配到 SubLevel（物理化），或拆解回主世界。
@@ -636,7 +627,7 @@ public class PhysicsAssembleHandler {
                 }
                 BlockState neighborState = level.getBlockState(neighbor);
                 // 跳过空气方块和装配屏障方块（车库地板等不应成为车体一部分）
-                if (!neighborState.isAir() && !(neighborState.getBlock() instanceof AssemblyBarrierBlock)) {
+                if (!neighborState.isAir() && !(neighborState.getBlock().equals(ModBlocks.ASSEMBLY_BARRIER.get()))) {
                     queue.add(neighbor);
                     if (collected.size() > MAX_BLOCKS) {
                         IACP.LOGGER.warn("[PhysicsAssemble] BFS 超量");
@@ -650,7 +641,7 @@ public class PhysicsAssembleHandler {
         for (BlockPos pos : collected) {
             BlockState state = level.getBlockState(pos);
             // 排除空气和装配屏障方块
-            if (!state.isAir() && !(state.getBlock() instanceof AssemblyBarrierBlock)) {
+            if (!state.isAir() && !(state.getBlock().equals(ModBlocks.ASSEMBLY_BARRIER.get()))) {
                 result.add(pos);
             }
         }

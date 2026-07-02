@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.part;
+package com.hainabaichuan75.iac_p.part;
 
 /**
  * 武器挂载点 —— 武器瞄准状态的纯数据接口。

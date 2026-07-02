@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.part;
+package com.hainabaichuan75.iac_p.part;
 
 /**
  * 炮塔部件 —— 炮塔旋转状态的纯数据接口。

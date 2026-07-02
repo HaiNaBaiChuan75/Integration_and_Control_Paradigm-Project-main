@@ -1,8 +1,8 @@
 package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.TurretPart;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.part.TurretPart;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,8 +21,8 @@ public class TurretAutoRotateSystem implements VehicleTickSystem {
     private static final double AUTO_ROTATE_SPEED = 2.0;
 
     @Override
-    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
-        for (PartBlockEntity part : parts) {
+    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts) {
+        for (Part part : parts) {
             if (part instanceof TurretPart turret && turret.isAutoRotate()) {
                 turret.setYaw(turret.getYaw() + AUTO_ROTATE_SPEED);
             }

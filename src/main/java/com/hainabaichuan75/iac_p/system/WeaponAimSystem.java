@@ -1,7 +1,9 @@
 package com.hainabaichuan75.iac_p.system;
 
-import com.hainabaichuan75.iac_p.ecs.part.*;
+import com.hainabaichuan75.iac_p.ecs.part.Part;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleTickSystem;
+import com.hainabaichuan75.iac_p.part.Controller;
+import com.hainabaichuan75.iac_p.part.WeaponMount;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
@@ -29,7 +31,7 @@ import java.util.List;
 public class WeaponAimSystem implements VehicleTickSystem {
 
     @Override
-    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<PartBlockEntity> parts) {
+    public void onTick(@NotNull ServerSubLevel subLevel, @NotNull List<? extends Part> parts) {
         // 1. 找到主控输入源
         Controller ctrl = findPrimaryController(parts);
         if (ctrl == null) return;
@@ -38,13 +40,12 @@ public class WeaponAimSystem implements VehicleTickSystem {
         if (aimTarget == null) return;
 
         // 2. 遍历武器挂载点，计算瞄准角度
-        for (PartBlockEntity part : parts) {
+        for (Part part : parts) {
             if (!(part instanceof WeaponMount mount)) continue;
-            if (!(part instanceof PartBlockEntity pbe)) continue;
 
             try {
                 // 坐标转换：将世界坐标目标点转换到 Part 局部空间
-                Vector3d targetLocal = pbe.partLogicalPose()
+                Vector3d targetLocal = part.partLogicalPose()
                         .transformPositionInverse(new Vector3d(aimTarget));
 
                 // 角度解算（Minecraft z- = 前方，x+ = 右方）
@@ -67,8 +68,8 @@ public class WeaponAimSystem implements VehicleTickSystem {
     /**
      * 从 parts 列表中查找第一个主控 Controller。
      */
-    private static Controller findPrimaryController(List<PartBlockEntity> parts) {
-        for (PartBlockEntity part : parts) {
+    private static Controller findPrimaryController(List<? extends Part> parts) {
+        for (Part part : parts) {
             if (part instanceof Controller ctrl) {
                 return ctrl;
             }

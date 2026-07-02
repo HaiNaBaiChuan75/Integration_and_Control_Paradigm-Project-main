@@ -1,7 +1,8 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
+import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
+import com.hainabaichuan75.iac_p.block.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.WeaponMount;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -41,7 +42,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  *                   └── 炮管几何体
  * </pre>
  */
-public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntity, WeaponMount {
+public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntity {
 
     // ==================================================================
     //  朝向映射：facingIndex → 四元数
@@ -121,16 +122,6 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
-
-    // ==================================================================
-    //  WeaponMount 接口实现
-    // ==================================================================
-    @Override public void setTargetYaw(double yaw) { driveImmediate((float) yaw, (float) this.pitchDeg); }
-    @Override public void setTargetPitch(double pitch) { driveImmediate((float) this.yawDeg, (float) pitch); }
-    @Override public double getTargetYaw() { return this.yawDeg; }
-    @Override public double getTargetPitch() { return this.pitchDeg; }
-    @Override public double getCurrentYaw() { return this.yawDeg; }
-    @Override public double getCurrentPitch() { return this.pitchDeg; }
 
     // ==================================================================
     //  渲染插值接口（供 Renderer 调用）

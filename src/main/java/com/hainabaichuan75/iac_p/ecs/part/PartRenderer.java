@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -14,15 +15,15 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 基于 {@link PartBlockEntity} 的 GeckoLib 渲染器基类。
+ * 基于 {@link Part} 的 GeckoLib 渲染器基类。
  * <p>
- * 在渲染时自动应用 {@link PartBlockEntity#orientation()} 的朝向偏移，
+ * 在渲染时自动应用 {@link Part#orientation()} 的朝向偏移，
  * 使得部件的视觉旋转与物理/逻辑朝向保持一致。
  * 覆盖 {@code getFacing()} 固定返回 {@link Direction#NORTH}——朝向由四元数处理，不依赖方块朝向。
  *
- * @param <BE> 部件 BE 类型，需同时实现 {@link PartBlockEntity} 和 {@link GeoAnimatable}
+ * @param <BE> 部件 BE 类型，需同时实现 {@link Part}、{@link GeoAnimatable}，并且是 {@link BlockEntity}
  */
-public class PartRenderer<BE extends PartBlockEntity & GeoAnimatable> extends GeoBlockRenderer<BE> {
+public class PartRenderer<BE extends BlockEntity & Part & GeoAnimatable> extends GeoBlockRenderer<BE> {
 
     /**
      * 渲染时复用的临时四元数。避免每帧创建新对象导致的 GC 压力。
