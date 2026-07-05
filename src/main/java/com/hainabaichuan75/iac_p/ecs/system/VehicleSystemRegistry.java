@@ -2,7 +2,7 @@ package com.hainabaichuan75.iac_p.ecs.system;
 
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.ecs.part.Part;
-import com.hainabaichuan75.iac_p.system.AxisRenderSystem;
+import com.hainabaichuan75.iac_p.system.*;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +14,9 @@ import java.util.List;
 /**
  * VehicleSystem 注册表——所有 System 在此注册，调度器从此读取。
  * <p>
- * <b>线程安全</b>：注册仅在 Mod 构造阶段（{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器}）
+ * <b>线程安全</b>：注册仅在 Mod 构造阶段
+ * （{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器} /
+ *  {@link com.hainabaichuan75.iac_p.IACPClient#IACPClient IACPClient 构造器}）
  * 完成，运行时只读。无需同步机制。
  * <p>
  * <b>设计原则</b>：
@@ -89,18 +91,39 @@ public final class VehicleSystemRegistry {
     }
 
     // ============================================================
-    //  批量注册入口（在 Mod 构造器中调用一次）
+    //  服务端 System 注册入口（在 IACP 构造器中调用一次）
     // ============================================================
     /**
-     * 注册所有内置 System。
+     * 注册所有服务端内置 System（{@link VehicleTickSystem} 和 {@link VehiclePhysicsSystem}）。
      * <p>
-     * 调用位置：{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器}中。
-     * 在此方法中添加新的 System 注册，避免分散在各处。
+     * 调用位置：{@link com.hainabaichuan75.iac_p.IACP#IACP IACP 构造器}。
+     * 在此方法中添加新的服务端 System 注册，避免分散在各处。
      * <p>
-     * 客户端专用 System（如 {@link com.hainabaichuan75.iac_p.system.AxisRenderSystem}）
-     * 不能在服务端注册——其注册在 {@code IACPClient} 中完成。
+     * <b>客户端专用 System 不在此注册</b>——它们在
+     * {@link #registerClientSystems()} 中，在 {@code IACPClient} 构造器中调用。
      */
-    public static void registerAll() {
+    public static void registerServerSystems() {
+        register(new SteeringSystem());            // 转向：最先运行
+        register(new TorqueDistributionSystem());   // 扭矩分配：依赖转向结果
+        register(new SuspensionSystem());            // 悬挂压缩：轮下射线 → 压缩量（20Hz 节约射线）
+        register(new WeaponAimSystem());             // 瞄准：独立
+
+        // ── 物理 System（按 Sable 步进频率 ~100Hz 执行）──
+        register(new SuspensionForceSystem());       // 悬挂弹簧力：压缩 → F = k×x
+        register(new TractionForceSystem());         // 牵引力：扭矩 → F = τ/r
+    }
+
+    // ============================================================
+    //  客户端 System 注册入口（在 IACPClient 构造器中调用一次）
+    // ============================================================
+
+    /**
+     * 注册所有客户端内置 System（{@link VehicleClientSystem}）。
+     * <p>
+     * 调用位置：{@link com.hainabaichuan75.iac_p.IACPClient#IACPClient IACPClient 构造器}。
+     * 在此方法中添加新的客户端 System 注册。
+     */
+    public static void registerClientSystems() {
         register(new AxisRenderSystem());
     }
 

@@ -1,20 +1,16 @@
 package com.hainabaichuan75.iac_p;
 
-import com.hainabaichuan75.iac_p.client.ClientEvents;
-import com.hainabaichuan75.iac_p.client.ClientMountGameHandler;
-import com.hainabaichuan75.iac_p.client.ClientMountHandler;
-import com.hainabaichuan75.iac_p.client.VehicleDebugOverlay;
-import com.hainabaichuan75.iac_p.client.WeaponOverlay;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockRenderer;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockRenderer;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestRenderer;
+import com.hainabaichuan75.iac_p.block.turret.TurretTestRenderer;
+import com.hainabaichuan75.iac_p.client.*;
 import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
-import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockRenderer;
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
-import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockRenderer;
-import com.hainabaichuan75.iac_p.block.turret.TurretTestRenderer;
+import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
-
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -30,6 +26,9 @@ public class IACPClient {
 
     public IACPClient(ModContainer container, IEventBus modEventBus) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+
+        // 注册客户端 VehicleSystem
+        VehicleSystemRegistry.registerClientSystems();
 
         // 注册按键映射
         modEventBus.addListener(this::registerKeyMappings);

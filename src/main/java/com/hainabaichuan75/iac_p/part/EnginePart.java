@@ -1,29 +1,54 @@
 package com.hainabaichuan75.iac_p.part;
 
+import com.hainabaichuan75.iac_p.ecs.part.Part;
+import com.hainabaichuan75.iac_p.system.TorqueDistributionSystem;
+
 /**
- * 发动机部件 —— 引擎状态的纯数据接口。
+ * 引擎 —— 动力源的扭矩与转速数据契约。
  * <p>
- * System 通过 {@code instanceof EnginePart} 找到引擎，读写 RPM/扭矩。
+ * 定义 {@code TorqueDistributionSystem} 与引擎之间的数据通道：
+ * 当前扭矩由 System 基于油门输入计算后写入，
+ * 最大扭矩和最大转速为引擎的规格参数（只读）。
  * <p>
- * <b>纯数据约束</b>：只暴露状态 getter/setter，引擎计算在 {@code EnginePowerSystem} 中。
+ * <b>为什么用扭矩而非功率</b>：
+ * 扭矩是驱动链的原始物理量，与 {@link DriveWheel#setTorqueInput(double)} 类型一致，
+ * 功率 = 扭矩 × 角速度，是导出量。在扭矩分配这一层，用扭矩无需额外换算。
+ *
+ * @see DriveWheel
+ * @see TorqueDistributionSystem
  */
-public interface EnginePart {
+public interface EnginePart extends Part {
 
-    /** @return 发动机当前转速（RPM） */
-    double getRpm();
-    /** 设置发动机转速 */
-    void setRpm(double rpm);
+    // ==================================================================
+    //  运行时状态（由 TorqueDistributionSystem 写入）
+    // ==================================================================
 
-    /** @return 发动机当前输出扭矩（Nm） */
+    /**
+     * @return 当前输出扭矩（Nm），正 = 前进方向
+     */
     double getTorque();
-    /** 设置发动机输出扭矩 */
+
+    /**
+     * 更新当前输出扭矩。
+     * <p>
+     * 由 {@code TorqueDistributionSystem} 在逻辑 tick 中
+     * 基于油门输入和引擎扭矩曲线计算后写入。
+     *
+     * @param torque 扭矩（Nm）
+     */
     void setTorque(double torque);
 
-    /** @return 发动机是否已熄火 */
-    boolean isStalled();
-    /** 设置熄火状态 */
-    void setStalled(boolean stalled);
+    // ==================================================================
+    //  规格参数（只读，引擎固有属性）
+    // ==================================================================
 
-    /** @return 当前油门位置 [0.0, 1.0] */
-    double getThrottleLevel();
+    /**
+     * @return 最大扭矩（Nm），引擎铭牌参数
+     */
+    double getMaxTorque();
+
+    /**
+     * @return 最大转速（RPM），即红线转速
+     */
+    double getMaxRpm();
 }

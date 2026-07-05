@@ -34,7 +34,7 @@ client visual update       →      WheelVisualSystem        (VehicleClientSyste
 | System 接口 | ✅ 3 个 @FunctionalInterface 定义完毕                    |
 | 调度器       | ✅ VehicleSystemDispatcher 事件路由就绪                   |
 | 注册表       | ✅ 框架就绪，但 `TICK_SYSTEMS` 和 `PHYSICS_SYSTEMS` 为空     |
-| Part 角色接口 | ❌ 纯数据接口未定义（Controller / WeaponMount / WheelPart 等） |
+| Part 角色接口 | ❌ 纯数据接口未定义（Controller / AimingMount / WheelPart 等） |
 | System 实现 | ⚠️ 仅 AxisRenderSystem（调试用），其余 0 个                  |
 
 ---
@@ -45,16 +45,15 @@ client visual update       →      WheelVisualSystem        (VehicleClientSyste
 
 System 用 `instanceof` 找到需要的 Part，读取/写入其状态字段。接口**只暴露数据 getter/setter**，不暴露算法。
 
-| 接口                 | 关键方法（纯数据）                                                                                                 | 实现者                                                                   |
-|--------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| `Controller`       | `getThrottleForward()`, `getThrottleBackward()`, `getBrake()`, `getTargetSteeringYaw()`, `getAimTarget()` | CockpitBlockEntity, BaseCabinBlockEntity                              |
-| `WeaponMount`      | `setTargetYaw(double)`, `setTargetPitch(double)`, `getCurrentYaw()`, `getCurrentPitch()`                  | ShotGunBlockEntity, ShotgunBaseBlockEntity, MachineGunBaseBlockEntity |
-| `WheelPart`        | `getCurrentWheelRpm()`, `setTorqueInput(double)`, `getSteeringAngle()`, `setSteeringAngle(double)`        | SuspensionTestBlockEntity                                             |
-| `EnginePart`       | `getRpm()`, `setRpm(double)`, `getTorque()`, `setTorque(double)`                                          | CockpitBlockEntity                                                    |
-| `TransmissionPart` | `getGear()`, `setGear(int)`, `getOutputRpm()`, `setOutputRpm(double)`                                     | CockpitBlockEntity                                                    |
-| `TurretPart`       | `getYaw()`, `setYaw(double)`, `getAutoRotate()`, `setAutoRotate(boolean)`                                 | TurretTestBlockEntity                                                 |
+| 接口                 | 关键方法（纯数据）                                                                                                 | 实现者                                                                                          |
+|--------------------|-----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| `Controller`       | `getThrottleForward()`, `getThrottleBackward()`, `getBrake()`, `getTargetSteeringYaw()`, `getAimTarget()` | CockpitBlockEntity, BaseCabinBlockEntity                                                     |
+| `AimingMount`      | `setYaw(double)`, `setPitch(double)`, `getYaw()`, `getPitch()`                                            | TurretTestBlockEntity, ShotGunBlockEntity, ShotgunBaseBlockEntity, MachineGunBaseBlockEntity |
+| `WheelPart`        | `getCurrentWheelRpm()`, `setTorqueInput(double)`, `getSteeringAngle()`, `setSteeringAngle(double)`        | SuspensionTestBlockEntity                                                                    |
+| `EnginePart`       | `getRpm()`, `setRpm(double)`, `getTorque()`, `setTorque(double)`                                          | CockpitBlockEntity                                                                           |
+| `TransmissionPart` | `getGear()`, `setGear(int)`, `getOutputRpm()`, `setOutputRpm(double)`                                     | CockpitBlockEntity                                                                           |
 
-> **原则**：Part 接口不定义任何计算行为。例如 `WeaponMount` 没有 `aimAt()`，`EnginePart` 没有
+> **原则**：Part 接口不定义任何计算行为。例如 `AimingMount` 没有 `aimAt()`，`EnginePart` 没有
 `computeThrottleControlledRun()`，这些算法全部上提到 System。
 
 > Controller目前阶段只设置一个，后续过于复杂时再拆分
@@ -64,9 +63,9 @@ System 用 `instanceof` 找到需要的 Part，读取/写入其状态字段。�
 #### 2a. TurretAutoRotateSystem (VehicleTickSystem)
 
 - **来源：** `TurretTestBlockEntity.tick()` 中 2 行逻辑
-- **做法：** 遍历 parts，`instanceof TurretPart` → 如果是 AUTO_ROTATE 模式，System 内部计算 yaw 增量 →
-  `turret.setYaw(newYaw)`
-- **接口需要：** `TurretPart`（纯数据）
+- **做法：** 遍历 parts，`instanceof AimingMount` → 如果是 AUTO_ROTATE 模式，System 内部计算 yaw 增量 →
+  `mount.setYaw(newYaw)`
+- **接口需要：** `AimingMount`（纯数据）
 
 #### 2b. ClientSyncSystem (VehicleTickSystem)
 
@@ -83,9 +82,9 @@ System 用 `instanceof` 找到需要的 Part，读取/写入其状态字段。�
 - **来源：** `ShotgunAimController.driveAnglesImmediate()`, `MachineGunAimController.driveAnglesImmediate()`
 - **做法：**
     1. 遍历 parts，找到 `Controller` 读取瞄准目标点（`getAimTarget()`）
-    2. 遍历 `WeaponMount`，System 内部做坐标转换（`partLogicalPose().transformPositionInverse()`）和角度解算
-    3. 计算结果写入 `weaponMount.setTargetYaw()` / `setTargetPitch()`
-- **接口需要：** `Controller`, `WeaponMount`
+  2. 遍历 `AimingMount`，System 内部做坐标转换（`partLogicalPose().transformPositionInverse()`）和角度解算
+  3. 计算结果写入 `mount.setYaw()` / `setPitch()`
+- **接口需要：** `Controller`, `AimingMount`
 - **注意：** 原 `VehicleControlC2SPacket` 将目标点写入 Controller Part 的字段即可，System 只读 Part 状态，不直接消费网络包
 
 #### 3b. SteeringSystem (VehicleTickSystem)
@@ -312,8 +311,8 @@ EnginePart.{isStalled}（或 Controller 状态）
 
 WeaponAimSystem (VehicleTickSystem)
 输入: Controller.{getAimTarget()}
-WeaponMount.{getCurrentYaw, getCurrentPitch}
-输出: WeaponMount.{setTargetYaw, setTargetPitch}
+AimingMount.{getYaw, getPitch}
+输出: AimingMount.{setYaw, setPitch}
 ✅ 独立于动力/悬挂系统
 
 ClientSyncSystem (VehicleTickSystem)

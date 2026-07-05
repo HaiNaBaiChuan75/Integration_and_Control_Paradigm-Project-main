@@ -2,30 +2,16 @@ package com.hainabaichuan75.iac_p;
 
 import com.hainabaichuan75.iac_p.affiliation.AffiliationCommand;
 import com.hainabaichuan75.iac_p.affiliation.WorldLoadHandler;
-import com.hainabaichuan75.iac_p.ecs.dispatch.VehicleSystemDispatcher;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
-import com.hainabaichuan75.iac_p.events.MountedProtectionHandler;
-import com.hainabaichuan75.iac_p.events.PartDamageCache;
-import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
-import com.hainabaichuan75.iac_p.events.SablePostPhysicsTickEvent;
-import com.hainabaichuan75.iac_p.events.SubLevelProjectileHandler;
-import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModBlocks;
-import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModCreativeModeTabs;
-import com.hainabaichuan75.iac_p.index.ModEntities;
-import com.hainabaichuan75.iac_p.index.ModItems;
-import com.hainabaichuan75.iac_p.index.ModLightCockpitBlockEntityTypes;
-import com.hainabaichuan75.iac_p.index.ModSounds;
-import org.slf4j.Logger;
-
+import com.hainabaichuan75.iac_p.events.*;
+import com.hainabaichuan75.iac_p.index.*;
 import com.mojang.logging.LogUtils;
-
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.common.NeoForge;
+import org.slf4j.Logger;
 
 @Mod(IACP.MODID)
 public class IACP {
@@ -67,7 +53,7 @@ public class IACP {
         // ============================================================
         //  VehicleSystem 架构 — 将逻辑从 BE 中抽到 System
         // ============================================================
-        // 注册所有内置 System
-        VehicleSystemRegistry.registerAll();
+        // 注册服务端内置 System
+        VehicleSystemRegistry.registerServerSystems();
     }
 }

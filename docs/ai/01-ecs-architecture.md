@@ -100,15 +100,15 @@ public class WeaponAimSystem implements VehicleTickSystem {
 
         // 2. 遍历武器挂载点，System 做全部瞄准计算
       for (Part part : parts) {
-            if (part instanceof WeaponMount mount) {
+            if (part instanceof AimingMount mount) {
                 // 坐标转换、角度解算 —— 这是车辆逻辑，必须在 System 中
                 Vector3d targetLocal = mount.partLogicalPose().transformPositionInverse(new Vector3d(ctrl.getAimTarget()));
-                double yaw = Math.toDegrees(Math.atan2(targetLocal.x(), targetLocal.z()));
+                double yaw = Math.toDegrees(Math.atan2(-targetLocal.x(), -targetLocal.z()));
                 double pitch = Math.toDegrees(Math.atan2(-targetLocal.y(), Math.sqrt(targetLocal.x() * targetLocal.x() + targetLocal.z() * targetLocal.z())));
 
                 // 3. 只写入纯数据目标值，Part 内部只做平滑插值
-                mount.setTargetYaw(yaw);
-                mount.setTargetPitch(pitch);
+                mount.setYaw(yaw);
+                mount.setPitch(pitch);
             }
         }
     }
@@ -176,7 +176,7 @@ add(new ClientSyncSystem());     // 最后同步完整状态
 1. **实现 `Part` 接口**（推荐继承 `PartBlockEntity` 以复用默认实现）
 
 ```java
-public class MyPartBlockEntity extends PartBlockEntity implements WeaponMount, Controller {
+public class MyPartBlockEntity extends PartBlockEntity implements AimingMount, Controller {
     // orientation() 定义了方块在 SubLevel 中的朝向（四元数）
     @Override
     public Quaterniondc orientation() {
@@ -195,15 +195,15 @@ public class MyPartBlockEntity extends PartBlockEntity implements WeaponMount, C
         updateSmoothRotation();
     }
 
-    // ===== 纯数据接口（WeaponMount）=====
+    // ===== 纯数据接口（AimingMount）=====
     @Override
-    public void setTargetYaw(double yaw) {this.targetYaw = yaw;}
+    public void setYaw(double yaw) {this.targetYaw = yaw;}
 
     @Override
-    public void setTargetPitch(double pitch) {this.targetPitch = pitch;}
+    public void setPitch(double pitch) {this.targetPitch = pitch;}
 
     @Override
-    public double getCurrentYaw() {return yaw;}
+    public double getYaw() {return yaw;}
 
     // ===== 纯数据接口（Controller ）=====
     @Override
@@ -214,15 +214,12 @@ public class MyPartBlockEntity extends PartBlockEntity implements WeaponMount, C
 2. **定义纯数据接口**（Part 只暴露状态，不暴露算法）
 
 ```java
-// 武器挂载点 — 纯数据，无瞄准逻辑
-public interface WeaponMount {
-    void setTargetYaw(double yaw);
-
-    void setTargetPitch(double pitch);
-
-    double getCurrentYaw();
-
-    double getCurrentPitch();
+// 可瞄准基座 — 纯数据，无瞄准逻辑
+public interface AimingMount {
+    void setYaw(double yaw);
+    void setPitch(double pitch);
+    double getYaw();
+    double getPitch();
 }
 
 // 控制器 — 提供玩家输入状态
@@ -274,7 +271,7 @@ SubLevel 逻辑坐标 (subLevel.logicalPose)
 ```java
 // 将世界目标转换到 Part 局部空间 → 计算角度
 Vector3d target = partLogicalPose().transformPositionInverse(new Vector3d(targetAbsPoint));
-double yaw = Math.toDegrees(Math.atan2(target.x(), target.z()));  // Minecraft ∠(x,z)
+double yaw = Math.toDegrees(Math.atan2(-target.x(), -target.z()));  // yaw=0 → 前方 (z-), CCW+
 double pitch = Math.toDegrees(Math.atan2(-target.y(), Math.sqrt(target.x() * target.x() + target.z() * target.z())));
 ```
 
