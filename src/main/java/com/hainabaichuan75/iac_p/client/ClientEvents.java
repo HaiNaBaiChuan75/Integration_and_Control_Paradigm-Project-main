@@ -583,16 +583,6 @@ public class ClientEvents {
     private static void sendVehicleControlInput(Minecraft mc) {
         long window = mc.getWindow().getWindow();
 
-        // ── ↑/↓ 键直接控制油门方向 ──
-        boolean upDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_UP);
-        boolean downDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_DOWN);
-        int throttleDirection = (upDown && !downDown) ? 1 : (downDown && !upDown) ? -1 : 0;
-
-        // 更新调试数据
-        debugThrottleUp = upDown;
-        debugThrottleDown = downDown;
-        debugLastThrottleDir = throttleDirection;
-
         // ── 构建逐悬挂输入条目 ──
         // 每个悬挂根据其生效按键（手动/智能映射）检测键盘状态，
         // 填入 Entry 供服务端 applyControlInput() 使用。
@@ -615,6 +605,19 @@ public class ClientEvents {
                 sbe.applyControlInput(fwd, bwd, left, right, brake);
             }
         }
+
+        // ── 从条目的前进/后退推导油门方向（沿用了技能映射的按键，默认 W/S）──
+        boolean anyFwd = false, anyBwd = false;
+        for (var e : entries) {
+            if (e.forward()) anyFwd = true;
+            if (e.backward()) anyBwd = true;
+        }
+        int throttleDirection = (anyFwd && !anyBwd) ? 1 : (anyBwd && !anyFwd) ? -1 : 0;
+
+        // 更新调试数据
+        debugThrottleUp = anyFwd;
+        debugThrottleDown = anyBwd;
+        debugLastThrottleDir = throttleDirection;
 
         // ── 发送（瞄准数据可能每 tick 变化，移除 change-detection 节流）──
         ticksSinceLastSend = 0;

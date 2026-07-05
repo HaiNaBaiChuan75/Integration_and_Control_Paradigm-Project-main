@@ -78,10 +78,13 @@ public class TractionForceSystem implements VehiclePhysicsSystem {
 
                 // ── 变换到世界空间并施加冲量 ──────────────────────
                 var worldDir = subLevel.logicalPose().transformNormal(rollDir);
-                Vector3d impulse = worldDir.mul(forceMag * timeStep);
+                Vector3d impulse = worldDir.mul(-forceMag * timeStep);
 
+                // 计算 SubLevel 局部坐标（applyImpulseAtPoint 要求 "position inside the plot"）
                 var hubPos = wheel.getSuspensionAttachmentInWorld();
-                forces.applyImpulseAtPoint(subLevel, new Vector3d(hubPos.x(), hubPos.y(), hubPos.z()), impulse);
+                Vector3d localPos = subLevel.logicalPose().transformPositionInverse(new Vector3d(hubPos.x(),
+                        hubPos.y(), hubPos.z()), new Vector3d());
+                forces.applyImpulseAtPoint(subLevel, localPos, impulse);
             }
         }
 

@@ -63,7 +63,6 @@ public class TorqueDistributionSystem implements VehicleTickSystem {
         if (engine == null) return;
 
         double engineTorque = throttle * engine.getMaxTorque();
-        engine.setTorque(engineTorque);
 
         // ── 4. 统计驱动轮数量 ─────────────────────────────────
         int driveWheelCount = 0;

@@ -46,7 +46,7 @@ public class CockpitBlockEntity extends PartBlockEntity implements EnginePart, C
     /**
      * 最大扭矩（Nm），供 TorqueDistributionSystem 计算轮端扭矩
      */
-    public static final double MAX_TORQUE = 5.0;
+    public static final double MAX_TORQUE = 50.0;
 
     /**
      * 最大转速（RPM），引擎铭牌参数
@@ -102,7 +102,7 @@ public class CockpitBlockEntity extends PartBlockEntity implements EnginePart, C
     private Vector3d inputAimTarget = null;
 
     /** 当前扭矩（Nm），由 TorqueDistributionSystem 写入 */
-    private double torque = 0;
+    private double torque = MAX_TORQUE;
 
     /**
      * 缓存总质量（kg），仅用于覆盖层显示

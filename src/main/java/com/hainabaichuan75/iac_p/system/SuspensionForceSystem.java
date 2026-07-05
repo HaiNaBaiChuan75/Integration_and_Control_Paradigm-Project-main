@@ -53,9 +53,11 @@ public class SuspensionForceSystem implements VehiclePhysicsSystem {
                 // 冲量向量 = 方向 × 冲量大小
                 Vector3d impulse = worldUp.mul(impulseMag);
 
-                // 在轮毂位置施加冲量
+                // 在轮毂位置施加冲量（applyImpulseAtPoint 要求 SubLevel 局部坐标 "inside the plot"）
                 var hubPos = wheel.getSuspensionAttachmentInWorld();
-                forces.applyImpulseAtPoint(subLevel, new Vector3d(hubPos.x(), hubPos.y(), hubPos.z()), impulse);
+                Vector3d localPos = subLevel.logicalPose().transformPositionInverse(new Vector3d(hubPos.x(),
+                        hubPos.y(), hubPos.z()), new Vector3d());
+                forces.applyImpulseAtPoint(subLevel, localPos, impulse);
             }
         }
 

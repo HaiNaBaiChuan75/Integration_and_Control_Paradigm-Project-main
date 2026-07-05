@@ -104,8 +104,8 @@ public final class VehicleSystemRegistry {
      */
     public static void registerServerSystems() {
         register(new SteeringSystem());            // 转向：最先运行
-        register(new TorqueDistributionSystem());   // 扭矩分配：依赖转向结果
         register(new SuspensionSystem());            // 悬挂压缩：轮下射线 → 压缩量（20Hz 节约射线）
+        register(new TorqueDistributionSystem());   // 扭矩分配：依赖转向结果
         register(new WeaponAimSystem());             // 瞄准：独立
 
         // ── 物理 System（按 Sable 步进频率 ~100Hz 执行）──
