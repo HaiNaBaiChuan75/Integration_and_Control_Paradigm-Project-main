@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-(更新于 2026/7/1)
+(更新于 2026/7/6)
 
 本文件为 Claude Code 在此仓库中的编码指导（编码约定、设计原则、注释规范）。
 项目全局文档（架构设计、功能清单、技术参考、踩坑索引）见 `《中控载具工坊：范式》管理文档3.0/`。
@@ -78,6 +78,23 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
 - **日志**：使用 `IACP.LOGGER`（SLF4J）。error 级别慎用；非关键边界情况用 warn；调试信息用 info。渲染代码使用宽泛的 try-catch
   守护，防止单个 BE 异常导致整个渲染流程崩溃。
 - **错误处理**：渲染/叠加层代码静默吞异常（视觉瑕疵优于崩溃）。逻辑代码对无效输入抛出 `IllegalArgumentException`。无自定义受检异常。
+- **优先使用 record / enum**：数据组件必须使用 `record`，有限状态使用 `enum`。JDK 21 的 Record Patterns 允许解构和嵌套解构，例如：
+  ```java
+  // 顶层解构
+  if (part.getComponent(EngineState.KEY) instanceof EngineState(var spec, var torque)) { }
+
+  // 嵌套解构（匹配 EngineState.spec 为 EngineDef）
+  if (part.getComponent(EngineState.KEY) instanceof EngineState(EngineDef(var maxT, var maxRpm), var torque)) { }
+  ```
+  这一规则与旧的 getter/setter 接口不兼容 — 旧接口（`EnginePart.getTorque()` 等）无法参与模式匹配。新增数据通道必须走
+  record 组件，不得新定义 getter/setter 接口。
+- **JOML 对象约定**：`Vector3dc`/`Quaterniondc` 等 JOML 只读视图遵循「**入口拷贝、出口只读、计算不滥分配**」：
+    - **入口即拷贝** — record compact constructor 中对所有 `Vector3dc`/`Quaterniondc` 参数防御性拷贝 `new Vector3d(src)`
+      ，确保 record 持有独立副本不受外部修改
+    - **出口只读不拷贝** — getter/accessor 返回 `Vector3dc`，调用方通过只读接口读 `.x()`/`.y()`/`.z()`，需要修改时自行
+      `new Vector3d(src)` 再改
+    - **计算不乱分配** — System 内临时计算复用局部 `Vector3d` 变量，用 `.set()` 修改而非每步 new
+    - nullable 的 Vector 字段（如 `ControlState.aimTarget`、`WheelState.contactPointLocal`）：非 null 时同样拷贝
 
 ## 分包规范
 
@@ -104,6 +121,34 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
 | 包      | 职责                                                      |
 |--------|---------------------------------------------------------|
 | `ecs/` | ECS 架构。子包：`dispatch/`（调度）、`part/`（组件）、`system/`（ECS 系统） |
+
+### ECS 组件命名
+
+`ecs/v2/part/state/` 下的数据组件遵循以下命名体系。
+
+**默认分类（适用于大多数部件）**：
+
+| 后缀      | 角色    | 频率   | 例子                    |
+|---------|-------|------|-----------------------|
+| `Def`   | 定义/参数 | 相对不变 | `EngineDef.maxTorque` |
+| `State` | 运行状态  | 动态调整 | `EngineState.torque`  |
+
+约定：`Def` + `State` 是默认命名方案，两者**必须平铺放置为同级组件，各自持有独立 `ComponentKey`**。
+`State` record **不得**持有 `Def` 引用，反之亦然。System 通过双组件查询拼合读取：
+<pre>{@code
+// ✅ 正确：Def/State 分离，各自独立查询
+var def = part.getComponent(EngineDef.KEY);
+var state = part.getComponent(EngineState.KEY);
+
+// ✅ Record Patterns 嵌套解构依然可用（通过连续匹配）
+if (part.getComponent(EngineDef.KEY) instanceof EngineDef(var maxT, var maxRpm)
+    && part.getComponent(EngineState.KEY) instanceof EngineState(var torque)) { }
+
+// ❌ 错误：State 内嵌 Def
+public record EngineState(EngineDef spec, double torque) { … }  // 禁止
+}</pre>
+
+**特殊命名**（不适用上述分类时使用描述性名字，无固定后缀）
 
 ### 关键规则
 

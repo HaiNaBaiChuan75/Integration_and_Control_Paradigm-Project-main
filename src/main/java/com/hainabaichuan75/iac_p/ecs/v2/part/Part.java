@@ -1,0 +1,37 @@
+package com.hainabaichuan75.iac_p.ecs.v2.part;
+
+import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * 载具部件的核心接口
+ * <p>
+ * 职责只有两个：
+ * <ol>
+ *   <li><b>身份</b> — {@link #getBlockEntity()} 此部件是哪个方块实体</li>
+ *   <li><b>组件通道</b> — {@link #getComponent(ComponentKey)} /
+ *       {@link #setComponent(ComponentKey, Object)} 访问部件持有的数据组件</li>
+ * </ol>
+ * <p>
+ * 一个 Part 是什么角色（引擎、控制器、轮子），完全由它持有哪些组件类型决定。
+ * <pre>{@code
+ * EngineState s = part.getComponent(EngineState.KEY);
+ * if (s != null) {
+ *     part.setComponent(EngineState.KEY, s.withTorque(...));
+ * }
+ * }</pre>
+ * <p>
+ * 类型化访问器见 {@link View#of(Part, ComponentKey)} 及相关重载。
+ *
+ * @see PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
+ * @see View 类型化访问器与工厂
+ */
+public interface Part extends BlockEntitySubLevelActor {
+    @NotNull BlockEntity getBlockEntity();
+
+    <T> @Nullable T getComponent(@NotNull ComponentKey<T> key);
+
+    <T> void setComponent(@NotNull ComponentKey<T> key, @Nullable T value);
+}
