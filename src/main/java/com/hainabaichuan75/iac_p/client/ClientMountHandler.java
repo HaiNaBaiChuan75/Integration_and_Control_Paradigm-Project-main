@@ -5,8 +5,6 @@ import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.Sable;
-
-import javax.annotation.Nullable;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
@@ -23,11 +21,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * 客户端骑乘状态处理器 —— Plan B 实现。
@@ -156,48 +151,38 @@ public class ClientMountHandler {
         ORIENTATION_CACHE.clear();
     }
 
-    // ====== 智能映射状态缓存 ======
-    /**
-     * 当前载具的智能映射是否已启用（从 CockpitBE 同步）
-     */
-    private static boolean smartMappingActive = false;
+    // ====== 智能映射状态缓存（已废弃）======
 
-    /** 当前载具的智能变速是否已启用（从 CockpitBE 同步） */
-    private static boolean autoShiftEnabled = false;
-
-    /**
-     * 当前选中的驾驶技能 ID（从 CockpitBE 同步）
-     */
-    private static String activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
-
+    @Deprecated
     public static boolean isSmartMappingActive() {
-        return smartMappingActive;
+        return false;
     }
 
+    @Deprecated
     public static void setSmartMappingActive(boolean active) {
-        smartMappingActive = active;
     }
 
+    @Deprecated
     public static boolean isAutoShiftEnabled() {
-        return autoShiftEnabled;
+        return false;
     }
 
+    @Deprecated
     public static void setAutoShiftEnabled(boolean enabled) {
-        autoShiftEnabled = enabled;
     }
 
-    /**
-     * @return 当前选中的驾驶技能 ID
-     */
-    public static String getActiveSkillId() {
-        return activeSkillId;
-    }
+    @Deprecated
+    public static String getActiveSkillId() {return "";}
 
-    /**
-     * 设置当前选中的驾驶技能 ID。
-     */
+    @Deprecated
     public static void setActiveSkillId(String skillId) {
-        activeSkillId = skillId != null ? skillId : com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
+    }
+
+    /**
+     * 已废弃：智能映射换挡已删除。
+     */
+    @Deprecated
+    public static void syncSmartMappingState(SubLevel subLevel, Level level) {
     }
 
     /**
@@ -239,27 +224,6 @@ public class ClientMountHandler {
                     oldLeft.isEmpty() ? oldRight : oldLeft,
                     sbe.getActiveKeyBrake()
             );
-        });
-    }
-
-    /**
-     * 在 SubLevel 中查找驾驶舱 BE，同步其 smartMappingActive、autoShiftEnabled 和 activeSkillId 状态到缓存。
-     */
-    public static void syncSmartMappingState(SubLevel subLevel, Level level) {
-        smartMappingActive = false;
-        autoShiftEnabled = false;
-        activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
-
-        SubLevelScanner.forEachBlock(subLevel, level, (worldPos, state, be) -> {
-            if (state.getBlock() instanceof com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock
-                    && be instanceof com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity cockpit) {
-                smartMappingActive = cockpit.isSmartMappingActive();
-                autoShiftEnabled = cockpit.isAutoShiftEnabled();
-                String skillId = cockpit.getActiveSkillId();
-                if (skillId != null && !skillId.isEmpty()) {
-                    activeSkillId = skillId;
-                }
-            }
         });
     }
 
@@ -534,73 +498,33 @@ public class ClientMountHandler {
     }
 
     // ==================================================================
-    //  车辆实时状态缓存（由 VehicleStateS2CPacket 每 2 tick 填充）
+    //  车辆基础状态缓存（本地维护）
     // ==================================================================
-    //  覆盖层从此处读取高频动态数据，与 NBT 块实体同步解耦，
-    //  消除油门稳定时 RPM/车速不更新的问题。
 
-    /** 发动机当前转速（RPM） */
-    private static double cachedEngineRpm = 0;
-    /** 油门踏板深度 [0.0, 1.0] */
-    private static double cachedThrottleLevel = 0;
-    /** 当前档位 */
-    private static int cachedCurrentGear = 0;
-    /** 发动机是否熄火 */
-    private static boolean cachedStalled = false;
-    /** 引擎输出扭矩（Nm），含扭矩曲线修正 × 油门（来自服务端同步） */
-    private static double cachedEffectiveTorque = 0;
     /** 载具当前速度（m/s） */
     private static double cachedVehicleSpeedMs = 0;
-    /** 载具当前加速度（m/s²），来自服务端速度差分 */
+    /**
+     * 载具当前加速度（m/s²），来自速度差分
+     */
     private static double cachedVehicleAccelMs2 = 0;
-    /** 是否正在换挡（动力中断期间） */
-    private static boolean cachedIsShifting = false;
 
     /**
-     * 由 VehicleStateS2CPacket.handle() 调用，更新缓存。
-     * 所有字段一次性写入，避免部分更新导致覆盖层读到不一致状态。
+     * 更新速度/加速度缓存。
      */
-    public static void updateVehicleState(
-            double engineRpm, double throttleLevel, int currentGear,
-            boolean stalled, double effectiveTorque, double vehicleSpeedMs,
-            double vehicleAccelMs2, boolean isShifting) {
-        cachedEngineRpm = engineRpm;
-        cachedThrottleLevel = throttleLevel;
-        cachedCurrentGear = currentGear;
-        cachedStalled = stalled;
-        cachedEffectiveTorque = effectiveTorque;
+    public static void updateVehicleState(double vehicleSpeedMs, double vehicleAccelMs2) {
         cachedVehicleSpeedMs = vehicleSpeedMs;
         cachedVehicleAccelMs2 = vehicleAccelMs2;
-        cachedIsShifting = isShifting;
     }
 
-    /** @return 缓存的发动机转速（RPM） */
-    public static double getCachedEngineRpm() { return cachedEngineRpm; }
-    /** @return 缓存的油门深度 [0.0, 1.0] */
-    public static double getCachedThrottleLevel() { return cachedThrottleLevel; }
-    /** @return 缓存的当前档位 */
-    public static int getCachedCurrentGear() { return cachedCurrentGear; }
-    /** @return 缓存的熄火状态 */
-    public static boolean isCachedStalled() { return cachedStalled; }
-    /** @return 缓存的有效扭矩（Nm） */
-    public static double getCachedEffectiveTorque() { return cachedEffectiveTorque; }
     /** @return 缓存的载具速度（m/s） */
     public static double getCachedVehicleSpeedMs() { return cachedVehicleSpeedMs; }
     /** @return 缓存的载具加速度（m/s²） */
     public static double getCachedVehicleAccelMs2() { return cachedVehicleAccelMs2; }
-    /** @return 是否正在换挡 */
-    public static boolean isCachedShifting() { return cachedIsShifting; }
 
     /** 下车时清空状态缓存 */
     private static void clearVehicleStateCache() {
-        cachedEngineRpm = 0;
-        cachedThrottleLevel = 0;
-        cachedCurrentGear = 0;
-        cachedStalled = false;
-        cachedEffectiveTorque = 0;
         cachedVehicleSpeedMs = 0;
         cachedVehicleAccelMs2 = 0;
-        cachedIsShifting = false;
     }
 
     // ====== 公开 API ======
@@ -632,9 +556,6 @@ public class ClientMountHandler {
             ClientSubLevel clientSubLevel = getMountedClientSubLevel();
             if (clientSubLevel != null && mc.level != null) {
                 scanOrientation(clientSubLevel, mc.level);
-                // scanOrientation() 内部已调用 refreshSuspensionPositions()
-                // 同步智能映射开关状态
-                syncSmartMappingState(clientSubLevel, mc.level);
             }
         } else {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
@@ -643,9 +564,6 @@ public class ClientMountHandler {
             // 下车时清除缓存
             clearAllOrientationCache();
             SUSPENSION_POSITIONS.clear();
-            smartMappingActive = false;
-            autoShiftEnabled = false;
-            activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
             // 清空弹道特效（防止悬空）
             WeaponOverlay.onDismount();
             // 强制关闭哨兵模式
@@ -716,8 +634,6 @@ public class ClientMountHandler {
         // 不论是否挂载，都清理所有缓存（确保重连后状态干净）
         clearAllOrientationCache();
         SUSPENSION_POSITIONS.clear();
-        smartMappingActive = false;
-        activeSkillId = com.hainabaichuan75.iac_p.skill.SkillRegistry.DEFAULT_SKILL_ID;
     }
 
     // ====== 每 Client Tick：Plan B 摄像机跟随 ======

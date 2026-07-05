@@ -1,9 +1,10 @@
 package com.hainabaichuan75.iac_p.block.shotgun;
 
 import com.hainabaichuan75.iac_p.affiliation.ComponentRole;
-import com.hainabaichuan75.iac_p.block.turret.TurretTestBlockEntity;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
+import com.hainabaichuan75.iac_p.part.AimingMount;
+import com.hainabaichuan75.iac_p.part.field.YawPitch;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.Util;
@@ -29,7 +30,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * ShotGunBlockEntity —— 霰弹枪炮塔 BlockEntity。
  * <p>
  * 实现了 GeckoLib 的 GeoBlockEntity 接口，使用动画系统控制 yaw/pitch 骨骼旋转。
- * 与 {@link TurretTestBlockEntity} 类似，但额外带有 facingIndex 用于初始朝向，
+ * 实现 GeckoLib 骨骼旋转的炮塔 BlockEntity，
  * 并注册为 {@link ComponentRole#SHOTGUN_BASE} 以接入武器系统。
  * <p>
  * 骨骼层级：
@@ -42,7 +43,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  *                   └── 炮管几何体
  * </pre>
  */
-public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntity {
+public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntity, AimingMount {
 
     // ==================================================================
     //  朝向映射：facingIndex → 四元数
@@ -69,12 +70,16 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
 
     /** 当前偏航角度（度） */
     private double yawDeg = 0;
-    /** 上一帧偏航角度（用于 partialTick 插值） */
-    private double lastYawDeg = 0;
+    /**
+     * 上次偏航变化量（差值），用于 partialTick 插值。无变化时 = 0，渲染直接返回 yawDeg
+     */
+    private double yawDegDelta = 0;
     /** 当前俯仰角度（度），正 = 上仰 */
     private double pitchDeg = 0;
-    /** 上一帧俯仰角度（用于 partialTick 插值） */
-    private double lastPitchDeg = 0;
+    /**
+     * 上次俯仰变化量（差值），用于 partialTick 插值
+     */
+    private double pitchDegDelta = 0;
 
     /** 开火动画触发冷却（tick） */
     private int fireAnimCooldown = 0;
@@ -112,8 +117,8 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
      * @param pitchDeg 目标俯仰角（度，正=上仰）
      */
     public void driveImmediate(float yawDeg, float pitchDeg) {
-        this.lastYawDeg = this.yawDeg;
-        this.lastPitchDeg = this.pitchDeg;
+        this.yawDegDelta = yawDeg - this.yawDeg;
+        this.pitchDegDelta = pitchDeg - this.pitchDeg;
         this.yawDeg = yawDeg;
         this.pitchDeg = pitchDeg;
 
@@ -128,12 +133,12 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
     // ==================================================================
     /** 获取插值后的偏航角（度） */
     public float getRenderYaw(float partialTick) {
-        return (float) (lastYawDeg + (yawDeg - lastYawDeg) * partialTick);
+        return (float) (yawDeg - yawDegDelta * (1 - partialTick));
     }
 
     /** 获取插值后的俯仰角（度） */
     public float getRenderPitch(float partialTick) {
-        return (float) (lastPitchDeg + (pitchDeg - lastPitchDeg) * partialTick);
+        return (float) (pitchDeg - pitchDegDelta * (1 - partialTick));
     }
 
     // ==================================================================
@@ -164,6 +169,20 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
         }
     }
 
+    // ==================================================================
+    //  AimingMount 实现
+    // ==================================================================
+    @Override
+    public void setAngles(YawPitch angles) {
+        driveImmediate((float) angles.yaw(), (float) angles.pitch());
+    }
+
+    @Override
+    public YawPitch getAngles() {
+        return new YawPitch(yawDeg, pitchDeg);
+    }
+
+    // ==================================================================
     /** 触发开火动画（由 WeaponOverlay/Network 调用） */
     public void triggerFiringAnim() {
         if (fireAnimCooldown <= 0) {
@@ -200,16 +219,6 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        super.handleUpdateTag(tag, registries);
-        this.facingIndex = tag.getByte("facing");
-        this.yawDeg = tag.getDouble("yaw");
-        this.pitchDeg = tag.getDouble("pitch");
-        this.lastYawDeg = this.yawDeg;
-        this.lastPitchDeg = this.pitchDeg;
-    }
-
-    @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
@@ -228,10 +237,13 @@ public class ShotGunBlockEntity extends PartBlockEntity implements GeoBlockEntit
     @Override
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        // 在新值写入前计算变化量（delta），用于渲染插值
+        double newYaw = tag.getDouble("yaw");
+        double newPitch = tag.getDouble("pitch");
+        this.yawDegDelta = newYaw - this.yawDeg;
+        this.pitchDegDelta = newPitch - this.pitchDeg;
         this.facingIndex = tag.getByte("facing");
-        this.yawDeg = tag.getDouble("yaw");
-        this.pitchDeg = tag.getDouble("pitch");
-        this.lastYawDeg = this.yawDeg;
-        this.lastPitchDeg = this.pitchDeg;
+        this.yawDeg = newYaw;
+        this.pitchDeg = newPitch;
     }
 }

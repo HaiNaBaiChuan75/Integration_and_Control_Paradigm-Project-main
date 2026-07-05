@@ -8,13 +8,11 @@
 package com.hainabaichuan75.iac_p.block.suspension_test;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.affiliation.ComponentRegistry;
-import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
-import com.hainabaichuan75.iac_p.block.cockpit.PowertrainConstants;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
-import com.hainabaichuan75.iac_p.ecs.part.PartQuery;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
+import com.hainabaichuan75.iac_p.part.DriveWheel;
+import com.hainabaichuan75.iac_p.part.SteeringWheel;
 import dev.ryanhcode.offroad.content.components.TireLike;
 import dev.ryanhcode.offroad.index.OffroadDataComponents;
 import dev.ryanhcode.sable.Sable;
@@ -37,17 +35,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
-import java.util.UUID;
-
 import static com.hainabaichuan75.iac_p.block.suspension_test.SuspensionConstants.*;
 
-public class SuspensionTestBlockEntity extends PartBlockEntity {
+public class SuspensionTestBlockEntity extends PartBlockEntity implements DriveWheel, SteeringWheel {
 
     // ==================================================================
     @Override
@@ -142,6 +137,16 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
      */
     private boolean braking = false;
 
+    // ===== ECS 数据通道（由 SteeringSystem / TorqueDistributionSystem 写入） =====
+    /**
+     * DriveWheel 扭矩通道（Nm），正=前进
+     */
+    private double torqueInput = 0;
+    /**
+     * SteeringWheel 转向通道 [-1, 1]，0=回正，正=右转
+     */
+    private double steeringInput = 0;
+
     // ===== 引擎负载报告（供 CockpitBE 读取） =====
     /**
      * P 控制器原始力需求（摩擦圆约束前），供座舱计算引擎负载
@@ -173,12 +178,7 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
 
     // ===== 缓存优化：避免每物理 tick 全量 SubLevel 扫描 =====
     /**
-     * 缓存的驾驶舱引用。null = 需要首次扫描刷新。 驾驶过程中 SubLevel 构成不变，缓存后无需定期失效。
-     */
-    private CockpitBlockEntity cachedCockpit = null;
-
-    /**
-     * 缓存的轮子总数。0 = 需要首次扫描刷新。 与 cachedCockpit 同时刷新，确保一致性。
+     * 缓存的轮子总数。0 = 需要首次扫描刷新。
      */
     private int cachedWheelCount = 0;
 
@@ -192,7 +192,6 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
      * </ul>
      */
     public void invalidateCache() {
-        this.cachedCockpit = null;
         this.cachedWheelCount = 0;
     }
 
@@ -475,7 +474,7 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
     }
 
     /**
-     * 设置横移轮标记（由 SmartMapC2SPacket.applyCarMode 分配 NS 轮时调用）。 保存后标记脏数据并同步到客户端。
+     * 设置横移轮标记。保存后标记脏数据并同步到客户端。
      */
     public void setStrafeWheel(boolean strafe) {
         this.isStrafeWheel = strafe;
@@ -682,18 +681,10 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
         }
 
         // 预计算本轮侧向/纵向位置（用于差速器 + 载荷转移）
-        // 通过 SubLevel 区块坐标与驾驶舱位置的偏移确定轮位
         // localPosZ > 0 = 前轮，localPosX > 0 = 右轮
+        // TODO: 从 Part 层级关系获取精确位置，目前使用固定值
         double localPosX = 0;
         double localPosZ = 0;
-        CockpitBlockEntity preCockpit = findCockpitInSubLevel(sl);
-        if (preCockpit != null) {
-            BlockPos cockpitPos = preCockpit.getBlockPos();
-            double worldDx = bp.getX() - cockpitPos.getX();
-            double worldDz = bp.getZ() - cockpitPos.getZ();
-            localPosZ = worldDx * fwdD.x() + worldDz * fwdD.z(); // 纵向 (+前)
-            localPosX = worldDx * sideD.x() + worldDz * sideD.z(); // 侧向 (+右)
-        }
 
         var terr = CollisionHandler.rayTerrain(this.level, getBlockPos(), f,
                 fwdD, pose, Sable.HELPER.getContaining(this));
@@ -827,13 +818,10 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
                     // ╚══════════════════════════════════════════════════════════════╝
                     targetRpm = 0;
                     torqueGain = 0;
-                } else if (preCockpit != null) {
-                    // ═══ Binary Grip 直驱模式（WASD 闸门） ═══
-                    // 变速箱提供扭矩大小（engineTorque × 齿比），
-                    // WASD 决定方向：W=前进, S=后退, 无输入=滑行/发动机制动。
-                    // 大小与方向解耦——变速箱管"多大力"，WASD 管"往哪推"。
-                    double wheelTorque = preCockpit.getTorquePerWheel();
-                    double torqueMag = Math.abs(wheelTorque);
+                } else {
+                    // ═══ ECS 直驱模式（torqueInput 由 TorqueDistributionSystem 写入） ═══
+                    // WASD 决定方向：throttleForward=前进, throttleBackward=后退
+                    double torqueMag = Math.abs(this.torqueInput);
 
                     double direction = 0;
                     if (this.throttleForward && !this.throttleBackward) {
@@ -843,59 +831,30 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
                     }
                     double signedTorque = torqueMag * direction;
                     double driveForceN = signedTorque / Math.max(rad, 0.01);
-                    double driveImpulse = driveForceN * PowertrainConstants.DT;
+                    double driveImpulse = driveForceN * (1.0 / 20.0);
 
                     // 最大抓地冲量 = μ × 法向冲量（始终正数）
                     double maxGripImpulse = mu * frictionBasis;
 
                     // Binary Grip: |驱动力| ≤ 抓地极限 → 全量通过，否则截断
-                    // 用绝对值判断抓地，但截断时保留原始方向符号
                     double absDriveImpulse = Math.abs(driveImpulse);
                     this.gripStatus = absDriveImpulse <= maxGripImpulse;
                     double actualImpulse = this.gripStatus
                             ? driveImpulse
                             : Math.signum(driveImpulse) * maxGripImpulse;
 
-                    // 摩擦需求比 = |驱动冲量| / 抓地极限 - 1.0
-                    //   < 0 → 有余量, = 0 → 刚好饱和, > 0 → 打滑
+                    // 摩擦需求比
                     this.frictionDemandRatio = maxGripImpulse > 1e-10
                             ? absDriveImpulse / maxGripImpulse - 1.0
                             : -1.0;
 
-                    // ═══ 运动学速度约束 ═══
-                    // 在档时轮子转速不能超过变速箱输出转速（引擎RPM/有效齿比）。
-                    // 变速箱不只是扭矩放大器——它也决定每个档位的极速。
-                    // 超速时切断驱动力，让阻力自然减速，不产生生硬刹车感。
-                    // 仅在档位有效时生效（空档/熄火 targetWheelRpm=0，自动跳过）。
-                    double kinematicTargetRpm = preCockpit.getTargetWheelRpm();
-                    if (Math.abs(kinematicTargetRpm) > 0.1) {
-                        double absCurrent = Math.abs(this.currentWheelRpm);
-                        double absMax = Math.abs(kinematicTargetRpm);
-                        if (absCurrent > absMax * 1.05) {
-                            // 超速 >5% → 完全切断驱动
-                            actualImpulse = 0;
-                        } else if (absCurrent > absMax * 0.95) {
-                            // 接近限速 (95%~105%) → 线性衰减
-                            double t = (absCurrent - absMax * 0.95) / (absMax * 0.10);
-                            actualImpulse *= (1.0 - t);
-                        }
-                    }
-
                     // ═══ 差速器扭矩偏置 ═══
-                    // 转弯时外侧轮多给扭矩、内侧轮少给，辅助过弯。
-                    // diffFactor ∈ [0.5, 1.5]：外侧最多 1.5 倍，内侧最少 0.5 倍。
                     double normX = Mth.clamp(localPosX / SuspensionConstants.HALF_TRACK, -1.0, 1.0);
                     double diffFactor = 1.0 + this.chasingYaw * normX * SuspensionConstants.DIFFERENTIAL_RATIO;
                     diffFactor = Mth.clamp(diffFactor, 0.5, 1.5);
                     longForce += actualImpulse * diffFactor;
                     this.pControllerDemand = 0;
                     // 标记已处理，跳过下方 P 控制器
-                    targetRpm = 0;
-                    torqueGain = 0;
-                } else {
-                    // ╔══════════════════════════════════════════════════════════════╗
-                    // ║  [暂禁用] 降级回退路径 — 无驾驶舱时暂不驱动              ║
-                    // ╚══════════════════════════════════════════════════════════════╝
                     targetRpm = 0;
                     torqueGain = 0;
                 }
@@ -1230,61 +1189,58 @@ public class SuspensionTestBlockEntity extends PartBlockEntity {
         if (this.braking) {
             return 0.0;
         }
-
-        SubLevel sl = Sable.HELPER.getContaining(this);
-        if (sl != null) {
-            CockpitBlockEntity cockpit = findCockpitInSubLevel(sl);
-            if (cockpit != null && !cockpit.isStalled()) {
-                double idealRpm = cockpit.getTargetWheelRpm();
-                return this.gripStatus ? this.currentWheelRpm : idealRpm;
-            }
-        }
-        // 降级：无驾驶舱或熄火时按实际物理速度
+        // 按实际物理速度
         return this.currentWheelRpm;
     }
 
-    /**
-     * 在当前 SubLevel 中查找驾驶舱的 BlockEntity。
-     * <p>
-     * 优先使用 {@link ComponentRegistry} 的 O(1) 查询，仅当注册表为空时
-     * 回退到 SubLevel 全量扫描（并利用扫描结果回填注册表）。
-     */
-    @Nullable
-    private CockpitBlockEntity findCockpitInSubLevel(SubLevel sl) {
-        // 缓存命中且 SubLevel 仍有效（未移除）时直接返回
-        if (this.cachedCockpit != null) {
-            if (!this.cachedCockpit.isRemoved()) {
-                return this.cachedCockpit;
-            }
-            // 驾驶舱已被移除 → 失效缓存
-            this.cachedCockpit = null;
-        }
+    // ====================================================================
+    //  WheelPart 实现
+    // ====================================================================
+    @Override
+    public double getRpm() {return getCurrentWheelRpm();}
 
-        // ═══ 使用 PartQuery 扫描查询 ═══
-        UUID subUUID = sl.getUniqueId();
-        var cockpits = PartQuery.findPartsByUUID(level, subUUID,
-                CockpitBlockEntity.class);
-        if (!cockpits.isEmpty()) {
-            var cockpit = cockpits.get(0);
-            if (!cockpit.isRemoved()) {
-                this.cachedCockpit = cockpit;
-                return cockpit;
-            }
-        }
+    @Override
+    public void setRpm(double rpm) {this.currentWheelRpm = rpm;}
 
-        // ═══ 降级：全量 SubLevel 扫描 ═══
-        SubLevelScanner.forEachBlock(sl, level, (worldPos, state, be) -> {
-            if (this.cachedCockpit != null) {
-                return; // 已找到，跳过
-            }
-            if (be instanceof CockpitBlockEntity cockpit) {
-                this.cachedCockpit = cockpit;
-                // 回填注册表：确保下次查询走 O(1) 路径
-                // ComponentHost 已移除，不再需要注册
-            }
-        });
+    @Override
+    public double getRadius() {return getWheelRadius();}
 
-        return this.cachedCockpit;
+    @Override
+    public double getSuspensionStiffness() {
+        // 从 physicsTick 中的 SpringConstants 推导（简化版）
+        return SPRING_STIFFNESS_PER_NM * 10.0; // 近似典型刚度
+    }
+
+    @Override
+    public double getSuspensionCompression() {
+        return Math.max(0, MAX_EXT - this.extension);
+    }
+
+    @Override
+    public void setSuspensionCompression(double compression) {
+        this.extension = MAX_EXT - Math.max(0, Math.min(MAX_EXT, compression));
+    }
+
+    // ====================================================================
+    //  DriveWheel 实现
+    // ====================================================================
+    @Override
+    public double getTorqueInput() {return torqueInput;}
+
+    @Override
+    public void setTorqueInput(double torque) {this.torqueInput = torque;}
+
+    // ====================================================================
+    //  SteeringWheel 实现
+    // ====================================================================
+    @Override
+    public double getSteeringInput() {return steeringInput;}
+
+    @Override
+    public void setSteeringInput(double steeringInput) {
+        this.steeringInput = Mth.clamp(steeringInput, -1, 1);
+        // 映射归一化 [-1, 1] → 最大转向角（弧度）
+        this.targetSteeringYaw = this.steeringInput * SuspensionConstants.MAX_STEERING_ANGLE_RAD;
     }
 
     /**

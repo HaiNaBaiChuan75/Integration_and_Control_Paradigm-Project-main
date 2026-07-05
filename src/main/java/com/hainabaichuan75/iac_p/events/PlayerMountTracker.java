@@ -3,11 +3,11 @@ package com.hainabaichuan75.iac_p.events;
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationHelper;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
-import com.hainabaichuan75.iac_p.events.PartDamageCache;
 import com.hainabaichuan75.iac_p.index.ModBlocks;
 import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.MountedStateS2CPacket;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.neoforge.event.ForgeSablePostPhysicsTickEvent;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -25,11 +24,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.joml.Vector3dc;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -388,7 +383,7 @@ public class PlayerMountTracker {
      */
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
-        // 机枪瞄准已移至 MachineGunTargetC2SPacket.handle() 直接驱动，不再依赖 tick
+        // 机枪瞄准通过 VehicleControlC2SPacket 传输，WeaponAimSystem 驱动
 
         if (MOUNTED.isEmpty()) {
             return;

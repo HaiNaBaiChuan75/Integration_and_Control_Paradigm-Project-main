@@ -1,18 +1,18 @@
 package com.hainabaichuan75.iac_p.events;
 
+import com.hainabaichuan75.iac_p.Config;
+import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.IACPConfig;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
-import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.Config;
-import com.hainabaichuan75.iac_p.IACPConfig;
 import com.hainabaichuan75.iac_p.index.ModBlocks;
-import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import com.hainabaichuan75.iac_p.network.ModNetworking;
 import com.hainabaichuan75.iac_p.network.packets.MountedStateS2CPacket;
 import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.companion.math.Pose3d;
-import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.companion.math.Pose3d;
+import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import dev.ryanhcode.sable.sublevel.SubLevel;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -28,9 +28,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
-import java.util.Set;
-
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -236,10 +235,8 @@ public class ServerMountHandler {
                 boolean keepBrake = suspension.isBraking();
                 suspension.resetControlInput(keepBrake);
             } else if (be instanceof CockpitBlockEntity cockpit) {
-                // 驾驶舱发动机回到怠速
-                cockpit.resetEngineToIdle();
-                // 重置原始油门方向输入（防止下车后残留油门信号）
-                cockpit.setRawThrottleDirection(0);
+                // 重置移动意图（防止下车后残留油门/转向信号）
+                cockpit.setMovementIntent(new org.joml.Vector3d());
             }
         });
     }

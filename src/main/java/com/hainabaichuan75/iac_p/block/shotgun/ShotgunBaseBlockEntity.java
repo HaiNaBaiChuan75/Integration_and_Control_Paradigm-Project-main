@@ -8,6 +8,8 @@ import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.network.packets.AnchorDataS2CPacket;
+import com.hainabaichuan75.iac_p.part.AimingMount;
+import com.hainabaichuan75.iac_p.part.field.YawPitch;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.physics.constraint.*;
@@ -41,7 +43,7 @@ import java.util.UUID;
 /**
  * ShotgunBaseBlockEntity —— 霰弹枪底座 BE。
  */
-public class ShotgunBaseBlockEntity extends PartBlockEntity {
+public class ShotgunBaseBlockEntity extends PartBlockEntity implements AimingMount {
 
     private static final java.util.Map<java.util.UUID, BlockPos> SG_GRINDSTONE_OWNER_MAP = new java.util.HashMap<>();
     private static final java.util.Map<java.util.UUID, BlockPos> SG_ROD_OWNER_MAP = new java.util.HashMap<>();
@@ -475,6 +477,20 @@ public class ShotgunBaseBlockEntity extends PartBlockEntity {
                 }
             }
         } catch (Exception e) {}
+    }
+
+    // ==================================================================
+    //  AimingMount 实现
+    // ==================================================================
+    @Override
+    public void setAngles(YawPitch angles) {
+        // YawPitch.from() 输出 CCW+，RotaryConstraint 同为 CCW+，但约束初始零位与模型朝向差 180°
+        driveImmediate((float) -(angles.yaw() + 180), (float) angles.pitch());
+    }
+
+    @Override
+    public YawPitch getAngles() {
+        return new YawPitch(targetAngleDegrees, targetPitchAngleDegrees);
     }
 
     private void sendData() { if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3); }

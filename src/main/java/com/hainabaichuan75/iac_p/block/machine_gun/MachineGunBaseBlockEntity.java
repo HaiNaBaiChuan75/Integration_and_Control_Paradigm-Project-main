@@ -9,6 +9,8 @@ import com.hainabaichuan75.iac_p.affiliation.AffiliationTag;
 import com.hainabaichuan75.iac_p.ecs.part.PartBlockEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.network.packets.AnchorDataS2CPacket;
+import com.hainabaichuan75.iac_p.part.AimingMount;
+import com.hainabaichuan75.iac_p.part.field.YawPitch;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.physics.constraint.*;
@@ -48,7 +50,7 @@ import java.util.UUID;
  * 装配流程：在底座附近生成砂轮 SubLevel（方向机/水平旋转）和 末地烛 SubLevel（高低机/俯仰），通过
  * RotaryConstraint（方向机） 和 GenericConstraint（高低机，ANGULAR_X 自由）约束连接。
  */
-public class MachineGunBaseBlockEntity extends PartBlockEntity {
+public class MachineGunBaseBlockEntity extends PartBlockEntity implements AimingMount {
 
     // ==================================================================
     //  静态注册表
@@ -674,6 +676,20 @@ public class MachineGunBaseBlockEntity extends PartBlockEntity {
             }
             IACP.LOGGER.info("[MachineGunBase] ====== 约束重建完成 @ {} ======", this.worldPosition);
         } catch (Exception e) { IACP.LOGGER.error("[MachineGunBase] 重建约束异常", e); }
+    }
+
+    // ==================================================================
+    //  AimingMount 实现
+    // ==================================================================
+    @Override
+    public void setAngles(YawPitch angles) {
+        // YawPitch.from() 输出 CCW+，RotaryConstraint 同为 CCW+，但约束初始零位与模型朝向差 180°
+        driveImmediate((float) -(angles.yaw() + 180), (float) angles.pitch());
+    }
+
+    @Override
+    public YawPitch getAngles() {
+        return new YawPitch(targetAngleDegrees, targetPitchAngleDegrees);
     }
 
     /**

@@ -4,19 +4,18 @@ import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitUpperBlock;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlock;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlock;
+import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear1Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear2Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear3Block;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
-import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
-import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlock;
-import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlock;
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
-import com.hainabaichuan75.iac_p.block.turret.TurretTestBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -116,15 +115,6 @@ public class ModBlocks {
                             .strength(2.0f, 6.0f)
                             .sound(SoundType.METAL)
                             .requiresCorrectToolForDrops());
-
-    // === 炮塔测试方块（GeckoLib 动态骨骼旋转测试） ===
-    public static final DeferredBlock<TurretTestBlock> TURRET_TEST =
-            BLOCKS.registerBlock("turret_test",
-                    TurretTestBlock::new,
-                    BlockBehaviour.Properties.of()
-                            .strength(3.0f, 3.0f)
-                            .sound(SoundType.METAL)
-                            .noOcclusion());
 
     // === 测试 Controller 方块（GeckoLib 多方块渲染测试） ===
     public static final DeferredBlock<TestControllerBlock> TEST_CONTROLLER =

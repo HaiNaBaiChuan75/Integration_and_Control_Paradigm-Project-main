@@ -1,23 +1,7 @@
 package com.hainabaichuan75.iac_p.network;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.network.packets.DebugGearToggleC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.DebugSwivelToggleC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.GearShiftC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.MountedStateS2CPacket;
-import com.hainabaichuan75.iac_p.network.packets.SeatMountC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.TireConfigC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.MachineGunTargetC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.WeaponFireC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.WeaponSoundS2CPacket;
-import com.hainabaichuan75.iac_p.network.packets.AnchorConfigC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.AnchorDataS2CPacket;
-import com.hainabaichuan75.iac_p.network.packets.GrindstoneConfigC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.SmartMapC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.VehicleControlC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.VehicleStateS2CPacket;
-import com.hainabaichuan75.iac_p.network.packets.VehicleKeyConfigC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.PhysicsAssembleC2SPacket;
+import com.hainabaichuan75.iac_p.network.packets.*;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -55,11 +39,6 @@ public class ModNetworking {
                 VehicleControlC2SPacket::handle
         );
         registrar.playToServer(
-                GearShiftC2SPacket.TYPE,
-                GearShiftC2SPacket.STREAM_CODEC,
-                GearShiftC2SPacket::handle
-        );
-        registrar.playToServer(
                 TireConfigC2SPacket.TYPE,
                 TireConfigC2SPacket.STREAM_CODEC,
                 TireConfigC2SPacket::handle
@@ -80,11 +59,6 @@ public class ModNetworking {
                 AnchorDataS2CPacket::handle
         );
         registrar.playToServer(
-                MachineGunTargetC2SPacket.TYPE,
-                MachineGunTargetC2SPacket.STREAM_CODEC,
-                MachineGunTargetC2SPacket::handle
-        );
-        registrar.playToServer(
                 DebugGearToggleC2SPacket.TYPE,
                 DebugGearToggleC2SPacket.STREAM_CODEC,
                 DebugGearToggleC2SPacket::handle
@@ -103,16 +77,6 @@ public class ModNetworking {
                 WeaponSoundS2CPacket.TYPE,
                 WeaponSoundS2CPacket.STREAM_CODEC,
                 WeaponSoundS2CPacket::handle
-        );
-        registrar.playToServer(
-                SmartMapC2SPacket.TYPE,
-                SmartMapC2SPacket.STREAM_CODEC,
-                SmartMapC2SPacket::handle
-        );
-        registrar.playToClient(
-                VehicleStateS2CPacket.TYPE,
-                VehicleStateS2CPacket.STREAM_CODEC,
-                VehicleStateS2CPacket::handle
         );
         registrar.playToServer(
                 PhysicsAssembleC2SPacket.TYPE,

@@ -3,7 +3,6 @@ package com.hainabaichuan75.iac_p;
 import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlockRenderer;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockRenderer;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestRenderer;
-import com.hainabaichuan75.iac_p.block.turret.TurretTestRenderer;
 import com.hainabaichuan75.iac_p.client.*;
 import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
@@ -61,10 +60,6 @@ public class IACPClient {
         // GeckoLib 测试控制器
         event.registerBlockEntityRenderer(ModBlockEntityTypes.TEST_CONTROLLER.get(),
                 TestControllerRenderer::new);
-
-        // GeckoLib 炮塔测试（动态骨骼旋转）
-        event.registerBlockEntityRenderer(ModBlockEntityTypes.TURRET_TEST.get(),
-                TurretTestRenderer::new);
 
         // GeckoLib 基础座舱（静态骨骼模型）
         event.registerBlockEntityRenderer(ModCockpitBlockEntityTypes.BASE_CABIN.get(),

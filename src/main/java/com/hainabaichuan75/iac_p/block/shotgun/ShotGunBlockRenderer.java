@@ -3,6 +3,7 @@ package com.hainabaichuan75.iac_p.block.shotgun;
 import com.hainabaichuan75.iac_p.ecs.part.PartRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -31,13 +32,14 @@ public class ShotGunBlockRenderer extends PartRenderer<ShotGunBlockEntity> {
                                   RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer,
                                   boolean isReRender, float partialTick, int packedLight, int packedOverlay,
                                   int colour) {
+        float realPartialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if ("yaw".equals(bone.getName())) {
-            float yawRad = (float) Math.toRadians(animatable.getRenderYaw(partialTick));
+            float yawRad = (float) Math.toRadians(animatable.getRenderYaw(realPartialTick));
             bone.setRotY(yawRad);
             bone.setRotX(0);
             bone.setRotZ(0);
         } else if ("pitch".equals(bone.getName())) {
-            float pitchRad = (float) Math.toRadians(animatable.getRenderPitch(partialTick));
+            float pitchRad = (float) Math.toRadians(animatable.getRenderPitch(realPartialTick));
             bone.setRotX(pitchRad);
             bone.setRotY(0);
             bone.setRotZ(0);

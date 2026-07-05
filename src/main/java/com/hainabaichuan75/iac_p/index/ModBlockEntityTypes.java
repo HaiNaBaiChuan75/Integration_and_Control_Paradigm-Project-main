@@ -1,14 +1,13 @@
 package com.hainabaichuan75.iac_p.index;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockEntity;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
-import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlockEntity;
-import com.hainabaichuan75.iac_p.block.turret.TurretTestBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -19,7 +18,7 @@ import java.util.function.Supplier;
  * BlockEntity 类型注册中心（主）。
  * <p>
  * 包含：SUSPENSION_TEST, MACHINE_GUN_BASE, SHOTGUN_BASE,
- * DEBUG_GEAR, DEBUG_SWIVEL_BEARING, TEST_CONTROLLER, TURRET_TEST。
+ * DEBUG_GEAR, DEBUG_SWIVEL_BEARING, TEST_CONTROLLER。
  * <p>
  * 驾驶舱/Cockpit 系列 BE 保留单独注册类（ModCockpitBlockEntityTypes /
  * ModLightCockpitBlockEntityTypes）以避免 Block ↔ BE 循环依赖。
@@ -77,12 +76,5 @@ public class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             TestControllerBlockEntity::new,
                             ModBlocks.TEST_CONTROLLER.get()
-                    ).build(null));
-
-    public static final Supplier<BlockEntityType<TurretTestBlockEntity>> TURRET_TEST =
-            BLOCK_ENTITY_TYPES.register("turret_test",
-                    () -> BlockEntityType.Builder.of(
-                            TurretTestBlockEntity::new,
-                            ModBlocks.TURRET_TEST.get()
                     ).build(null));
 }

@@ -1,33 +1,25 @@
 package com.hainabaichuan75.iac_p.client;
 
+import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
+import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.client.screen.GrindstoneConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.StructureInfoScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleKeyConfigScreen;
 import com.hainabaichuan75.iac_p.client.screen.VehicleOrientationScreen;
-import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
-import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
-import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
-import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.network.ModNetworking;
-import com.hainabaichuan75.iac_p.network.packets.DebugGearToggleC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.DebugSwivelToggleC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.GearShiftC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.PhysicsAssembleC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.SeatMountC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.MachineGunTargetC2SPacket;
-import com.hainabaichuan75.iac_p.network.packets.VehicleControlC2SPacket;
+import com.hainabaichuan75.iac_p.network.packets.*;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.neoforged.neoforge.client.event.ScreenEvent;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import org.joml.Vector3d;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
@@ -42,8 +34,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.util.Lazy;
+import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -114,15 +108,6 @@ public class ClientEvents {
     private static int vehicleControlCooldown = 0;
 
     /**
-     * 换挡按键上升沿检测 —— 上次 tick 时 Q 键是否被按下
-     */
-    private static boolean gearUpKeyWasDown = false;
-    /**
-     * 换挡按键上升沿检测 —— 上次 tick 时 E 键是否被按下
-     */
-    private static boolean gearDownKeyWasDown = false;
-
-    /**
      * 上次开火的游戏刻（用于冷却判断）
      */
     private static int lastFireGameTime = 0;
@@ -135,6 +120,11 @@ public class ClientEvents {
      * 持续射线检测冷却（每 2 tick 执行一次以降低性能开销）
      */
     private static int raycastCooldown = 0;
+
+    /**
+     * 上次射线检测的命中点，由 VehicleControlC2SPacket 携带到服务端
+     */
+    private static Vec3 lastAimHitPos = null;
 
     /**
      * Ctrl+右键 物理装配上升沿检测
@@ -305,11 +295,9 @@ public class ClientEvents {
             return false;
         }
 
-        // 打开朝向信息界面（交互式，含汽车模式/反转/开关按钮）
+        // 打开朝向信息界面（只读显示悬挂朝向统计）
         VehicleOrientationData data = ClientMountHandler.getOrientationData(targetSubLevel.getUniqueId());
-        boolean smartOn = ClientMountHandler.isSmartMappingActive();
-        boolean autoOn = ClientMountHandler.isAutoShiftEnabled();
-        mc.setScreen(new VehicleOrientationScreen(data, targetSubLevel.getUniqueId(), smartOn, autoOn));
+        mc.setScreen(new VehicleOrientationScreen(data, targetSubLevel.getUniqueId()));
         return true;
     }
 
@@ -505,24 +493,10 @@ public class ClientEvents {
                         WeaponOverlay.fireAllTurrets(mc);
                     }
                 } else {
-                    // 每 2 tick 射线检测 → 发送命中点坐标 + 摄像机朝向角度
+                    // 每 2 tick 射线检测 → 缓存命中点，随 VehicleControlC2SPacket 写入座舱
                     if (--raycastCooldown <= 0) {
                         raycastCooldown = 2;
-                        Vec3 hitPos = WeaponOverlay.performRaycast();
-                        // 获取摄像机实际朝向（轨道模式下被 CameraMixin 强制设定，
-                        // 不同于 player.getYRot()/getXRot()）
-                        var camera = mc.gameRenderer.getMainCamera();
-                        float camYaw = camera.getYRot();
-                        float camPitch = camera.getXRot();
-                        if (hitPos != null) {
-                            ModNetworking.sendToServer(
-                                    new MachineGunTargetC2SPacket(
-                                            (float) hitPos.x,
-                                            (float) hitPos.y,
-                                            (float) hitPos.z,
-                                            camYaw,
-                                            camPitch));
-                        }
+                        lastAimHitPos = WeaponOverlay.performRaycast();
                     }
 
                     // 按住连发（最小间隔 3 tick）
@@ -537,29 +511,9 @@ public class ClientEvents {
             // ===== 衰减弹道渲染计数 =====
             WeaponOverlay.tickFireTrail();
 
-            // ===== 换挡操作（Q 升档 / E 降档） =====
-            {
-                long window = mc.getWindow().getWindow();
-                boolean gearUp = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_Q);
-                boolean gearDown = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_E);
-
-                if (gearUp && !gearUpKeyWasDown) {
-                    ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.UP));
-                }
-                if (gearDown && !gearDownKeyWasDown) {
-                    ModNetworking.sendToServer(new GearShiftC2SPacket(GearShiftC2SPacket.Direction.DOWN));
-                }
-                gearUpKeyWasDown = gearUp;
-                gearDownKeyWasDown = gearDown;
-            }
-
         } else {
             vehicleControlCooldown = 0;
             if (!ClientMountHandler.isMounted()) {
-                // 重置换挡按键状态
-                gearUpKeyWasDown = false;
-                gearDownKeyWasDown = false;
-
                 // ===== Ctrl+右键 → 物理装配/拆解 =====
                 {
                     long window = mc.getWindow().getWindow();
@@ -662,50 +616,14 @@ public class ClientEvents {
             }
         }
 
-        // ── 发送节流：仅在状态变化或心跳到期时发送 ──
-        // 检测状态是否变化
-        boolean changed = false;
+        // ── 发送（瞄准数据可能每 tick 变化，移除 change-detection 节流）──
+        ticksSinceLastSend = 0;
 
-        // 1) 油门方向变化？
-        if (throttleDirection != lastSentThrottleDir) {
-            changed = true;
-        }
-
-        // 2) 条目数量变化？
-        if (!changed && entries.size() != lastSentEntriesDigest.length) {
-            changed = true;
-        }
-
-        // 3) 条目内容变化？
-        if (!changed) {
-            for (int i = 0; i < entries.size(); i++) {
-                var e = entries.get(i);
-                byte dig = (byte)((e.forward() ? 1 : 0) | (e.backward() ? 2 : 0)
-                        | (e.left() ? 4 : 0) | (e.right() ? 8 : 0) | (e.brake() ? 16 : 0));
-                if (dig != lastSentEntriesDigest[i]) {
-                    changed = true;
-                    break;
-                }
-            }
-        }
-
-        // 4) 心跳：连续无发送超过 MAX_SILENT_TICKS 次调用时强制发
-        ticksSinceLastSend++;
-        boolean heartbeat = ticksSinceLastSend >= MAX_SILENT_TICKS;
-
-        if (changed || heartbeat) {
-            // 更新缓存
-            lastSentThrottleDir = throttleDirection;
-            lastSentEntriesDigest = new byte[entries.size()];
-            for (int i = 0; i < entries.size(); i++) {
-                var e = entries.get(i);
-                lastSentEntriesDigest[i] = (byte)((e.forward() ? 1 : 0) | (e.backward() ? 2 : 0)
-                        | (e.left() ? 4 : 0) | (e.right() ? 8 : 0) | (e.brake() ? 16 : 0));
-            }
-            ticksSinceLastSend = 0;
-
-            ModNetworking.sendToServer(new VehicleControlC2SPacket(entries, throttleDirection));
-        }
+        boolean hasAim = lastAimHitPos != null;
+        float aimX = hasAim ? (float) lastAimHitPos.x : 0;
+        float aimY = hasAim ? (float) lastAimHitPos.y : 0;
+        float aimZ = hasAim ? (float) lastAimHitPos.z : 0;
+        ModNetworking.sendToServer(new VehicleControlC2SPacket(entries, throttleDirection, hasAim, aimX, aimY, aimZ));
     }
 
     /** 检查命名按键（如 "key.keyboard.w"）是否被按下。 */

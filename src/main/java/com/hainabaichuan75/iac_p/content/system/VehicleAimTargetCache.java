@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 每辆车的瞄准目标点缓存。
  * <p>
- * 写入方：{@code MachineGunTargetC2SPacket.handle()}（客户端→服务端的命中坐标）
+ * 写入方：{@code VehicleControlC2SPacket.handle()}（客户端→服务端的命中坐标）
  * 读取方：WeaponAimSystem（每逻辑 tick 读取）
  * <p>
  * 使用 JOML {@link Vector3dc} 与 {@code PartBlockEntity.partLogicalPose()} 坐标体系一致。

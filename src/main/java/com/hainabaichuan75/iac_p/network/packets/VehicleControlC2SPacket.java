@@ -44,15 +44,38 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
      */
     private final int throttleDirection;
 
-    public record Entry(BlockPos blockPos, boolean forward, boolean backward, boolean left, boolean right, boolean brake) {}
+    /**
+     * 是否有有效的瞄准目标
+     */
+    private final boolean hasAim;
+    /**
+     * 瞄准目标世界坐标
+     */
+    private final float aimX, aimY, aimZ;
 
-    public VehicleControlC2SPacket(List<Entry> entries, int throttleDirection) {
+    public record Entry(BlockPos blockPos, boolean forward, boolean backward, boolean left, boolean right,
+                        boolean brake) {}
+
+    public VehicleControlC2SPacket(List<Entry> entries, int throttleDirection, boolean hasAim, float aimX, float aimY
+            , float aimZ) {
         this.entries = entries;
         this.throttleDirection = throttleDirection;
+        this.hasAim = hasAim;
+        this.aimX = aimX;
+        this.aimY = aimY;
+        this.aimZ = aimZ;
     }
 
     public List<Entry> entries() { return entries; }
-    public int throttleDirection() { return throttleDirection; }
+    public int throttleDirection() { return throttleDirection;}
+
+    public boolean hasAim() {return hasAim;}
+
+    public float aimX() {return aimX;}
+
+    public float aimY() {return aimY;}
+
+    public float aimZ() { return aimZ; }
 
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleControlC2SPacket> STREAM_CODEC =
             new StreamCodec<>() {
@@ -71,7 +94,11 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
                         ));
                     }
                     int throttleDir = buf.readVarInt();
-                    return new VehicleControlC2SPacket(entries, throttleDir);
+                    boolean hasAim = buf.readBoolean();
+                    float aimX = hasAim ? buf.readFloat() : 0;
+                    float aimY = hasAim ? buf.readFloat() : 0;
+                    float aimZ = hasAim ? buf.readFloat() : 0;
+                    return new VehicleControlC2SPacket(entries, throttleDir, hasAim, aimX, aimY, aimZ);
                 }
 
                 @Override
@@ -86,6 +113,12 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
                         buf.writeBoolean(e.brake);
                     }
                     buf.writeVarInt(packet.throttleDirection);
+                    buf.writeBoolean(packet.hasAim);
+                    if (packet.hasAim) {
+                        buf.writeFloat(packet.aimX);
+                        buf.writeFloat(packet.aimY);
+                        buf.writeFloat(packet.aimZ);
+                    }
                 }
             };
 
@@ -116,13 +149,29 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
                     }
                 }
 
-                // ── 油门方向直接发送到驾驶舱（与悬挂解耦） ──
-                // W/S 直接控制抽象发动机油门，不经过悬挂方的智能键映射。
+                // ── 控制信号转发到座舱的 PlayerCommandReceiver ──
                 var mountData = PlayerMountTracker.getMountData(serverPlayer);
                 if (mountData != null) {
                     CockpitBlockEntity cockpit = findCockpitInSubLevel(level, mountData.subLevelUUID());
                     if (cockpit != null) {
-                        cockpit.setRawThrottleDirection(packet.throttleDirection);
+                        // 油门 + 转向：Controller 约定 z- = 前, z+ = 后
+                        // throttleDirection +1 = W(前进) → z = -1
+                        cockpit.setMovementIntent(new org.joml.Vector3d(0, 0, -packet.throttleDirection));
+                        // 刹车：任一悬挂刹车即整体刹车
+                        boolean anyBrake = false;
+                        for (Entry entry : packet.entries) {
+                            if (entry.brake) {
+                                anyBrake = true;
+                                break;
+                            }
+                        }
+                        cockpit.setBrake(anyBrake);
+                        // 瞄准目标
+                        if (packet.hasAim) {
+                            cockpit.setAimTarget(new org.joml.Vector3d(packet.aimX, packet.aimY, packet.aimZ));
+                        } else {
+                            cockpit.setAimTarget(null);
+                        }
                     }
                 }
             }
@@ -135,7 +184,7 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
 
     /**
      * 在指定 SubLevel 中查找驾驶舱 BlockEntity。
-     * 使用 SubLevelScanner 统一遍历，与 SmartMapC2SPacket 中的实现保持一致。
+     * 使用 SubLevelScanner 统一遍历。
      */
     private static CockpitBlockEntity findCockpitInSubLevel(ServerLevel level, UUID subLevelUUID) {
         var container = SubLevelContainer.getContainer(level);

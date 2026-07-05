@@ -39,9 +39,6 @@ public class ModItems {
     // === 装配扫描屏障方块 ===
     public static final DeferredItem<BlockItem> ASSEMBLY_BARRIER = ITEMS.registerSimpleBlockItem(ModBlocks.ASSEMBLY_BARRIER);
 
-    // === 炮塔测试方块（GeckoLib 动态骨骼旋转测试） ===
-    public static final DeferredItem<BlockItem> TURRET_TEST = ITEMS.registerSimpleBlockItem(ModBlocks.TURRET_TEST);
-
     // === 测试 Controller（GeckoLib 渲染测试） ===
     public static final DeferredItem<BlockItem> TEST_CONTROLLER = ITEMS.registerSimpleBlockItem(ModBlocks.TEST_CONTROLLER);
 
