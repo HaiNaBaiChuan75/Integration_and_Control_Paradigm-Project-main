@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretBaseBlock.java\" \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/machine_gun/MachineGunBaseBlock.java\")",
+      "Bash(cp \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretBaseBlockEntity.java\" \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/machine_gun/MachineGunBaseBlockEntity.java\")",
+      "Bash(cp \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretAimController.java\" \"src/main/java/com/hainabaichuan75/iac_p/content/blocks/machine_gun/MachineGunAimController.java\")",
+      "mcp__idea__list_directory_tree",
+      "mcp__idea__read_file",
+      "Bash(rm -f \"D:/Minecraft Mod Studio/Minecraft Mod Studio/cang ku/Integration_and_Control_Paradigm-Project-main/src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretBaseBlock.java\" \"D:/Minecraft Mod Studio/Minecraft Mod Studio/cang ku/Integration_and_Control_Paradigm-Project-main/src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretBaseBlockEntity.java\" \"D:/Minecraft Mod Studio/Minecraft Mod Studio/cang ku/Integration_and_Control_Paradigm-Project-main/src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret/TurretAimController.java\")",
+      "Bash(rmdir \"D:/Minecraft Mod Studio/Minecraft Mod Studio/cang ku/Integration_and_Control_Paradigm-Project-main/src/main/java/com/hainabaichuan75/iac_p/content/blocks/turret\")",
+      "Bash(rm -f \"D:/Minecraft Mod Studio/Minecraft Mod Studio/cang ku/Integration_and_Control_Paradigm-Project-main/src/main/java/com/hainabaichuan75/iac_p/network/packets/TurretTargetC2SPacket.java\")",
+      "Bash(./gradlew compileJava)",
+      "Bash(./gradlew build *)",
+      "Bash(cp \"src/main/resources/assets/iac_p/blockstates/turret_base.json\" \"src/main/resources/assets/iac_p/blockstates/machine_gun_base.json\")",
+      "Bash(cp \"src/main/resources/assets/iac_p/models/block/turret_base.json\" \"src/main/resources/assets/iac_p/models/block/machine_gun_base.json\")",
+      "Bash(cp \"src/main/resources/assets/iac_p/models/item/turret_base.json\" \"src/main/resources/assets/iac_p/models/item/machine_gun_base.json\")",
+      "mcp__idea__create_new_file"
+    ]
+  }
+}

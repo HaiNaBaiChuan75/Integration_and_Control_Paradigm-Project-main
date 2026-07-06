@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -140,10 +141,6 @@ public class PlayerMountTracker {
         SUBLEVEL_OCCUPANTS.put(subLevelUUID, player.getUUID());
         // 持久化标记：标记玩家当前处于骑乘状态，用于断线重连时检测
         player.getPersistentData().putBoolean(MOUNTED_NBT_KEY, true);
-
-        // 上车时设置无敌状态 + 玩家模型隐身（多人同步）
-        player.setInvulnerable(true);
-        player.setInvisible(true);
 
         // 注册载具主体归属到 AffiliationRegistry
         try {
@@ -448,8 +445,9 @@ public class PlayerMountTracker {
                 continue;
             }
 
-            // 位置同步已移至 SablePostPhysicsTickEvent (物理 tick 频率)
-            // 此处仅做生命周期清理，SubLevel 正常存在时无需额外操作
+            // 阻断玩家运动——防止键盘输入影响玩家实体（客户端 MovementInputUpdateEvent
+            // 已清零 WASD/跳跃/潜行，此处作为服务端兜底）
+            player.setDeltaMovement(Vec3.ZERO);
         }
     }
 

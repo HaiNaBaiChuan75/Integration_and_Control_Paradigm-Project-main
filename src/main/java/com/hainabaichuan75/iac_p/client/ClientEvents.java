@@ -33,7 +33,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.util.Lazy;
@@ -43,7 +42,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 /**
- * 客户端事件 —— 处理 F 键上车/下车输入、C 键打开按键配置、以及骑乘时载具控制输入检测。
+ * 客户端事件 —— 处理 C 键打开按键配置、以及骑乘时载具控制输入检测。
  *
  * <h3>C 键配置界面</h3>
  * 对着悬挂测试方块按 C 键打开按键配置界面，可自定义每组的 5 个操控按键。
@@ -56,19 +55,12 @@ import java.util.List;
 public class ClientEvents {
 
     private static final String KEY_CATEGORY = "key.category.iac_p";
-    private static final String KEY_MOUNT = "key.iac_p.mount";
     private static final String KEY_VEHICLE_CONFIG = "key.iac_p.vehicle_config";
     private static final String KEY_RAYCAST_FIRE = "key.iac_p.raycast_fire";
     private static final String KEY_DEBUG_GEAR = "key.iac_p.debug_gear";
     private static final String KEY_STATIONARY_CAM = "key.iac_p.stationary_cam";
-
-    private static final Lazy<KeyMapping> MOUNT_KEY = Lazy.of(() -> new KeyMapping(
-            KEY_MOUNT,
-            KeyConflictContext.IN_GAME,
-            com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F,
-            KEY_CATEGORY
-    ));
+    private static final String KEY_VEHICLE_CAMERA = "key.iac_p.vehicle_camera";
+    private static final String KEY_DISMOUNT = "key.iac_p.dismount";
 
     private static final Lazy<KeyMapping> VEHICLE_CONFIG_KEY = Lazy.of(() -> new KeyMapping(
             KEY_VEHICLE_CONFIG,
@@ -102,6 +94,22 @@ public class ClientEvents {
             KEY_CATEGORY
     ));
 
+    private static final Lazy<KeyMapping> VEHICLE_CAMERA_KEY = Lazy.of(() -> new KeyMapping(
+            KEY_VEHICLE_CAMERA,
+            KeyConflictContext.IN_GAME,
+            com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F6,
+            KEY_CATEGORY
+    ));
+
+    private static final Lazy<KeyMapping> DISMOUNT_KEY = Lazy.of(() -> new KeyMapping(
+            KEY_DISMOUNT,
+            KeyConflictContext.IN_GAME,
+            com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_SHIFT,
+            KEY_CATEGORY
+    ));
+
     /**
      * 载具控制数据包发送间隔（每 2 ticks ≈ 10 次/秒）
      */
@@ -132,13 +140,6 @@ public class ClientEvents {
     private static boolean ctrlRightClickWasDown = false;
 
     /**
-     * 返回挂载/卸载键位映射，用于注册。
-     */
-    public static KeyMapping getMountKey() {
-        return MOUNT_KEY.get();
-    }
-
-    /**
      * 返回载具配置键位映射，用于注册。
      */
     public static KeyMapping getVehicleConfigKey() {
@@ -163,6 +164,14 @@ public class ClientEvents {
         return STATIONARY_CAM_KEY.get();
     }
 
+    public static KeyMapping getDismountKey() {
+        return DISMOUNT_KEY.get();
+    }
+
+    public static KeyMapping getVehicleCameraKey() {
+        return VEHICLE_CAMERA_KEY.get();
+    }
+
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         var mc = Minecraft.getInstance();
@@ -170,15 +179,33 @@ public class ClientEvents {
             return;
         }
 
-        if (MOUNT_KEY.get().consumeClick()) {
-            // 按下 F 键 → 发送上车/下车请求到服务端
-            ModNetworking.sendToServer(new SeatMountC2SPacket());
-        }
-
         if (STATIONARY_CAM_KEY.get().consumeClick()) {
             // 按下 V 键 → 切换哨兵摄像机模式（仅骑乘时有效）
             if (ClientMountHandler.isMounted()) {
                 ClientMountHandler.toggleStationaryCamera(mc);
+            }
+        }
+
+        if (VEHICLE_CAMERA_KEY.get().consumeClick()) {
+            // 按下 F6 键 → 循环载具摄像机模式（仅 IACPSeatEntity 骑乘时有效）
+            if (mc.player.getVehicle() instanceof com.hainabaichuan75.iac_p.entity.IACPSeatEntity) {
+                var mode = ClientMountHandler.cycleVehicleCameraMode();
+                if (mode != null) {
+                    mc.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal("§7[摄像机] §f" + mode.displayName()),
+                            true);
+                } else {
+                    mc.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal("§7[摄像机] §f标准模式"),
+                            true);
+                }
+            }
+        }
+
+        if (DISMOUNT_KEY.get().consumeClick()) {
+            // 按下下车键（默认 Shift） → 发送下车请求到服务端
+            if (ClientMountHandler.isMounted()) {
+                ModNetworking.sendToServer(new DismountC2SPacket());
             }
         }
 
@@ -636,43 +663,6 @@ public class ClientEvents {
                 com.mojang.blaze3d.platform.InputConstants.getKey(keyName);
         return mapped != null
                 && com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, mapped.getValue());
-    }
-
-    /**
-     * 骑乘时完全隐藏玩家模型及衍生粒子发射器。
-     * <p>
-     * 取消整个渲染事件，使玩家模型、装备、名称标签均不渲染。 再加上 {@code player.setInvisible(true)}
-     * 抑制大部分粒子生成。
-     */
-    @SubscribeEvent
-    public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
-        var player = event.getEntity();
-        var mc = Minecraft.getInstance();
-
-        // 1. 玩家自身上车 → 隐藏（本地玩家立即生效）
-        if (ClientMountHandler.isMounted() && player == mc.player) {
-            event.setCanceled(true);
-            return;
-        }
-
-        // 2. 服务端已设为不可见 → 隐藏（其他玩家视角）
-        if (player.isInvisible()) {
-            event.setCanceled(true);
-            return;
-        }
-
-        // 3. 降级检测：玩家位置在 SubLevel 内 → 上车状态
-        //    覆盖 isInvisible() 尚未同步的时间窗口
-        if (mc.level != null && player.isAlive()) {
-            try {
-                SubLevel sl = Sable.HELPER.getContaining(mc.level,
-                        new Vector3d(player.getX(), player.getY(), player.getZ()));
-                if (sl != null) {
-                    event.setCanceled(true);
-                }
-            } catch (Exception ignored) {
-            }
-        }
     }
 
     // ==================================================================

@@ -12,28 +12,26 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * 客户端骑乘状态处理器 —— Plan B 实现。
+ * 客户端骑乘状态处理器。
  * <p>
- * 核心改动：相机不再跟随玩家实体，而是直接绑定到 SubLevel 的 {@code renderPose()} （Create Simulated
- * 已经处理好的平滑插值变换），彻底消除玩家实体插值和 SubLevel 渲染插值之间的冲突。
+ * 管理骑乘状态标记（{@code isMounted}），为控制输入路由提供 SubLevel UUID 和悬挂朝向缓存。
+ * 不处理玩家视觉——玩家实体保留在世界原位，正常渲染。
  * <p>
  * 额外处理：
  * <ul>
  * <li>重新进入世界时重置骑乘状态</li>
- * <li>骑乘时禁止交互、隐藏手部渲染</li>
+ * <li>缓存 SubLevel 悬挂朝向数据供 WASD 智能映射使用</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -357,147 +355,6 @@ public class ClientMountHandler {
     }
 
     // ==================================================================
-    //  独立轨道摄像机角度追踪（解耦 entity.getYRot() 服务器覆盖问题）
-    // ==================================================================
-    /**
-     * 轨道摄像机独立偏航角（度），不受 {@code SablePostPhysicsTickEvent} 服务端
-     * {@code player.setYRot()} 覆盖影响。
-     * <p>
-     * 实现原理：跟踪 {@code entity.getYRot()} 的帧间变化，通过
-     * {@link #MAX_YAW_DELTA_PER_FRAME} 阈值滤除服务端强制覆盖（~100Hz 跳变），
-     * 仅接受鼠标产生的平滑小差分。类似低通滤波器。
-     */
-    private static float orbitalYaw = 0;
-
-    /**
-     * 轨道摄像机独立俯仰角（度），MC 惯例（负=上仰）。
-     */
-    private static float orbitalPitch = 0;
-
-    /**
-     * 轨道摄像机是否已初始化（上车时设为 true，下车时 false）。
-     */
-    private static boolean orbitalInitialized = false;
-
-    /**
-     * 上一帧 {@code entity.getYRot()} 的快照，用于计算帧间差分。
-     */
-    private static float lastEntityYaw = 0;
-
-    /**
-     * 上一帧 {@code entity.getXRot()} 的快照，用于计算帧间差分。
-     */
-    private static float lastEntityPitch = 0;
-
-    /**
-     * 帧间偏航最大可接受差分（度/帧）。
-     * <p>
-     * 鼠标快速甩动约 500°/s，60fps 下约 8.3°/帧；
-     * 服务端覆盖通常远大于此（车辆旋转可瞬时改变 >45°）。
-     * 15° 阈值能安全区分鼠标输入和服务端覆盖。
-     */
-    private static final float MAX_YAW_DELTA_PER_FRAME = 15.0f;
-
-    /**
-     * 帧间俯仰最大可接受差分（度/帧）。
-     */
-    private static final float MAX_PITCH_DELTA_PER_FRAME = 15.0f;
-
-    /**
-     * 上车时初始化轨道摄像机角度为玩家当前朝向。
-     * <p>
-     * 此后仅接受帧间小差分（鼠标输入），滤除服务端强制覆盖的大跳变。
-     */
-    private static void initOrbitalCamera() {
-        var mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            // 以上车瞬间的玩家朝向作为初始值
-            orbitalYaw = mc.player.getYRot();
-            orbitalPitch = mc.player.getXRot();
-            lastEntityYaw = orbitalYaw;
-            lastEntityPitch = orbitalPitch;
-            orbitalInitialized = true;
-            IACP.LOGGER.debug("[OrbitalCamera] 初始化: yaw={}, pitch={}", orbitalYaw, orbitalPitch);
-        }
-    }
-
-    /**
-     * 每帧更新轨道摄像机角度（由 CameraMixin 在 setup TAIL 中调用）。
-     * <p>
-     * 跟踪 {@code entity.getYRot()} 的帧间变化，仅接受低于阈值的平滑差分
-     * （来自鼠标输入），滤除服务器强制覆盖（~100Hz 大跳变）。
-     * 俯仰（pitch）取反：MC 负=上仰 → 轨道惯例保持一致。
-     */
-    public static void updateOrbitalCamera() {
-        if (!orbitalInitialized) {
-            return;
-        }
-
-        var mc = Minecraft.getInstance();
-        if (mc.player == null) {
-            return;
-        }
-
-        float currentYaw = mc.player.getYRot();
-        float currentPitch = mc.player.getXRot();
-
-        // 计算帧间差分（归一化到 [-180, 180]）
-        float yawDelta = currentYaw - lastEntityYaw;
-        yawDelta = (float) Math.IEEEremainder(yawDelta, 360.0);
-
-        float pitchDelta = currentPitch - lastEntityPitch;
-
-        // 阈值过滤：仅接受平滑小差分（鼠标输入），滤除服务端覆盖的大跳变
-        if (Math.abs(yawDelta) <= MAX_YAW_DELTA_PER_FRAME) {
-            orbitalYaw += yawDelta;
-        }
-        if (Math.abs(pitchDelta) <= MAX_PITCH_DELTA_PER_FRAME) {
-            // MC 惯例：正 pitch = 下俯，负 pitch = 上仰
-            // 与轨道惯例一致，直接累加
-            orbitalPitch = (float) Mth.clamp(orbitalPitch + pitchDelta, -89.0, 89.0);
-        }
-
-        // 更新上一帧快照
-        lastEntityYaw = currentYaw;
-        lastEntityPitch = currentPitch;
-    }
-
-    /**
-     * @return 轨道摄像机独立偏航角（度，MC 惯例 CW+, 南=0°），不受服务端覆盖影响。
-     *         未初始化时回退到玩家实体偏航，避免时序问题导致摄像机归零。
-     */
-    public static float getOrbitalYaw() {
-        if (orbitalInitialized) {
-            return orbitalYaw;
-        }
-        var mc = Minecraft.getInstance();
-        return mc.player != null ? mc.player.getYRot() : 0;
-    }
-
-    /**
-     * @return 轨道摄像机独立俯仰角（度，MC 惯例负=上仰），不受服务端覆盖影响。
-     *         未初始化时回退到玩家实体俯仰。
-     */
-    public static float getOrbitalPitch() {
-        if (orbitalInitialized) {
-            return orbitalPitch;
-        }
-        var mc = Minecraft.getInstance();
-        return mc.player != null ? mc.player.getXRot() : 0;
-    }
-
-    /**
-     * 下车时重置轨道摄像机状态。
-     */
-    private static void resetOrbitalCamera() {
-        orbitalInitialized = false;
-        orbitalYaw = 0;
-        orbitalPitch = 0;
-        lastEntityYaw = 0;
-        lastEntityPitch = 0;
-    }
-
-    // ==================================================================
     //  车辆基础状态缓存（本地维护）
     // ==================================================================
 
@@ -549,9 +406,6 @@ public class ClientMountHandler {
         if (mounted) {
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
 
-            // 初始化独立轨道摄像机（使用上车瞬间的玩家朝向，之后仅由鼠标差分驱动）
-            initOrbitalCamera();
-
             // 上车时自动扫描载具悬挂朝向，缓存供 WASD 智能映射使用
             ClientSubLevel clientSubLevel = getMountedClientSubLevel();
             if (clientSubLevel != null && mc.level != null) {
@@ -559,8 +413,6 @@ public class ClientMountHandler {
             }
         } else {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
-            // 恢复玩家可见性（骑乘时被设为不可见以抑制粒子）
-            mc.player.setInvisible(false);
             // 下车时清除缓存
             clearAllOrientationCache();
             SUSPENSION_POSITIONS.clear();
@@ -568,8 +420,8 @@ public class ClientMountHandler {
             WeaponOverlay.onDismount();
             // 强制关闭哨兵模式
             disableStationaryCamera();
-            // 重置独立轨道摄像机
-            resetOrbitalCamera();
+            // 清除载具摄像机模式
+            clearVehicleCameraMode();
             // 清空车辆状态缓存
             clearVehicleStateCache();
         }
@@ -616,6 +468,42 @@ public class ClientMountHandler {
         return clientSubLevel;
     }
 
+    // ====== 载具参照摄像机模式（IACPSeatEntity 骑乘时） ======
+
+    /** 当前激活的载具摄像机模式，null = 未激活（使用原版 F5 模式） */
+    @Nullable
+    private static VehicleCameraMode vehicleCameraMode = null;
+
+    /**
+     * @return 当前激活的载具摄像机模式，{@code null} 表示未激活
+     */
+    @Nullable
+    public static VehicleCameraMode getVehicleCameraMode() {
+        return vehicleCameraMode;
+    }
+
+    /**
+     * 循环切换载具摄像机模式：{@code null → STRUCTURE_FIXED → DIRECTION_STABILIZED → null}。
+     * <p>
+     * 返回新的模式，可用于显示通知。
+     */
+    @Nullable
+    public static VehicleCameraMode cycleVehicleCameraMode() {
+        if (vehicleCameraMode == null) {
+            vehicleCameraMode = VehicleCameraMode.STRUCTURE_FIXED;
+        } else {
+            vehicleCameraMode = vehicleCameraMode.next();
+        }
+        return vehicleCameraMode;
+    }
+
+    /**
+     * 清除载具摄像机模式（下车/断线时调用）。
+     */
+    public static void clearVehicleCameraMode() {
+        vehicleCameraMode = null;
+    }
+
     // ====== 重新进入世界时重置状态 ======
     /**
      * 当客户端玩家加入/重新进入世界时，重置骑乘状态。
@@ -634,83 +522,7 @@ public class ClientMountHandler {
         // 不论是否挂载，都清理所有缓存（确保重连后状态干净）
         clearAllOrientationCache();
         SUSPENSION_POSITIONS.clear();
-    }
-
-    // ====== 每 Client Tick：Plan B 摄像机跟随 ======
-    /**
-     * 每 client tick 将玩家位置同步到驾驶舱方块底部中心。
-     * <p>
-     * 使用 {@code renderPose(partialTick)} 确保玩家模型与 SubLevel 渲染位置平滑对齐。
-     * 零碰撞箱避免客户端碰撞检测干扰。 偏航角由 SubLevel 位姿变化决定，使玩家视觉模型始终面向车辆前进方向。
-     */
-    @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
-        if (!isMounted) {
-            return;
-        }
-        var mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) {
-            return;
-        }
-
-        // 强制第三人称背面，让 F5 失效
-        mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-
-        // 无物理（防止服务端 SubLevel 刚体碰撞网格交互）
-        mc.player.noPhysics = true;
-
-        // 零体积碰撞箱：使原版碰撞系统和 Sable SubLevelEntityCollision 均忽略该实体
-        var p = mc.player;
-        mc.player.setBoundingBox(new net.minecraft.world.phys.AABB(
-                p.getX(), p.getY(), p.getZ(),
-                p.getX(), p.getY(), p.getZ()));
-
-        // 速度归零
-        mc.player.setDeltaMovement(Vec3.ZERO);
-
-        // 禁用行走/奔跑动画（腿部和手臂保持静止）
-        // walkAnimation.speed/position 设为 0 冻结肢体摆动。
-        // walkDist = oWalkDist 使游戏认为行走距离增量为零，
-        // 防止 aiStep() 中通过位置变化量重新计算动画。
-        mc.player.walkAnimation.speed(0.0f);
-        mc.player.walkAnimation.position(0.0f);
-        // oWalkDist 是 LivingEntity 私有字段，不可直接访问。
-        // walkAnimation 冻结由 RenderPlayerEvent.Pre 在渲染阶段执行。
-
-        // === 玩家位置同步到驾驶舱方块底部（使用 renderPose 平滑插值） ===
-        ClientSubLevel clientSubLevel = getMountedClientSubLevel();
-        if (clientSubLevel == null) {
-            return;
-        }
-
-        float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
-        var renderPose = clientSubLevel.renderPose(partialTick);
-        if (renderPose == null) {
-            return;
-        }
-
-        // 驾驶舱本地位置 → 世界空间
-        org.joml.Vector3d worldPos = new org.joml.Vector3d();
-        renderPose.transformPosition(
-                new org.joml.Vector3d(cockpitLocalX, cockpitLocalY, cockpitLocalZ),
-                worldPos);
-
-        var player = mc.player;
-
-        double px = worldPos.x;
-        double py = worldPos.y;
-        double pz = worldPos.z;
-
-        // 玩家不可见（抑制大部分粒子生成，如受伤粒子、进食粒子等）
-        player.setInvisible(true);
-
-        // 同步位置：使用 setPosRaw 避免触发位置相关事件，
-        // 不设置 xo/yo/zo——让 Minecraft 的实体渲染插值系统自然处理
-        // 前后两 tick 之间的平滑过渡，与 SubLevel 的 renderPose
-        // 插值时序保持一致，消除视觉滞后。
-        player.setPosRaw(px, py, pz);
-
-        // 位置日志已移除（性能优化）
+        clearVehicleCameraMode();
     }
 
 }

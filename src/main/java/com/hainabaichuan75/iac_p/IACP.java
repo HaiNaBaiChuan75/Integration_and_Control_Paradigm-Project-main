@@ -34,8 +34,6 @@ public class IACP {
 
         // 将服务端事件处理器注册到游戏总线（替代弃用的 @EventBusSubscriber(bus = Bus.GAME)）
         NeoForge.EVENT_BUS.register(PlayerMountTracker.class);
-        // 骑乘保护处理器：伤害免疫 + 仇恨屏蔽
-        NeoForge.EVENT_BUS.register(MountedProtectionHandler.class);
         // 部件损坏系统：外部弹射物命中 SubLevel 方块
         NeoForge.EVENT_BUS.register(SubLevelProjectileHandler.class);
         // 部件损坏缓存 + 裂纹同步 + chunk 加载重发

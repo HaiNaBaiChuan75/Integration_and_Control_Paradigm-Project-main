@@ -18,15 +18,15 @@ public class ModNetworking {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1.0");
-        registrar.playToServer(
-                SeatMountC2SPacket.TYPE,
-                SeatMountC2SPacket.STREAM_CODEC,
-                SeatMountC2SPacket::handle
-        );
         registrar.playToClient(
                 MountedStateS2CPacket.TYPE,
                 MountedStateS2CPacket.STREAM_CODEC,
                 MountedStateS2CPacket::handle
+        );
+        registrar.playToServer(
+                DismountC2SPacket.TYPE,
+                DismountC2SPacket.STREAM_CODEC,
+                DismountC2SPacket::handle
         );
         registrar.playToServer(
                 VehicleKeyConfigC2SPacket.TYPE,

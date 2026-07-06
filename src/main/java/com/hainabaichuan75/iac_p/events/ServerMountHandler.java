@@ -19,12 +19,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
@@ -47,7 +44,12 @@ public class ServerMountHandler {
     private static final int COOLDOWN_TICKS = 5;
     private static final Map<UUID, Integer> COOLDOWN_MAP = new Object2IntOpenHashMap<>();
 
-    public static void handleMountDismount(ServerPlayer player) {
+    /**
+     * 右键驾驶舱方块上车（已确认方块位置，跳过射线检测）。
+     * <p>
+     * 与下车分离——已上车时静默忽略，下车由 {@link #handleDismount(ServerPlayer)} 处理。
+     */
+    public static void handleMountDismount(ServerPlayer player, BlockPos targetPos) {
         ServerLevel level = player.serverLevel();
 
         // 冷却检查
@@ -58,44 +60,47 @@ public class ServerMountHandler {
         }
         COOLDOWN_MAP.put(player.getUUID(), (int) currentTick);
 
-        // 已上车 → 下车
+        // 已上车 → 忽略（下车走 handleDismount）
         if (PlayerMountTracker.isMounted(player)) {
-            dismountPlayer(player);
             return;
         }
 
-        // 尝试上车
-        mountPlayer(player);
+        mountPlayerFromBlock(player, targetPos);
     }
 
-    private static void mountPlayer(ServerPlayer player) {
+    /**
+     * 下车（独立于上车，由下车键触发）。
+     * <p>
+     * 不依赖方块位置——只要处于骑乘状态即可下车。
+     */
+    public static void handleDismount(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
 
-        // ====== 步骤 1：3 格射线检测 ======
-        Vec3 eyePos = player.getEyePosition();
-        Vec3 lookVec = player.getLookAngle();
-        Vec3 endPos = eyePos.add(lookVec.scale(3.0));
+        long currentTick = level.getGameTime();
+        int lastTick = COOLDOWN_MAP.getOrDefault(player.getUUID(), 0);
+        if (currentTick - lastTick < COOLDOWN_TICKS) return;
+        COOLDOWN_MAP.put(player.getUUID(), (int) currentTick);
 
-        BlockHitResult hitResult = level.clip(
-                new ClipContext(eyePos, endPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player)
-        );
-        if (hitResult.getType() == HitResult.Type.MISS) {
-            return;
+        if (PlayerMountTracker.isMounted(player)) {
+            dismountPlayer(player);
         }
+    }
 
-        BlockPos hitPos = hitResult.getBlockPos();
-        Vector3d hitJomlPos = new Vector3d(hitPos.getX() + 0.5, hitPos.getY() + 0.5, hitPos.getZ() + 0.5);
+    /**
+     * 从已知驾驶舱方块位置上车（跳过射线检测）。
+     * <p>
+     * 由 {@code useWithoutItem()} 调用时已确认目标方块是驾驶舱，
+     * 直接以其位置查找 SubLevel 并执行上车流程。
+     */
+    private static void mountPlayerFromBlock(ServerPlayer player, BlockPos blockPos) {
+        ServerLevel level = player.serverLevel();
+        Vector3d centerPos = new Vector3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
 
-        // ====== 步骤 2：射线命中的方块必须在 SubLevel 内 ======
-        SubLevel subLevel = Sable.HELPER.getContaining(level, hitJomlPos);
-        if (subLevel == null) {
-            return;
-        }
+        // ====== 步骤 1：直接定位 SubLevel ======
+        SubLevel subLevel = Sable.HELPER.getContaining(level, centerPos);
+        if (subLevel == null) return;
 
-        // ====== SubLevel 缩放（比例耦合方案） ======
-        // 将 SubLevel 缩放到 0.33，使 Minecraft 的 1 格 ≈ Crossout 的 1 米。
-        // 需要改版 Sable（feature/sublevel-scale 分支）支持 JNI 传 scale。
-        // 如使用原版 Sable，设为 false 跳过以避免 Java 侧变换与物理碰撞不同步。
+        // ====== SubLevel 缩放 ======
         if (IACPConfig.SUBLEVEL_SCALE_ENABLED) {
             Pose3d pose = subLevel.logicalPose();
             pose.scale().set(
@@ -109,18 +114,12 @@ public class ServerMountHandler {
                     IACPConfig.SUBLEVEL_SCALE_Y,
                     IACPConfig.SUBLEVEL_SCALE_Z);
         }
-        // ====== Scale End ======
 
         UUID subLevelUUID = subLevel.getUniqueId();
 
-        // ====== 步骤 3（合并）：单次扫描获取驾驶舱全部信息 ======
-        // 替代原来的 containsCockpit + hasUniqueCockpit + findCockpitBlockInSubLevel 三次独立扫描
+        // ====== 步骤 2：单次扫描获取驾驶舱全部信息 ======
         var cockpitScan = PlayerMountTracker.scanSubLevelForCockpit(subLevel, level);
-
-        // 检查 SubLevel 是否包含驾驶舱
-        if (!cockpitScan.hasCockpit()) {
-            return;
-        }
+        if (!cockpitScan.hasCockpit()) return;
 
         BlockPos cockpitWorldPos = cockpitScan.cockpitWorldPos();
         if (cockpitWorldPos == null) {
@@ -128,7 +127,7 @@ public class ServerMountHandler {
             return;
         }
 
-        // ====== 步骤 3.1：驾驶舱结构完整性检查 ======
+        // ====== 步骤 2.1：驾驶舱结构完整性检查 ======
         BlockState cockpitState = level.getBlockState(cockpitWorldPos);
         if (cockpitState.is(ModBlocks.COCKPIT.get())) {
             BlockPos above = cockpitWorldPos.above();
@@ -138,41 +137,28 @@ public class ServerMountHandler {
                 return;
             }
         }
-        // SeatBlock 是单方块结构，无需完整性检查
 
-        // ====== 步骤 3.2（目标1）：检查驾驶舱唯一性 ======
-        // 直接使用 scanSubLevelForCockpit 的结果，无需再次扫描
+        // ====== 步骤 2.2：检查驾驶舱唯一性 ======
         if (!cockpitScan.isUnique()) {
             player.sendSystemMessage(Component.translatable("message.iac_p.multiple_cockpits"));
             return;
         }
 
-        // ====== 步骤 3.3（目标2）：检查 SubLevel 是否已被其他玩家占用 ======
+        // ====== 步骤 2.3：检查 SubLevel 是否已被其他玩家占用 ======
         if (PlayerMountTracker.isSubLevelOccupiedByOther(subLevelUUID, player)) {
             player.sendSystemMessage(Component.translatable("message.iac_p.sublevel_occupied"));
             return;
         }
-        // 驾驶舱本地位置 = 其在 Plot 中的原始世界位置。取底部中心（y 不变 = 底部）
+
+        // 驾驶舱本地位置
         double cockpitLocalX = cockpitWorldPos.getX() + 0.5;
         double cockpitLocalY = cockpitWorldPos.getY();
         double cockpitLocalZ = cockpitWorldPos.getZ() + 0.5;
 
-        // ====== 步骤 4：执行上车 ======
+        // ====== 步骤 3：执行上车 ======
         PlayerMountTracker.mount(player, subLevelUUID, cockpitLocalX, cockpitLocalY, cockpitLocalZ);
 
-        // 禁用玩家移动/碰撞
-        player.noPhysics = true;
-        player.setNoGravity(true);
-        player.getAbilities().flying = true;
-        player.getAbilities().setFlyingSpeed(0.0f);
-        player.onUpdateAbilities();
-
-        // 速度归零
-        player.setDeltaMovement(Vec3.ZERO);
-
-        // 获取载具实际物理质量（用于客户端调试覆盖层精确显示）
-        // 使用 getMass() 获取总质量，而非 getInverseNormalMass()（后者是某点的有效质量，
-        // 只有点在质心时才等于总质量）。
+        // 获取载具实际物理质量
         double mass = 0;
         if (subLevel instanceof ServerSubLevel ssl) {
             try {
@@ -182,32 +168,15 @@ public class ServerMountHandler {
             }
         }
 
-        // 上车前刷新 SuspensionBE 缓存（确保轮子计数和驾驶舱引用与新状态一致）
+        // 刷新悬挂缓存
         SuspensionTestBlockEntity.invalidateCachesInSubLevel(level, subLevelUUID);
 
-        // 通知客户端切换到第三人称，并传递 SubLevel UUID + 实际质量 + 驾驶舱本地位置
+        // 通知客户端
         ModNetworking.sendToPlayer(player, new MountedStateS2CPacket(
                 true, subLevelUUID, mass,
                 cockpitLocalX, cockpitLocalY, cockpitLocalZ));
         IACP.LOGGER.info("[ServerMount] 上车完成: player={}, subLevel={}, mass={}",
                 player.getName().getString(), subLevelUUID, mass);
-    }
-
-    /**
-     * 在 SubLevel 中查找驾驶舱核心方块的位置。 使用 {@link SubLevelScanner} 统一遍历。
-     * <p>
-     * 注：mountPlayer() 已改用 {@link PlayerMountTracker#scanSubLevelForCockpit}
-     * 单次扫描， 此方法仅保留供其他外部调用方使用。
-     */
-    private static BlockPos findCockpitBlockInSubLevel(SubLevel subLevel, ServerLevel level) {
-        final BlockPos[] result = {null};
-        SubLevelScanner.forEachBlock(subLevel, level, (worldPos, state, be) -> {
-            if (result[0] == null && (state.is(ModBlocks.COCKPIT.get()) || state.is(ModBlocks.SEAT.get())
-                    || state.is(ModBlocks.COCKPIT_LIGHT_LINEAR_0.get()))) {
-                result[0] = worldPos;
-            }
-        });
-        return result[0];
     }
 
     /**

@@ -17,11 +17,12 @@
   "block.iac_p.debug_swivel_bearing": "调试 SwivelBearing",
 
   "key.category.iac_p": "中控载具工坊：范式",
-  "key.iac_p.mount": "上车 / 下车",
   "key.iac_p.vehicle_config": "载具按键配置",
   "key.iac_p.raycast_fire": "射线检测 / 开火",
   "key.iac_p.weapon_fire": "武器开火",
   "key.iac_p.debug_gear": "调试齿轮开关",
+  "key.iac_p.dismount": "下车",
+  "key.iac_p.vehicle_camera": "载具摄像机模式 (F6)",
 
   "message.iac_p.cockpit_incomplete": "该驾驶舱不可用",
   "message.iac_p.multiple_cockpits": "请移除多余驾驶舱结构",

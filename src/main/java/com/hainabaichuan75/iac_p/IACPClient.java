@@ -8,8 +8,10 @@ import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
+import com.hainabaichuan75.iac_p.entity.IACPSeatEntity;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
+import com.hainabaichuan75.iac_p.index.ModEntities;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -46,14 +48,18 @@ public class IACPClient {
     }
 
     private void registerKeyMappings(RegisterKeyMappingsEvent event) {
-        event.register(ClientEvents.getMountKey());
         event.register(ClientEvents.getVehicleConfigKey());
         event.register(ClientEvents.getRaycastFireKey());
         event.register(ClientEvents.getDebugGearKey());
         event.register(ClientEvents.getStationaryCamKey());
+        event.register(ClientEvents.getDismountKey());
+        event.register(ClientEvents.getVehicleCameraKey());
     }
 
     private void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        // IACP 座位实体（不可见）
+        event.registerEntityRenderer(ModEntities.IACP_SEAT.get(), IACPSeatEntity.Render::new);
+
         event.registerBlockEntityRenderer(ModBlockEntityTypes.SUSPENSION_TEST.get(),
                 SuspensionTestRenderer::new);
 

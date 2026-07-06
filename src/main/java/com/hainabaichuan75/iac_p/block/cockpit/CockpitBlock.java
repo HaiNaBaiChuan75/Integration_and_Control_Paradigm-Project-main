@@ -92,7 +92,7 @@ public class CockpitBlock extends Block implements EntityBlock {
             return InteractionResult.SUCCESS;
         }
         if (player instanceof ServerPlayer serverPlayer) {
-            ServerMountHandler.handleMountDismount(serverPlayer);
+            ServerMountHandler.handleMountDismount(serverPlayer, pos);
         }
         return InteractionResult.SUCCESS;
     }

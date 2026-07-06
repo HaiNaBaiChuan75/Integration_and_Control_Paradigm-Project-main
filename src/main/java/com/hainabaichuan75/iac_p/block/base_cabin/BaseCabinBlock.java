@@ -1,10 +1,9 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
-import com.hainabaichuan75.iac_p.events.ServerMountHandler;
+import com.hainabaichuan75.iac_p.entity.IACPSeatEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -20,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -61,17 +61,33 @@ public class BaseCabinBlock extends Block implements EntityBlock {
         return this.defaultBlockState()
                 .setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
-    // ====== 空手右键 → 上车回调 ======
+    // ====== 空手右键 → 坐下 ======
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
                                                BlockHitResult hitResult) {
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (player instanceof ServerPlayer serverPlayer) {
-            ServerMountHandler.handleMountDismount(serverPlayer);
+
+        // 已有座位实体 → 弹出当前乘客，换人坐上
+        var seats = level.getEntitiesOfClass(IACPSeatEntity.class, new AABB(pos));
+        if (!seats.isEmpty()) {
+            IACPSeatEntity seat = seats.get(0);
+            var passengers = seat.getPassengers();
+            if (!passengers.isEmpty() && passengers.get(0) instanceof Player) {
+                return InteractionResult.PASS;
+            }
+            seat.ejectPassengers();
+            player.startRiding(seat);
+            return InteractionResult.SUCCESS;
         }
+
+        IACPSeatEntity.sitDown(level, pos, player);
         return InteractionResult.SUCCESS;
     }
 
