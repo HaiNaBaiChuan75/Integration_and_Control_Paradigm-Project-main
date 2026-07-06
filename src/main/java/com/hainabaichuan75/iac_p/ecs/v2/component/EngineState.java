@@ -1,13 +1,13 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 引擎运行时状态 —— 当前输出扭矩。
+ * 引擎运行时状态 —— ECS <b>组件（Component）</b>，当前输出扭矩。
  * <p>
  * 不可变记录，每次修改通过 wither 方法创建新实例。
  * 在 20Hz tick 频率下，每次 {@link #withTorque(double)} 产生一次分配，

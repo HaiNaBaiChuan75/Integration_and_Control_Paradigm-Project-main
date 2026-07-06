@@ -1,6 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation;
+package com.hainabaichuan75.iac_p.ecs.v2.component.rotation;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.StringTag;
 import org.jetbrains.annotations.Contract;

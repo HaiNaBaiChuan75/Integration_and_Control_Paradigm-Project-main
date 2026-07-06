@@ -1,13 +1,13 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 驱动状态 —— 引擎分配给本轮的扭矩。
+ * 驱动状态 —— ECS <b>组件（Component）</b>，引擎分配给本轮的扭矩。
  * <p>
  * 由 {@code TorqueDistributionSystem} 在逻辑 tick 中写入（含差速器偏置分配），
  * 物理 System 在物理 tick 中读取用于推进力计算。

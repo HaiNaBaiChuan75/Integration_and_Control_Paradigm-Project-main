@@ -1,15 +1,15 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 /**
- * 轮子定义 —— 不可变的轮子几何与悬挂参数。
+ * 轮子定义 —— ECS <b>组件（Component）</b>，不可变的轮子几何与悬挂参数。
  * <p>
  * 与运行时状态 {@link WheelState} 分离，两者通过各自的 {@link ComponentKey} 独立存取。
  * 定义参数在载具生命周期内通常不会变化，或仅在更换轮胎/升级悬挂时通过 swap 整个 record 变更。

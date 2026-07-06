@@ -1,8 +1,8 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +10,7 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 /**
- * 轮子运行时状态 —— 当前轮速、悬挂压缩、接触点。
+ * 轮子运行时状态 —— ECS <b>组件（Component）</b>，当前轮速、悬挂压缩、接触点。
  * <p>
  * 不可变记录，每次修改通过 wither 方法创建新实例。
  * <p>

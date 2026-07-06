@@ -1,5 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.component;
 
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

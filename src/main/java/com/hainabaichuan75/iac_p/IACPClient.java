@@ -8,6 +8,7 @@ import com.hainabaichuan75.iac_p.client.renderer.AxisLineRenderer;
 import com.hainabaichuan75.iac_p.client.renderer.BulletTrailRenderer;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerRenderer;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
+import com.hainabaichuan75.iac_p.ecs.v2.api.dispatch.V2SystemRegistry;
 import com.hainabaichuan75.iac_p.index.ModBlockEntityTypes;
 import com.hainabaichuan75.iac_p.index.ModCockpitBlockEntityTypes;
 import net.neoforged.api.distmarker.Dist;
@@ -28,6 +29,9 @@ public class IACPClient {
 
         // 注册客户端 VehicleSystem
         VehicleSystemRegistry.registerClientSystems();
+
+        // ── V2 Client System ─────────────────────────────────────
+        V2SystemRegistry.registerClientSystems();
 
         // 注册按键映射
         modEventBus.addListener(this::registerKeyMappings);

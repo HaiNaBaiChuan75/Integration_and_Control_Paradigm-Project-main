@@ -1,14 +1,14 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import com.hainabaichuan75.iac_p.part.field.YawPitch;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 瞄准状态 —— 武器挂载的俯仰/偏航角度。
+ * 瞄准状态 —— ECS <b>组件（Component）</b>，武器挂载的俯仰/偏航角度。
  * <p>
  * 由 {@code WeaponAimSystem} 在逻辑 tick 中写入，
  * 渲染 System 读取用于模型旋转。

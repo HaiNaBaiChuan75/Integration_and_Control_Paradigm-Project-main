@@ -1,12 +1,14 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.entity;
 
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 载具部件的核心接口
+ * 载具部件的核心接口 —— ECS 中的 <b>实体（Entity）</b>。
  * <p>
  * 职责只有两个：
  * <ol>
@@ -25,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * 类型化访问器见 {@link View#of(Part, ComponentKey)} 及相关重载。
  *
- * @see PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
+ * @see com.hainabaichuan75.iac_p.ecs.v2.entity.PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
  * @see View 类型化访问器与工厂
  */
 public interface Part extends BlockEntitySubLevelActor {

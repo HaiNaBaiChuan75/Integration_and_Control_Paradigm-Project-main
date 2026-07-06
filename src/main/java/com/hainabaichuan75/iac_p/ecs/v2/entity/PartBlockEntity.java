@@ -1,6 +1,8 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.entity;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -18,7 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 部件方块实体的抽象基类 —— v2 组件存储与 NBT 批量序列化。
+ * 部件方块实体的抽象基类 —— ECS 中 <b>实体（Entity）</b>的默认实现，
+ * 提供组件存储与 NBT 批量序列化。
  * <p>
  * 继承此类即可按 {@link ComponentKey} 存取组件。组件定义在 state record 上
  * （如 {@code EngineState.KEY}），包含 NBT 键名和编解码器。

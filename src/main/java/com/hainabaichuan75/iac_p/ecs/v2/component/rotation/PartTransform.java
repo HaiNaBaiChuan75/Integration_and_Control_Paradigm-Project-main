@@ -1,6 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation;
+package com.hainabaichuan75.iac_p.ecs.v2.component.rotation;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3d;
@@ -15,7 +15,7 @@ import org.joml.Quaterniondc;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
-import static com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation.Rotation.IDENTITY;
+import static com.hainabaichuan75.iac_p.ecs.v2.component.rotation.Rotation.IDENTITY;
 
 /**
  * Part 的坐标变换句柄 —— 在 Part-local 与父 Level 世界坐标之间双向切换。

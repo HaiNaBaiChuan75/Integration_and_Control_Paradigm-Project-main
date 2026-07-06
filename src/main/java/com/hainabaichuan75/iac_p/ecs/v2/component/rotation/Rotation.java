@@ -1,6 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation;
+package com.hainabaichuan75.iac_p.ecs.v2.component.rotation;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +10,7 @@ import org.joml.Quaterniondc;
 /**
  * 任意旋转状态 —— 不限于轴对齐的任意四元数。
  * <p>
- * 用于 45&deg; 椅子等非立方体对齐的部件。与 {@link com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation.CubeRotation}
+ * 用于 45&deg; 椅子等非立方体对齐的部件。与 {@link CubeRotation}
  * （24 种离散朝向）互补。
  * <p>
  * <b>不变式</b>：存储的单位四元数始终归一化。

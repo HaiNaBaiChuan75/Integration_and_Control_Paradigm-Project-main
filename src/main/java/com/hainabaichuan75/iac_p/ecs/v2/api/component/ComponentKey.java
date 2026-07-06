@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.component;
 
 import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.Contract;
@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * 组件键 —— 类型安全的组件标识符，持有 NBT 元数据。
+ * 组件键 —— ECS 中 <b>组件（Component）</b>的类型安全标识符，持有 NBT 元数据。
  * <p>
  * 对比 {@link Class} 作为键：Class 只描述"是什么类型"，不包含
  * NBT 键名、序列化方法这些持久化所需的信息。ComponentKey 把三者绑定在一起：
@@ -23,8 +23,8 @@ import java.util.function.Function;
  * 编码器返回 {@link Tag} 而非 {@link net.minecraft.nbt.CompoundTag}：
  * 简单类型（枚举等）可直接用 {@link net.minecraft.nbt.StringTag}，避免不必要的包裹。
  * <p>
- * 每次 {@link #of} 调用时自动注册到全局表，{@link PartBlockEntity} 的批量 NBT 操作
- * 遍历此全局表，不依赖 BE 实例的初始化状态。
+ * 每次 {@link #of} 调用时自动注册到全局表，{@link com.hainabaichuan75.iac_p.ecs.v2.entity.PartBlockEntity}
+ * 的批量 NBT 操作遍历此全局表，不依赖 BE 实例的初始化状态。
  *
  * @param <T> 组件值的类型
  */

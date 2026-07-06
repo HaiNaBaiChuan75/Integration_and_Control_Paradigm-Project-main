@@ -1,13 +1,13 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 转向状态 —— 本轮的归一化转向输入。
+ * 转向状态 —— ECS <b>组件（Component）</b>，本轮的归一化转向输入。
  * <p>
  * 由 {@code SteeringSystem} 在逻辑 tick 中写入，
  * 物理 System 读取后将其映射为实际偏转角，然后旋转轮子轴向获得偏转后的牵引方向。
