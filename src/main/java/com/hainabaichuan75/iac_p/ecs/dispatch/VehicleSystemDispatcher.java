@@ -34,7 +34,7 @@ import java.util.List;
  * </ul>
  * <p>
  */
-@EventBusSubscriber
+//@EventBusSubscriber
 public class VehicleSystemDispatcher {
 
     // ============================================================

@@ -15,6 +15,7 @@ import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
+import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -173,6 +174,14 @@ public class ModBlocks {
             DebugSwivelBearingBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(1.5f, 6.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    // === 测试空白方块（无默认组件，NBT 手动添加） ===
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK = BLOCKS.registerBlock("test_blank",
+            TestBlankBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(2.0f, 6.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion());
 }

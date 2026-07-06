@@ -22,9 +22,6 @@ import java.util.function.Function;
  * <p>
  * 编码器返回 {@link Tag} 而非 {@link net.minecraft.nbt.CompoundTag}：
  * 简单类型（枚举等）可直接用 {@link net.minecraft.nbt.StringTag}，避免不必要的包裹。
- * <p>
- * 每次 {@link #of} 调用时自动注册到全局表，{@link com.hainabaichuan75.iac_p.ecs.v2.entity.PartBlockEntity}
- * 的批量 NBT 操作遍历此全局表，不依赖 BE 实例的初始化状态。
  *
  * @param <T> 组件值的类型
  */
@@ -46,8 +43,8 @@ public final class ComponentKey<T> {
     private final @NotNull Function<@NotNull Tag, @Nullable T> decoder;
 
     private ComponentKey(@NotNull Class<T> type, @NotNull String nbtKey,
-                         @NotNull Function<@NotNull T, @NotNull Tag> encoder, @NotNull Function<@NotNull Tag,
-                    @Nullable T> decoder) {
+                         @NotNull Function<@NotNull T, @NotNull Tag> encoder,
+                         @NotNull Function<@NotNull Tag, @Nullable T> decoder) {
         this.type = type;
         this.nbtKey = nbtKey;
         this.encoder = encoder;

@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 部件方块实体的抽象基类 —— ECS 中 <b>实体（Entity）</b>的默认实现，
@@ -131,9 +132,9 @@ public abstract class PartBlockEntity extends BlockEntity implements Part {
                 continue;
             }
             Tag nbt = payload.get(nbtKey);
-            Object decoded = key.decoder().apply(nbt);
+            Object decoded = key.decoder().apply(Objects.requireNonNull(nbt));
             if (decoded == null) {
-                IACP.LOGGER.warn("Decoder returned null for component [{}] on {}", nbtKey, this);
+                IACP.LOGGER.warn("Component [{}] decoder returned null on {}, skipped", nbtKey, this);
                 continue;
             }
             components.put(key, decoded);

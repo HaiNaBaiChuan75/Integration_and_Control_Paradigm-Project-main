@@ -47,4 +47,7 @@ public class ModItems {
 
     // === 调试 SwivelBearing 监视方块 ===
     public static final DeferredItem<BlockItem> DEBUG_SWIVEL_BEARING = ITEMS.registerSimpleBlockItem(ModBlocks.DEBUG_SWIVEL_BEARING);
+
+    // === 测试空白方块（无默认组件，NBT 手动添加） ===
+    public static final DeferredItem<BlockItem> TEST_BLANK = ITEMS.registerSimpleBlockItem(ModBlocks.TEST_BLANK);
 }

@@ -3,6 +3,7 @@ package com.hainabaichuan75.iac_p.ecs.v2.component;
 import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
 import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
 import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
+import com.hainabaichuan75.iac_p.util.NbtUtil;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,23 +102,11 @@ public record WheelDef(double radius, @NotNull Vector3dc mountDirection, @NotNul
 
     private static final String TAG_RADIUS = "radius";
 
-    private static final String TAG_MOUNT_DIR_X = "mountDirX";
-    private static final String TAG_MOUNT_DIR_Y = "mountDirY";
-    private static final String TAG_MOUNT_DIR_Z = "mountDirZ";
-
-    private static final String TAG_MOUNT_POINT_X = "mountPointX";
-    private static final String TAG_MOUNT_POINT_Y = "mountPointY";
-    private static final String TAG_MOUNT_POINT_Z = "mountPointZ";
-
-    private static final String TAG_SUSP_DIR_X = "suspDirX";
-    private static final String TAG_SUSP_DIR_Y = "suspDirY";
-    private static final String TAG_SUSP_DIR_Z = "suspDirZ";
-
+    private static final String TAG_MOUNT_DIR = "mountDir";
+    private static final String TAG_MOUNT_POINT = "mountPoint";
+    private static final String TAG_SUSP_DIR = "suspDir";
     private static final String TAG_STIFFNESS = "suspensionStiffness";
-
-    private static final String TAG_STEER_AXIS_X = "steerAxisX";
-    private static final String TAG_STEER_AXIS_Y = "steerAxisY";
-    private static final String TAG_STEER_AXIS_Z = "steerAxisZ";
+    private static final String TAG_STEER_AXIS = "steerAxis";
 
     private static final String TAG_MAX_STEER_ANGLE = "maxSteeringAngle";
 
@@ -131,29 +120,13 @@ public record WheelDef(double radius, @NotNull Vector3dc mountDirection, @NotNul
     public CompoundTag toTag() {
         var tag = new CompoundTag();
         tag.putDouble(TAG_RADIUS, radius);
-
-        tag.putDouble(TAG_MOUNT_DIR_X, mountDirection.x());
-        tag.putDouble(TAG_MOUNT_DIR_Y, mountDirection.y());
-        tag.putDouble(TAG_MOUNT_DIR_Z, mountDirection.z());
-
-        tag.putDouble(TAG_MOUNT_POINT_X, mountPoint.x());
-        tag.putDouble(TAG_MOUNT_POINT_Y, mountPoint.y());
-        tag.putDouble(TAG_MOUNT_POINT_Z, mountPoint.z());
-
-        tag.putDouble(TAG_SUSP_DIR_X, suspensionDirection.x());
-        tag.putDouble(TAG_SUSP_DIR_Y, suspensionDirection.y());
-        tag.putDouble(TAG_SUSP_DIR_Z, suspensionDirection.z());
-
+        NbtUtil.putVec3d(tag, TAG_MOUNT_DIR, mountDirection);
+        NbtUtil.putVec3d(tag, TAG_MOUNT_POINT, mountPoint);
+        NbtUtil.putVec3d(tag, TAG_SUSP_DIR, suspensionDirection);
         tag.putDouble(TAG_STIFFNESS, suspensionStiffness);
-
-        tag.putDouble(TAG_STEER_AXIS_X, steeringAxis.x());
-        tag.putDouble(TAG_STEER_AXIS_Y, steeringAxis.y());
-        tag.putDouble(TAG_STEER_AXIS_Z, steeringAxis.z());
-
+        NbtUtil.putVec3d(tag, TAG_STEER_AXIS, steeringAxis);
         tag.putDouble(TAG_MAX_STEER_ANGLE, maxSteeringAngle);
-
         tag.putBoolean(TAG_DRIVEN, driven);
-
         tag.putDouble(TAG_GRIP_FWD, gripForward);
         tag.putDouble(TAG_GRIP_LAT, gripLateral);
         tag.putDouble(TAG_ROLLING_RESIST, rollingResistance);
@@ -162,14 +135,16 @@ public record WheelDef(double radius, @NotNull Vector3dc mountDirection, @NotNul
 
     @NotNull
     public static WheelDef fromTag(@NotNull CompoundTag tag) {
-        return new WheelDef(tag.getDouble(TAG_RADIUS), new Vector3d(tag.getDouble(TAG_MOUNT_DIR_X),
-                tag.getDouble(TAG_MOUNT_DIR_Y), tag.getDouble(TAG_MOUNT_DIR_Z)),
-                new Vector3d(tag.getDouble(TAG_MOUNT_POINT_X), tag.getDouble(TAG_MOUNT_POINT_Y),
-                        tag.getDouble(TAG_MOUNT_POINT_Z)), new Vector3d(tag.getDouble(TAG_SUSP_DIR_X),
-                tag.getDouble(TAG_SUSP_DIR_Y), tag.getDouble(TAG_SUSP_DIR_Z)), tag.getDouble(TAG_STIFFNESS),
-                new Vector3d(tag.getDouble(TAG_STEER_AXIS_X), tag.getDouble(TAG_STEER_AXIS_Y),
-                        tag.getDouble(TAG_STEER_AXIS_Z)), tag.getDouble(TAG_MAX_STEER_ANGLE),
-                tag.getBoolean(TAG_DRIVEN), tag.getDouble(TAG_GRIP_FWD), tag.getDouble(TAG_GRIP_LAT),
+        return new WheelDef(tag.getDouble(TAG_RADIUS),
+                NbtUtil.getVec3d(tag, TAG_MOUNT_DIR),
+                NbtUtil.getVec3d(tag, TAG_MOUNT_POINT),
+                NbtUtil.getVec3d(tag, TAG_SUSP_DIR),
+                tag.getDouble(TAG_STIFFNESS),
+                NbtUtil.getVec3d(tag, TAG_STEER_AXIS),
+                tag.getDouble(TAG_MAX_STEER_ANGLE),
+                tag.getBoolean(TAG_DRIVEN),
+                tag.getDouble(TAG_GRIP_FWD),
+                tag.getDouble(TAG_GRIP_LAT),
                 tag.getDouble(TAG_ROLLING_RESIST));
     }
 

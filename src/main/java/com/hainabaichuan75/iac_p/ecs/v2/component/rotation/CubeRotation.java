@@ -169,5 +169,12 @@ public enum CubeRotation {
      * }</pre>
      */
     public static final ComponentKey<CubeRotation> KEY = ComponentKey.of(CubeRotation.class, "cube_rotation",
-            r -> StringTag.valueOf(r.name()), tag -> CubeRotation.valueOf(tag.getAsString()));
+            r -> StringTag.valueOf(r.name()),
+            tag -> {
+                try {
+                    return CubeRotation.valueOf(tag.getAsString());
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+            });
 }

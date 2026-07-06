@@ -7,6 +7,7 @@ import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
+import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -76,5 +77,14 @@ public class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             TestControllerBlockEntity::new,
                             ModBlocks.TEST_CONTROLLER.get()
+                    ).build(null));
+
+    // ===== 测试空白方块 =====
+
+    public static final Supplier<BlockEntityType<TestBlankBlockEntity>> TEST_BLANK =
+            BLOCK_ENTITY_TYPES.register("test_blank",
+                    () -> BlockEntityType.Builder.of(
+                            TestBlankBlockEntity::new,
+                            ModBlocks.TEST_BLANK.get()
                     ).build(null));
 }
