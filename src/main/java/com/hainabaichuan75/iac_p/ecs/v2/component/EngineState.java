@@ -5,6 +5,7 @@ import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
 import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 引擎运行时状态 —— ECS <b>组件（Component）</b>，当前输出扭矩。
@@ -69,14 +70,18 @@ public record EngineState(double torque) {
     // ====================================================================
 
     /**
-     * 创建类型化组件访问器。
+     * 创建类型化组件访问器（可空）。
+     * <p>
+     * 部件无此组件时返回 {@code null}，调用方必须处理缺失情况。
      * <pre>{@code
      * var ev = EngineState.view(part);
-     * ev.set(ev.get().withTorque(50));
+     * if (ev != null) {
+     *     ev.set(ev.get().withTorque(50));
+     * }
      * }</pre>
      */
-    @NotNull
+    @Nullable
     public static View<EngineState> view(@NotNull Part part) {
-        return new View<>(part, KEY);
+        return View.of(part, KEY);
     }
 }

@@ -34,8 +34,8 @@ import java.util.Map;
  * public class MyPartBE extends PartBlockEntity {
  *     public MyPartBE(BlockPos pos, BlockState state) {
  *         super(ModTypes.MY_PART.get(), pos, state);
- *         setComponent(EngineState.KEY, EngineState.createDefault());
- *         setComponent(ControlState.KEY, ControlState.IDLE);
+ *         setComponent(SomeState.KEY, SomeState.createDefault());
+ *         setComponent(AnotherState.KEY, AnotherState.IDLE);
  *     }
  *     // ← 没有 saveAdditional / getUpdatePacket
  *     // ← 只有 BE 特有的逻辑
@@ -122,6 +122,7 @@ public abstract class PartBlockEntity extends BlockEntity implements Part {
      */
     @SuppressWarnings("unchecked")
     public void loadComponents(@NotNull CompoundTag tag) {
+        components.clear();
         CompoundTag payload = tag.getCompound(NBT_KEY);
         for (String nbtKey : payload.getAllKeys()) {
             ComponentKey<Object> key = (ComponentKey<Object>) ComponentKey.byNbtKey(nbtKey);

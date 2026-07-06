@@ -19,9 +19,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * 一个 Part 是什么角色（引擎、控制器、轮子），完全由它持有哪些组件类型决定。
  * <pre>{@code
- * EngineState s = part.getComponent(EngineState.KEY);
+ * SomeState s = part.getComponent(SomeState.KEY);
  * if (s != null) {
- *     part.setComponent(EngineState.KEY, s.withTorque(...));
+ *     part.setComponent(SomeState.KEY, s.withValue(...));
  * }
  * }</pre>
  * <p>

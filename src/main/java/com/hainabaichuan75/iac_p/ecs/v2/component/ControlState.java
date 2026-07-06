@@ -108,14 +108,18 @@ public record ControlState(@NotNull Vector3dc intent, boolean braking, boolean f
     // ====================================================================
 
     /**
-     * 创建类型化组件访问器。
+     * 创建类型化组件访问器（可空）。
+     * <p>
+     * 部件无此组件时返回 {@code null}，调用方必须处理缺失情况。
      * <pre>{@code
      * var cv = ControlState.view(part);
-     * cv.set(cv.get().withBraking(true));
+     * if (cv != null) {
+     *     cv.set(cv.get().withBraking(true));
+     * }
      * }</pre>
      */
-    @NotNull
+    @Nullable
     public static View<ControlState> view(@NotNull Part part) {
-        return new View<>(part, KEY);
+        return View.of(part, KEY);
     }
 }

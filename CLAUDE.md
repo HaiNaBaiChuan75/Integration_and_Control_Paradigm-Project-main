@@ -78,16 +78,8 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
 - **日志**：使用 `IACP.LOGGER`（SLF4J）。error 级别慎用；非关键边界情况用 warn；调试信息用 info。渲染代码使用宽泛的 try-catch
   守护，防止单个 BE 异常导致整个渲染流程崩溃。
 - **错误处理**：渲染/叠加层代码静默吞异常（视觉瑕疵优于崩溃）。逻辑代码对无效输入抛出 `IllegalArgumentException`。无自定义受检异常。
-- **优先使用 record / enum**：数据组件必须使用 `record`，有限状态使用 `enum`。JDK 21 的 Record Patterns 允许解构和嵌套解构，例如：
-  ```java
-  // 顶层解构
-  if (part.getComponent(EngineState.KEY) instanceof EngineState(var spec, var torque)) { }
-
-  // 嵌套解构（匹配 EngineState.spec 为 EngineDef）
-  if (part.getComponent(EngineState.KEY) instanceof EngineState(EngineDef(var maxT, var maxRpm), var torque)) { }
-  ```
-  这一规则与旧的 getter/setter 接口不兼容 — 旧接口（`EnginePart.getTorque()` 等）无法参与模式匹配。新增数据通道必须走
-  record 组件，不得新定义 getter/setter 接口。
+- **优先使用 record / enum**：数据组件必须使用 `record`，有限状态使用 `enum`。新增数据通道必须走
+  record 组件，不得新定义 getter/setter 接口（旧接口如 `EnginePart.getTorque()` 在 record 模式下不可模式匹配）。
 - **JOML 对象约定**：`Vector3dc`/`Quaterniondc` 等 JOML 只读视图遵循「**入口拷贝、出口只读、计算不滥分配**」：
     - **入口即拷贝** — record compact constructor 中对所有 `Vector3dc`/`Quaterniondc` 参数防御性拷贝 `new Vector3d(src)`
       ，确保 record 持有独立副本不受外部修改
@@ -95,6 +87,102 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
       `new Vector3d(src)` 再改
     - **计算不乱分配** — System 内临时计算复用局部 `Vector3d` 变量，用 `.set()` 修改而非每步 new
     - nullable 的 Vector 字段（如 `ControlState.aimTarget`、`WheelState.contactPointLocal`）：非 null 时同样拷贝
+
+## System 编写规范
+
+System 层是模组核心逻辑所在，写法必须清晰一致。以下为 `ecs/v2/system/` 下所有 System 类的强制约定。
+
+### 组件访问：仅解构 View 容器，组件 record 走访问器
+
+**仅对 `View2`/`View3`/`View4` 使用 Record Pattern 解构**（目的是为两个 View 绑定有意义的局部变量名）。
+组件数据 record（`WheelDef`、`EngineState` 等）通过 `.get()` + 访问器按需取值：
+
+```java
+// ✅ 正确：仅 Views2 解构，组件 record 走访问器
+for(var entry :View.
+
+find(parts, WheelDef.KEY, WheelState.KEY)){
+        if(!(entry instanceof
+
+Views2(var defView, var stateView)))continue;
+var wd = defView.get();
+
+PartTransform tx = PartTransform.of(stateView.part());
+Vector3dc localDir = tx.toRelativePos(aimTarget);
+YawPitch raw = YawPitch.from(localDir);
+
+double clampedYaw = Math.clamp(raw.yaw(), gd.minYaw(), gd.maxYaw());
+double clampedPitch = Math.clamp(raw.pitch(), gd.minPitch(), gd.maxPitch());
+
+    stateView.
+
+set(new GimbalState(
+        new YawPitch(clampedYaw, clampedPitch), 0,0));
+        }
+```
+
+```java
+// ❌ 错误：解构组件 record 全部字段（位置敏感，为用一个字段拆 11 个）
+if(!(defView.get() instanceof
+
+WheelDef(var radius, var mountDirection, var mountPoint, var suspensionDirection, var suspensionStiffness, var steeringAxis, var maxSteeringAngle, var driven, var gripForward, var gripLateral, var rollingResistance)))
+        continue;
+        if(driven)driveCount++;
+```
+
+### 为什么
+
+| 方式                                     | 耦合                         | 可读性                            | 重构代价 |
+|----------------------------------------|----------------------------|--------------------------------|------|
+| `instanceof WheelDef(var radius, ...)` | **位置敏感**：加/删字段 → 所有解构处编译报错 | 一次列出全部 11 个名字，读者必须一一识别哪些用了哪些没用 | 高    |
+| `defView.get().driven()`               | **名称敏感**：加字段不影响            | 只写实际需要的调用                      | 低    |
+
+组件 record 的字段排序不是 API 契约——字段名才是。解构把记录的顺序耦合进每个读取处，违反信息隐藏原则。
+
+### 单组件读取
+
+单个组件的读取不需要 Views2 容器，直接用 `View.of()` 或 `ComponentKey` 访问器：
+
+```java
+// ✅ 单组件
+View<ControlState> cv = View.findPrimary(parts, null, ControlState.KEY);
+if(cv ==null)return;
+double throttle = -Mth.clamp(cv.get().intent().z(), -1.0, 1.0);
+```
+
+### 多字段写入（Wither 链）
+
+需要构造新 record 替换旧值时，从 `stateView.get()` 取原有字段，仅替换需要变更的部分：
+
+```java
+// ✅ 正确
+var ws = stateView.get();
+stateView.
+
+set(new WheelState(ws.angularVelocity(),ws.
+
+suspensionCompression(),smoothed,
+        ws.
+
+torque(),ws.
+
+braking(),ws.
+
+contactPointLocal()));
+```
+
+```java
+// ❌ 错误：用 Record Pattern 解构后再重建（等于重新列出全部字段，只为传一个参数）
+if(!(stateView.get() instanceof
+
+WheelState(var angVel, var suspComp, var steerAng, var oldTorque, var brakeVal, var contactPt)))
+        continue;
+        stateView.
+
+set(new WheelState(angVel, suspComp, steerAng, torquePerWheel, brakeVal ||braking, contactPt));
+```
+
+**例外**：如果确实需要读取/回写组件的全部字段，允许解构减少重复。但这种情况在 Sysem 层极少见（通常只需变 1-2 个字段）。
 
 ## 分包规范
 
@@ -134,15 +222,13 @@ IAC-P 是一个 **Minecraft 1.21.1 NeoForge 模组**，通过协调 [Sable](http
 | `State` | 运行状态  | 动态调整 | `EngineState.torque`  |
 
 约定：`Def` + `State` 是默认命名方案，两者**必须平铺放置为同级组件，各自持有独立 `ComponentKey`**。
-`State` record **不得**持有 `Def` 引用，反之亦然。System 通过双组件查询拼合读取：
+`State` record **不得**持有 `Def` 引用，反之亦然。System 通过 View 查询拼合读取（详见「System 编写规范」）：
 <pre>{@code
-// ✅ 正确：Def/State 分离，各自独立查询
-var def = part.getComponent(EngineDef.KEY);
-var state = part.getComponent(EngineState.KEY);
-
-// ✅ Record Patterns 嵌套解构依然可用（通过连续匹配）
-if (part.getComponent(EngineDef.KEY) instanceof EngineDef(var maxT, var maxRpm)
-    && part.getComponent(EngineState.KEY) instanceof EngineState(var torque)) { }
+// 正确：Def/State 分离，各自独立查询（通过 View 批量获取）
+for (var entry : View.find(parts, EngineDef.KEY, EngineState.KEY)) {
+    if (!(entry instanceof Views2(var defView, var stateView))) continue;
+    // defView.get().maxTorque(), stateView.get().torque()
+}
 
 // ❌ 错误：State 内嵌 Def
 public record EngineState(EngineDef spec, double torque) { … }  // 禁止
