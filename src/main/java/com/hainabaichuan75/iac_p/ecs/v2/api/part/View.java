@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.part;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -224,6 +225,139 @@ public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
         return result;
     }
 
+    /**
+     * 从部件列表中查找持有指定组件的最"优"部件（单一结果），并按比较器决定优先级。
+     * <p>
+     * {@code primary} 参数位于 {@code parts} 和 {@code key} 之间，方便重载切换：
+     * <pre>{@code
+     * View.findPrimary(parts, key);           // 默认：找任一
+     * View.findPrimary(parts, cmp, key);      // 用 cmp 找最优
+     * }</pre>
+     * 当 {@code primary} 为 {@code null} 时，返回首个匹配部件（默认过滤）。
+     *
+     * @param parts   部件列表
+     * @param primary 组件值比较器（可为 null，表示找任意一个）
+     * @param key     目标组件键
+     * @return 最优匹配的部件访问器，无匹配时返回 {@code null}
+     */
+    @Nullable
+    public static <T> View<T> findPrimary(@NotNull Collection<? extends Part> parts,
+                                          @Nullable Comparator<? super T> primary, @NotNull ComponentKey<T> key) {
+        View<T> best = null;
+        for (var part : parts) {
+            var comp = part.getComponent(key);
+            if (comp == null) continue;
+            var view = new View<>(part, key);
+            if (best == null) {
+                best = view;
+            } else if (primary != null && primary.compare(view.get(), best.get()) > 0) {
+                best = view;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 从部件列表中查找同时持有两个指定组件的最"优"部件，按第一个组件的比较器决定优先级。
+     * <p>
+     * {@code primary} 为 {@code null} 时返回首个同时持有两组件的部件（默认过滤）。
+     *
+     * @param parts   部件列表
+     * @param primary 第一个组件值的比较器（可为 null，表示找任意一个）
+     * @param key1    第一个组件键（比较对象）
+     * @param key2    第二个组件键
+     * @return 最优匹配的访问器对，无匹配时返回 {@code null}
+     */
+    @Nullable
+    public static <T1, T2> Views2<T1, T2> findPrimary(@NotNull Collection<? extends Part> parts,
+                                                      @Nullable Comparator<? super T1> primary,
+                                                      @NotNull ComponentKey<T1> key1, @NotNull ComponentKey<T2> key2) {
+        Views2<T1, T2> best = null;
+        for (var part : parts) {
+            var c1 = part.getComponent(key1);
+            var c2 = part.getComponent(key2);
+            if (c1 == null || c2 == null) continue;
+            var pair = new Views2<>(new View<>(part, key1), new View<>(part, key2));
+            if (best == null) {
+                best = pair;
+            } else if (primary != null && primary.compare(c1, best.v1().get()) > 0) {
+                best = pair;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 从部件列表中查找同时持有三个指定组件的最"优"部件，按第一个组件的比较器决定优先级。
+     * <p>
+     * {@code primary} 为 {@code null} 时返回首个同时持有三组件的部件（默认过滤）。
+     *
+     * @param parts   部件列表
+     * @param primary 第一个组件值的比较器（可为 null，表示找任意一个）
+     * @param key1    第一个组件键（比较对象）
+     * @param key2    第二个组件键
+     * @param key3    第三个组件键
+     * @return 最优匹配的访问器组，无匹配时返回 {@code null}
+     */
+    @Nullable
+    public static <T1, T2, T3> Views3<T1, T2, T3> findPrimary(@NotNull Collection<? extends Part> parts,
+                                                              @Nullable Comparator<? super T1> primary,
+                                                              @NotNull ComponentKey<T1> key1,
+                                                              @NotNull ComponentKey<T2> key2,
+                                                              @NotNull ComponentKey<T3> key3) {
+        Views3<T1, T2, T3> best = null;
+        for (var part : parts) {
+            var c1 = part.getComponent(key1);
+            var c2 = part.getComponent(key2);
+            var c3 = part.getComponent(key3);
+            if (c1 == null || c2 == null || c3 == null) continue;
+            var triple = new Views3<>(new View<>(part, key1), new View<>(part, key2), new View<>(part, key3));
+            if (best == null) {
+                best = triple;
+            } else if (primary != null && primary.compare(c1, best.v1().get()) > 0) {
+                best = triple;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 从部件列表中查找同时持有四个指定组件的最"优"部件，按第一个组件的比较器决定优先级。
+     * <p>
+     * {@code primary} 为 {@code null} 时返回首个同时持有四组件的部件（默认过滤）。
+     *
+     * @param parts   部件列表
+     * @param primary 第一个组件值的比较器（可为 null，表示找任意一个）
+     * @param key1    第一个组件键（比较对象）
+     * @param key2    第二个组件键
+     * @param key3    第三个组件键
+     * @param key4    第四个组件键
+     * @return 最优匹配的访问器组，无匹配时返回 {@code null}
+     */
+    @Nullable
+    public static <T1, T2, T3, T4> Views4<T1, T2, T3, T4> findPrimary(@NotNull Collection<? extends Part> parts,
+                                                                      @Nullable Comparator<? super T1> primary,
+                                                                      @NotNull ComponentKey<T1> key1,
+                                                                      @NotNull ComponentKey<T2> key2,
+                                                                      @NotNull ComponentKey<T3> key3,
+                                                                      @NotNull ComponentKey<T4> key4) {
+        Views4<T1, T2, T3, T4> best = null;
+        for (var part : parts) {
+            var c1 = part.getComponent(key1);
+            var c2 = part.getComponent(key2);
+            var c3 = part.getComponent(key3);
+            var c4 = part.getComponent(key4);
+            if (c1 == null || c2 == null || c3 == null || c4 == null) continue;
+            var quad = new Views4<>(new View<>(part, key1), new View<>(part, key2), new View<>(part, key3),
+                    new View<>(part, key4));
+            if (best == null) {
+                best = quad;
+            } else if (primary != null && primary.compare(c1, best.v1().get()) > 0) {
+                best = quad;
+            }
+        }
+        return best;
+    }
     // ====================================================================
     //  访问器方法
     // ====================================================================

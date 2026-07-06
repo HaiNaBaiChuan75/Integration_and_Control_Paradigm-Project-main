@@ -1,8 +1,8 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part.state;
+package com.hainabaichuan75.iac_p.ecs.v2.common.part;
 
-import com.hainabaichuan75.iac_p.ecs.v2.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
+import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 

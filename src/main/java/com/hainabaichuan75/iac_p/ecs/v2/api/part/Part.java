@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.part;
 
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import net.minecraft.world.level.block.entity.BlockEntity;

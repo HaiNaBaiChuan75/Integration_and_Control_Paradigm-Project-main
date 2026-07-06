@@ -1,7 +1,7 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part.rotation;
+package com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation;
 
 import com.hainabaichuan75.iac_p.IACP;
-import com.hainabaichuan75.iac_p.ecs.v2.part.Part;
+import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3d;
@@ -19,7 +19,7 @@ import org.joml.Quaterniondc;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
-import static com.hainabaichuan75.iac_p.ecs.v2.part.rotation.Rotation.IDENTITY;
+import static com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation.Rotation.IDENTITY;
 
 /**
  * 部件旋转与姿态 —— 朝向解析 + 坐标变换。

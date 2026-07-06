@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.part;
 
 import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.Contract;

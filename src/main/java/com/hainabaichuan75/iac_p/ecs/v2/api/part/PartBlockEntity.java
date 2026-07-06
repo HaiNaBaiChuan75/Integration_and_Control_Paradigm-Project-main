@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.ecs.v2.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.part;
 
 import com.hainabaichuan75.iac_p.IACP;
 import net.minecraft.core.BlockPos;
