@@ -32,6 +32,9 @@ public class ModCreativeModeTabs {
                 output.accept(ModBlocks.DEBUG_GEAR.asItem());
                 output.accept(ModBlocks.DEBUG_SWIVEL_BEARING.asItem());
                 output.accept(ModBlocks.TEST_BLANK.asItem());
+                output.accept(ModBlocks.TEST_BLANK_ENGINE.asItem());
+                output.accept(ModBlocks.TEST_BLANK_WHEEL.asItem());
+                output.accept(ModBlocks.TEST_BLANK_GIMBAL.asItem());
                 // TEST_CONTROLLER 是 GeckoLib 测试方块，用 /give @s iac_p:test_controller 获取
 
             }).build());

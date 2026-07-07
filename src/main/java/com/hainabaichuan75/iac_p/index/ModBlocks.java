@@ -8,6 +8,7 @@ import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlock;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlock;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear1Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear2Block;
@@ -15,13 +16,15 @@ import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlock;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlock;
 import com.hainabaichuan75.iac_p.content.blocks.seat.SeatBlock;
-import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlock;
 import com.hainabaichuan75.iac_p.content.blocks.test_controller.TestControllerBlock;
+import com.hainabaichuan75.iac_p.ecs.v2.component.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.List;
 
 public class ModBlocks {
 
@@ -177,11 +180,37 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion());
 
-    // === 测试空白方块（无默认组件，NBT 手动添加） ===
-    public static final DeferredBlock<TestBlankBlock> TEST_BLANK = BLOCKS.registerBlock("test_blank",
-            TestBlankBlock::new,
+    // ==================================================================
+    //  测试空白方块系列（每个变体携带不同的默认组件列表）
+    // ==================================================================
+
+    /**
+     * 无默认组件，完全由 NBT 手动添加。
+     */
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK = BLOCKS.registerBlock("test_blank", p -> new TestBlankBlock(p, List.of()), BlockBehaviour.Properties.of().strength(2.0f, 6.0f).sound(SoundType.METAL).noOcclusion());
+
+    /**
+     * 携带 {@link EngineDef#DEFAULT} + {@link EngineState#IDLE}。
+     */
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK_ENGINE = BLOCKS.registerBlock("test_blank_engine",
+            p -> new TestBlankBlock(p, List.of(new TestBlankBlock.DefaultComponentEntry(EngineDef.KEY,
+                    EngineDef.DEFAULT), new TestBlankBlock.DefaultComponentEntry(EngineState.KEY, EngineState.IDLE)))
+            , BlockBehaviour.Properties.of().strength(2.0f, 6.0f).sound(SoundType.METAL).noOcclusion());
+
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK_WHEEL = BLOCKS.registerBlock("test_blank_wheel",
+            p -> new TestBlankBlock(p, List.of(new TestBlankBlock.DefaultComponentEntry(WheelDef.KEY,
+                    WheelDef.DEFAULT), new TestBlankBlock.DefaultComponentEntry(WheelState.KEY, WheelState.IDLE))),
+            BlockBehaviour.Properties.of().strength(2.0f, 6.0f).sound(SoundType.METAL).noOcclusion());
+
+    /**
+     * 携带 {@link GimbalDef#DEFAULT} + {@link GimbalState#ZERO}。
+     */
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK_GIMBAL = BLOCKS.registerBlock("test_blank_gimbal",
+            p -> new TestBlankBlock(p, List.of(new TestBlankBlock.DefaultComponentEntry(GimbalDef.KEY,
+                    GimbalDef.DEFAULT), new TestBlankBlock.DefaultComponentEntry(GimbalState.KEY, GimbalState.ZERO))),
             BlockBehaviour.Properties.of()
                     .strength(2.0f, 6.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion());
+
 }

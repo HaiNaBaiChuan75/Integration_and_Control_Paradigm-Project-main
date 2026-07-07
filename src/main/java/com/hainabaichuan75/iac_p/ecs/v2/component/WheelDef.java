@@ -46,48 +46,20 @@ public record WheelDef(double radius, @NotNull Vector3dc mountDirection, @NotNul
                        double gripLateral, double rollingResistance) {
 
     /**
-     * 默认挂载方向：指向 Z-（载具前方）
-     */
-    private static final Vector3dc DEFAULT_MOUNT_DIR = new Vector3d(0, 0, -1);
-
-    /**
-     * 默认挂载点：原点
-     */
-    private static final Vector3dc DEFAULT_MOUNT_POINT = new Vector3d();
-
-    /**
-     * 默认悬挂方向：沿 Y+（向上）
-     */
-    private static final Vector3dc DEFAULT_SUSPENSION_DIR = new Vector3d(0, 1, 0);
-
-    /**
-     * 默认转向轴：沿 Y+（向上）
-     */
-    private static final Vector3dc DEFAULT_STEERING_AXIS = new Vector3d(0, 1, 0);
-
-    /**
      * 默认轮子定义（半径 0.5m，刚度 20000 N/m）
      */
-    public static final WheelDef DEFAULT = new WheelDef(0.5, DEFAULT_MOUNT_DIR, DEFAULT_MOUNT_POINT,
-            DEFAULT_SUSPENSION_DIR, 20000.0, DEFAULT_STEERING_AXIS, 30.0, true, 0.85, 0.80, 0.015);
+    public static final WheelDef DEFAULT = new WheelDef(1, new Vector3d(0, 0, -1), new Vector3d(0.5, 0, 0.5),
+            new Vector3d(0, 1, 0), 200.0, new Vector3d(0, 1, 0), 30.0, true, 0.85, 0.80, 0.015);
 
     /**
      * 紧凑构造：null 向量回退到默认值；无效数值回退；入口防御性拷贝。
      * 参见 CLAUDE.md 「JOML 对象约定」。
      */
     public WheelDef {
-        if (mountDirection == null) mountDirection = DEFAULT_MOUNT_DIR;
-        else mountDirection = new Vector3d(mountDirection);
-
-        if (mountPoint == null) mountPoint = DEFAULT_MOUNT_POINT;
-        else mountPoint = new Vector3d(mountPoint);
-
-        if (suspensionDirection == null) suspensionDirection = DEFAULT_SUSPENSION_DIR;
-        else suspensionDirection = new Vector3d(suspensionDirection);
-
-        if (steeringAxis == null) steeringAxis = DEFAULT_STEERING_AXIS;
-        else steeringAxis = new Vector3d(steeringAxis);
-
+        mountDirection = new Vector3d(mountDirection);
+        mountPoint = new Vector3d(mountPoint);
+        suspensionDirection = new Vector3d(suspensionDirection);
+        steeringAxis = new Vector3d(steeringAxis);
         if (!Double.isFinite(radius)) radius = 0.5;
         if (!Double.isFinite(suspensionStiffness)) suspensionStiffness = 20000.0;
         if (!Double.isFinite(maxSteeringAngle)) maxSteeringAngle = 0;
@@ -135,17 +107,10 @@ public record WheelDef(double radius, @NotNull Vector3dc mountDirection, @NotNul
 
     @NotNull
     public static WheelDef fromTag(@NotNull CompoundTag tag) {
-        return new WheelDef(tag.getDouble(TAG_RADIUS),
-                NbtUtil.getVec3d(tag, TAG_MOUNT_DIR),
-                NbtUtil.getVec3d(tag, TAG_MOUNT_POINT),
-                NbtUtil.getVec3d(tag, TAG_SUSP_DIR),
-                tag.getDouble(TAG_STIFFNESS),
-                NbtUtil.getVec3d(tag, TAG_STEER_AXIS),
-                tag.getDouble(TAG_MAX_STEER_ANGLE),
-                tag.getBoolean(TAG_DRIVEN),
-                tag.getDouble(TAG_GRIP_FWD),
-                tag.getDouble(TAG_GRIP_LAT),
-                tag.getDouble(TAG_ROLLING_RESIST));
+        return new WheelDef(tag.getDouble(TAG_RADIUS), NbtUtil.getVec3d(tag, TAG_MOUNT_DIR), NbtUtil.getVec3d(tag,
+                TAG_MOUNT_POINT), NbtUtil.getVec3d(tag, TAG_SUSP_DIR), tag.getDouble(TAG_STIFFNESS),
+                NbtUtil.getVec3d(tag, TAG_STEER_AXIS), tag.getDouble(TAG_MAX_STEER_ANGLE), tag.getBoolean(TAG_DRIVEN)
+                , tag.getDouble(TAG_GRIP_FWD), tag.getDouble(TAG_GRIP_LAT), tag.getDouble(TAG_ROLLING_RESIST));
     }
 
     // ====================================================================
