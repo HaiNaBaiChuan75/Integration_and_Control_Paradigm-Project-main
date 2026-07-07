@@ -64,8 +64,7 @@ public class TorqueDistributionSystem implements TickSystem {
             if (!defView.get().driven()) continue;
 
             var ws = stateView.get();
-            stateView.set(new WheelState(ws.angularVelocity(), ws.suspensionCompression(), ws.steeringAngle(),
-                    torquePerWheel, ws.braking() || ctrl.braking(), ws.contactPointLocal()));
+            stateView.set(new WheelState(ws.angularVelocity(), ws.suspensionCompression(), ws.steeringAngle(), torquePerWheel, ws.braking() || ctrl.braking(), ws.prevCompression(), ws.contactPointLocal()));
         }
     }
 }

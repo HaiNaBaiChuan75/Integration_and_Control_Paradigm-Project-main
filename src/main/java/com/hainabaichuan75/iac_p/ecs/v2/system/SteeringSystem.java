@@ -42,8 +42,7 @@ public class SteeringSystem implements TickSystem {
             double smoothed = Math.abs(delta) < CONVERGENCE_THRESHOLD ? targetAngle : Mth.lerp(CHASE_RATE,
                     ws.steeringAngle(), targetAngle);
 
-            stateView.set(new WheelState(ws.angularVelocity(), ws.suspensionCompression(), smoothed, ws.torque(),
-                    ws.braking(), ws.contactPointLocal()));
+            stateView.set(new WheelState(ws.angularVelocity(), ws.suspensionCompression(), smoothed, ws.torque(), ws.braking(), ws.prevCompression(), ws.contactPointLocal()));
         }
     }
 }

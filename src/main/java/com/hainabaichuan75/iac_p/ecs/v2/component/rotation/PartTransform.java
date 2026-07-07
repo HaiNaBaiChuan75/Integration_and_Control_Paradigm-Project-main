@@ -126,36 +126,64 @@ public record PartTransform(@NotNull Quaterniondc orientation, @NotNull Pose3dc 
     // ====================================================================
 
     /**
-     * 世界坐标 → Part 局部坐标。
+     * 世界坐标 → Part 局部坐标（分配新对象）。
      * <p>
      * 链：{@code world} → {@code subPose⁻¹} → SubLevel → {@code -blockCenter}
      * → 相对方块中心 → {@code orientation⁻¹} → local 空间。
      *
      * @param worldPos 父 Level 世界坐标中的位置
-     * @return Part 局部坐标（相对于方块中心）
+     * @return Part 局部坐标（相对于方块中心），新分配
      */
     @Contract(value = "_ -> new", pure = true)
     public @NotNull Vector3dc toRelativePos(@NotNull Vector3dc worldPos) {
-        var inSubLevel = subPose.transformPositionInverse(new Vector3d(worldPos));
-        inSubLevel.sub(blockCenter);
-        orientation.transformInverse(inSubLevel);
-        return inSubLevel;
+        return toRelativePos(worldPos, new Vector3d());
     }
 
     /**
-     * Part 局部坐标 → 世界坐标。
+     * 世界坐标 → Part 局部坐标（复用 {@code dest}）。
+     * <p>
+     * 链同 {@link #toRelativePos(Vector3dc)}。
+     *
+     * @param worldPos 父 Level 世界坐标中的位置
+     * @param dest     接收计算结果的可变向量
+     * @return {@code dest}，便于链式调用
+     */
+    @Contract(value = "_, _ -> param2", pure = true)
+    public @NotNull Vector3d toRelativePos(@NotNull Vector3dc worldPos, @NotNull Vector3d dest) {
+        subPose.transformPositionInverse(worldPos, dest);
+        dest.sub(blockCenter);
+        orientation.transformInverse(dest);
+        return dest;
+    }
+
+    /**
+     * Part 局部坐标 → 世界坐标（分配新对象）。
      * <p>
      * 链：{@code localPos} → {@code orientation} → Part 转 →
      * {@code +blockCenter} → SubLevel → {@code subPose} → world。
      *
      * @param localPos Part 局部坐标（相对于方块中心）
-     * @return 父 Level 世界坐标中的位置
+     * @return 父 Level 世界坐标中的位置，新分配
      */
     @Contract(value = "_ -> new", pure = true)
     public @NotNull Vector3dc fromRelativePos(@NotNull Vector3dc localPos) {
-        var step = orientation.transform(new Vector3d(localPos));
-        step.add(blockCenter);
-        return subPose.transformPosition(step);
+        return fromRelativePos(localPos, new Vector3d());
+    }
+
+    /**
+     * Part 局部坐标 → 世界坐标（复用 {@code dest}）。
+     * <p>
+     * 链同 {@link #fromRelativePos(Vector3dc)}。
+     *
+     * @param localPos Part 局部坐标（相对于方块中心）
+     * @param dest     接收计算结果的可变向量
+     * @return {@code dest}，便于链式调用
+     */
+    @Contract(value = "_, _ -> param2", pure = true)
+    public @NotNull Vector3d fromRelativePos(@NotNull Vector3dc localPos, @NotNull Vector3d dest) {
+        orientation.transform(localPos, dest);
+        dest.add(blockCenter);
+        return subPose.transformPosition(dest);
     }
 
     // ====================================================================
@@ -163,27 +191,51 @@ public record PartTransform(@NotNull Quaterniondc orientation, @NotNull Pose3dc 
     // ====================================================================
 
     /**
-     * 世界法线 → Part 局部法线。
+     * 世界法线 → Part 局部法线（分配新对象）。
      *
      * @param worldNormal 父 Level 世界坐标中的法线向量
-     * @return Part 局部法线
+     * @return Part 局部法线，新分配
      */
     @Contract(value = "_ -> new", pure = true)
     public @NotNull Vector3dc toRelativeNormal(@NotNull Vector3dc worldNormal) {
-        var step = subPose.transformNormalInverse(new Vector3d(worldNormal));
-        orientation.transformInverse(step);
-        return step;
+        return toRelativeNormal(worldNormal, new Vector3d());
     }
 
     /**
-     * Part 局部法线 → 世界法线。
+     * 世界法线 → Part 局部法线（复用 {@code dest}）。
+     *
+     * @param worldNormal 父 Level 世界坐标中的法线向量
+     * @param dest        接收计算结果的可变向量
+     * @return {@code dest}，便于链式调用
+     */
+    @Contract(value = "_, _ -> param2", pure = true)
+    public @NotNull Vector3d toRelativeNormal(@NotNull Vector3dc worldNormal, @NotNull Vector3d dest) {
+        subPose.transformNormalInverse(worldNormal, dest);
+        orientation.transformInverse(dest);
+        return dest;
+    }
+
+    /**
+     * Part 局部法线 → 世界法线（分配新对象）。
      *
      * @param localNormal Part 局部法线
-     * @return 父 Level 世界坐标中的法线向量
+     * @return 父 Level 世界坐标中的法线向量，新分配
      */
     @Contract(value = "_ -> new", pure = true)
     public @NotNull Vector3dc fromRelativeNormal(@NotNull Vector3dc localNormal) {
-        var step = orientation.transform(new Vector3d(localNormal));
-        return subPose.transformNormal(step);
+        return fromRelativeNormal(localNormal, new Vector3d());
+    }
+
+    /**
+     * Part 局部法线 → 世界法线（复用 {@code dest}）。
+     *
+     * @param localNormal Part 局部法线
+     * @param dest        接收计算结果的可变向量
+     * @return {@code dest}，便于链式调用
+     */
+    @Contract(value = "_, _ -> param2", pure = true)
+    public @NotNull Vector3d fromRelativeNormal(@NotNull Vector3dc localNormal, @NotNull Vector3d dest) {
+        orientation.transform(localNormal, dest);
+        return subPose.transformNormal(dest);
     }
 }

@@ -43,12 +43,14 @@ import org.joml.Vector3dc;
  * @param torque                驱动力矩（Nm），符号由动力系统根据驾驶意图分配，
  *                              正值：使轮子向 {@link WheelDef#mountDirection} + 右手定则的正方向加速
  * @param braking               刹车是否施加，{@code true} = 阻滞轮速让摩擦力减速
+ * @param prevCompression       上一帧的悬挂压缩量（m），用于阻尼计算中的
+ *                              {@code velocity = (compression − prevCompression) / dt}
  * @param contactPointLocal     当前 tick 中压缩量最大的接触点在 SubLevel 局部空间中的位置，
  *                              {@code null} 表示本 tick 所有射线均未命中地面。
  *                              仅运行时写入，不持久化到 NBT。
  */
 public record WheelState(double angularVelocity, double suspensionCompression, double steeringAngle, double torque,
-                         boolean braking, @Nullable Vector3dc contactPointLocal) {
+                         boolean braking, double prevCompression, @Nullable Vector3dc contactPointLocal) {
 
     /**
      * 紧凑构造：null contactPoint 跳过拷贝；无效浮点归零。
@@ -62,12 +64,13 @@ public record WheelState(double angularVelocity, double suspensionCompression, d
         if (!Double.isFinite(suspensionCompression)) suspensionCompression = 0;
         if (!Double.isFinite(steeringAngle)) steeringAngle = 0;
         if (!Double.isFinite(torque)) torque = 0;
+        if (!Double.isFinite(prevCompression)) prevCompression = 0;
     }
 
     /**
      * 零状态：静止、回正、全伸展、无力矩、不刹车、无接触
      */
-    public static final WheelState IDLE = new WheelState(0, 0, 0, 0, false, null);
+    public static final WheelState IDLE = new WheelState(0, 0, 0, 0, false, 0, null);
 
     // ====================================================================
     //  Wither 方法
@@ -75,37 +78,37 @@ public record WheelState(double angularVelocity, double suspensionCompression, d
 
     @NotNull
     public WheelState withAngularVelocity(double angularVelocity) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
     @NotNull
     public WheelState withCompression(double suspensionCompression) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
     @NotNull
     public WheelState withSteeringAngle(double steeringAngle) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
     @NotNull
     public WheelState withTorque(double torque) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
     @NotNull
     public WheelState withBraking(boolean braking) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
     @NotNull
     public WheelState withContactPoint(@Nullable Vector3dc contactPointLocal) {
-        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking,
+        return new WheelState(angularVelocity, suspensionCompression, steeringAngle, torque, braking, prevCompression,
                 contactPointLocal);
     }
 
@@ -133,8 +136,8 @@ public record WheelState(double angularVelocity, double suspensionCompression, d
 
     @NotNull
     public static WheelState fromTag(@NotNull CompoundTag tag) {
-        return new WheelState(tag.getDouble(TAG_ANGULAR_VEL), tag.getDouble(TAG_COMPRESSION),
-                tag.getDouble(TAG_STEER_ANGLE), tag.getDouble(TAG_TORQUE), tag.getBoolean(TAG_BRAKING), null // 接触点不持久化
+        return new WheelState(tag.getDouble(TAG_ANGULAR_VEL), tag.getDouble(TAG_COMPRESSION), tag.getDouble(TAG_STEER_ANGLE), tag.getDouble(TAG_TORQUE), tag.getBoolean(TAG_BRAKING), 0, // prevCompression 不持久化
+                null // 接触点不持久化
         );
     }
 
@@ -152,6 +155,17 @@ public record WheelState(double angularVelocity, double suspensionCompression, d
     @NotNull
     public static WheelState createDefault() {
         return IDLE;
+    }
+
+    /**
+     * 更新压缩量与上一帧压缩量（由 SuspensionSystem 调用）。
+     * <p>
+     * prevCompression 自动设为旧值、suspensionCompression 设为新值。
+     */
+    @NotNull
+    public WheelState withCompressionUpdate(double newCompression, @Nullable Vector3dc newContactPoint) {
+        return new WheelState(angularVelocity, newCompression, steeringAngle, torque, braking, suspensionCompression,
+                newContactPoint);
     }
 
     // ====================================================================

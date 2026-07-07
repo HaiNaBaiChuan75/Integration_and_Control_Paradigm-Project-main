@@ -39,11 +39,16 @@ public class SuspensionForceSystem implements PhysicsSystem {
         for (var entry : View.find(parts, WheelDef.KEY, WheelState.KEY)) {
             if (!(entry instanceof Views2(var defView, var stateView))) continue;
             var wd = defView.get();
-            double compression = stateView.get().suspensionCompression();
+            var ws = stateView.get();
+            double compression = ws.suspensionCompression();
             if (compression <= 0.0) continue;
 
-            // 弹簧力 = 刚度 × 压缩量（胡克定律）
-            double impulseMag = wd.suspensionStiffness() * compression * timeStep;
+            // 阻尼冲量 = −c × (compression − prevCompression)
+            // (c·(Δx/Δt))·Δt = c·Δx  → 时间步长自动消去
+            double dampingImpulse = -wd.suspensionDamping() * (compression - ws.prevCompression());
+
+            // 弹簧冲量 = k·x·Δt + 阻尼冲量
+            double impulseMag = wd.suspensionStiffness() * compression * timeStep + dampingImpulse;
 
             // 局部悬挂方向 → 世界空间
             Vector3d worldSuspDir = subLevel.logicalPose().transformNormal(new Vector3d(wd.suspensionDirection()));
