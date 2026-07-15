@@ -3,6 +3,7 @@ package com.hainabaichuan75.iac_p;
 import com.hainabaichuan75.iac_p.affiliation.AffiliationCommand;
 import com.hainabaichuan75.iac_p.affiliation.WorldLoadHandler;
 import com.hainabaichuan75.iac_p.ecs.system.VehicleSystemRegistry;
+import com.hainabaichuan75.iac_p.ecs.v2.api.dispatch.V2SystemRegistry;
 import com.hainabaichuan75.iac_p.events.*;
 import com.hainabaichuan75.iac_p.index.*;
 import com.mojang.logging.LogUtils;
@@ -53,5 +54,8 @@ public class IACP {
         // ============================================================
         // 注册服务端内置 System
         VehicleSystemRegistry.registerServerSystems();
+
+        // ── V2 System ──────────────────────────────────────────────
+        V2SystemRegistry.registerV2ServerSystems();
     }
 }

@@ -1,12 +1,14 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.entity;
 
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 载具部件的核心接口
+ * 载具部件的核心接口 —— ECS 中的 <b>实体（Entity）</b>。
  * <p>
  * 职责只有两个：
  * <ol>
@@ -17,15 +19,15 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * 一个 Part 是什么角色（引擎、控制器、轮子），完全由它持有哪些组件类型决定。
  * <pre>{@code
- * EngineState s = part.getComponent(EngineState.KEY);
+ * SomeState s = part.getComponent(SomeState.KEY);
  * if (s != null) {
- *     part.setComponent(EngineState.KEY, s.withTorque(...));
+ *     part.setComponent(SomeState.KEY, s.withValue(...));
  * }
  * }</pre>
  * <p>
  * 类型化访问器见 {@link View#of(Part, ComponentKey)} 及相关重载。
  *
- * @see PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
+ * @see com.hainabaichuan75.iac_p.ecs.v2.entity.PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
  * @see View 类型化访问器与工厂
  */
 public interface Part extends BlockEntitySubLevelActor {

@@ -1,5 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.api.component;
 
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,16 +13,16 @@ import java.util.List;
 /**
  * 类型化组件访问器 —— 持有 {@link Part} 引用和 {@link ComponentKey}。
  * <p>
- * 消除重复传 {@code part} + {@code EngineState.KEY} 的样板代码：
+ * 消除重复传 {@code part} + {@code SomeState.KEY} 的样板代码：
  * <pre>{@code
  * // 无访问器
- * EngineState s = part.getComponent(EngineState.KEY);
- * part.setComponent(EngineState.KEY, s.withTorque(50));
+ * SomeState s = part.getComponent(SomeState.KEY);
+ * part.setComponent(SomeState.KEY, s.withValue(50));
  *
  * // 有访问器
- * View<EngineState> ev = View.of(part, EngineState.KEY);
- * if (ev != null) {
- *     ev.set(ev.get().withTorque(50));
+ * View<SomeState> sv = View.of(part, SomeState.KEY);
+ * if (sv != null) {
+ *     sv.set(sv.get().withValue(50));
  * }
  * }</pre>
  * <p>
@@ -36,6 +37,14 @@ import java.util.List;
  */
 public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
 
+    /**
+     * 规范构造器：设为 {@code public} 以满足 public record 的访问级别要求。
+     * <p>
+     * 外部代码<b>应该</b>通过 {@link #of(Part, ComponentKey)} 等工厂方法访问，
+     * 工厂返回 {@code @Nullable} 以保证调用方处理组件不存在的情况。
+     */
+    public View {}
+
     // ====================================================================
     //  工厂：单组件
     // ====================================================================
@@ -43,8 +52,8 @@ public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
     /**
      * 创建类型化组件访问器，仅当组件存在时返回非 null。
      * <pre>{@code
-     * View.of(part, EngineState.KEY).ifPresent(ev -> {
-     *     ev.set(ev.get().withTorque(50));
+     * View.of(part, SomeState.KEY).ifPresent(sv -> {
+     *     sv.set(sv.get().withValue(50));
      * });
      * }</pre>
      *
@@ -116,14 +125,14 @@ public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
      * <pre>{@code
      * // 旧
      * for (Part p : parts) {
-     *     if (p instanceof DriveWheel dw) {
-     *         dw.setTorqueInput(...);
+     *     if (p instanceof SomePart sp) {
+     *         sp.setValue(...);
      *     }
      * }
      *
      * // 新
-     * for (var dv : View.find(parts, DriveState.KEY)) {
-     *     dv.set(dv.get().withTorqueInput(...));
+     * for (var sv : View.find(parts, SomeState.KEY)) {
+     *     sv.set(sv.get().withValue(...));
      * }
      * }</pre>
      *
@@ -149,13 +158,13 @@ public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
      * <pre>{@code
      * // 旧
      * for (Part p : parts) {
-     *     if (p instanceof DriveWheel dw && p instanceof SteeringWheel sw) { ... }
+     *     if (p instanceof SomePart sp && p instanceof AnotherPart ap) { ... }
      * }
      *
      * // 新
-     * for (var vs : View.find(parts, DriveState.KEY, SteeringState.KEY)) {
-     *     vs.v1().set(vs.v1().get().withTorqueInput(...));
-     *     vs.v2().set(vs.v2().get().withSteeringInput(...));
+     * for (var vs : View.find(parts, SomeState.KEY, AnotherState.KEY)) {
+     *     vs.v1().set(vs.v1().get().withValue(...));
+     *     vs.v2().set(vs.v2().get().withOtherValue(...));
      * }
      * }</pre>
      *

@@ -1,6 +1,6 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part.rotation;
+package com.hainabaichuan75.iac_p.ecs.v2.component.rotation;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.StringTag;
 import org.jetbrains.annotations.Contract;
@@ -169,5 +169,12 @@ public enum CubeRotation {
      * }</pre>
      */
     public static final ComponentKey<CubeRotation> KEY = ComponentKey.of(CubeRotation.class, "cube_rotation",
-            r -> StringTag.valueOf(r.name()), tag -> CubeRotation.valueOf(tag.getAsString()));
+            r -> StringTag.valueOf(r.name()),
+            tag -> {
+                try {
+                    return CubeRotation.valueOf(tag.getAsString());
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+            });
 }

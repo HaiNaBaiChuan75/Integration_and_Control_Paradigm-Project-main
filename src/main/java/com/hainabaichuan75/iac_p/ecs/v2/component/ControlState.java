@@ -1,8 +1,9 @@
-package com.hainabaichuan75.iac_p.ecs.v2.common.part;
+package com.hainabaichuan75.iac_p.ecs.v2.component;
 
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.ComponentKey;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.Part;
-import com.hainabaichuan75.iac_p.ecs.v2.api.part.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.View;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
+import com.hainabaichuan75.iac_p.util.NbtUtil;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +11,7 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 /**
- * 控制状态 —— 驾驶员的全部意图输入。
+ * 控制状态 —— ECS <b>组件（Component）</b>，驾驶员的全部意图输入。
  * <p>
  * 由网络包写入、System 层读取。通过 {@code part.getComponent(ControlState.KEY)}
  * 获取完整快照。
@@ -68,29 +69,26 @@ public record ControlState(@NotNull Vector3dc intent, boolean braking, boolean f
     //  NBT 序列化
     // ====================================================================
 
-    private static final String TAG_INTENT_X = "intentX";
-    private static final String TAG_INTENT_Y = "intentY";
-    private static final String TAG_INTENT_Z = "intentZ";
+    private static final String TAG_INTENT = "intent";
     private static final String TAG_BRAKING = "braking";
     private static final String TAG_FIRING = "firing";
+    private static final String TAG_AIM_TARGET = "aimTarget";
 
     @NotNull
     public CompoundTag toTag() {
         var tag = new CompoundTag();
-        tag.putDouble(TAG_INTENT_X, intent.x());
-        tag.putDouble(TAG_INTENT_Y, intent.y());
-        tag.putDouble(TAG_INTENT_Z, intent.z());
+        NbtUtil.putVec3d(tag, TAG_INTENT, intent);
         tag.putBoolean(TAG_BRAKING, braking);
         tag.putBoolean(TAG_FIRING, firing);
+        NbtUtil.putVec3d(tag, TAG_AIM_TARGET, aimTarget);
         return tag;
     }
 
     @NotNull
     public static ControlState fromTag(@NotNull CompoundTag tag) {
-        return new ControlState(new Vector3d(tag.getDouble(TAG_INTENT_X), tag.getDouble(TAG_INTENT_Y),
-                tag.getDouble(TAG_INTENT_Z)), tag.getBoolean(TAG_BRAKING), tag.getBoolean(TAG_FIRING), null //
-                // 瞄准目标不同步 NBT，只在运行时由网络包写入
-        );
+        return new ControlState(NbtUtil.getVec3d(tag, TAG_INTENT),
+                tag.getBoolean(TAG_BRAKING), tag.getBoolean(TAG_FIRING),
+                NbtUtil.getVec3d(tag, TAG_AIM_TARGET, null));
     }
 
     // ====================================================================
@@ -108,14 +106,18 @@ public record ControlState(@NotNull Vector3dc intent, boolean braking, boolean f
     // ====================================================================
 
     /**
-     * 创建类型化组件访问器。
+     * 创建类型化组件访问器（可空）。
+     * <p>
+     * 部件无此组件时返回 {@code null}，调用方必须处理缺失情况。
      * <pre>{@code
      * var cv = ControlState.view(part);
-     * cv.set(cv.get().withBraking(true));
+     * if (cv != null) {
+     *     cv.set(cv.get().withBraking(true));
+     * }
      * }</pre>
      */
-    @NotNull
+    @Nullable
     public static View<ControlState> view(@NotNull Part part) {
-        return new View<>(part, KEY);
+        return View.of(part, KEY);
     }
 }

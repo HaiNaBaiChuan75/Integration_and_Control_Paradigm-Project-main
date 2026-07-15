@@ -1,6 +1,8 @@
-package com.hainabaichuan75.iac_p.ecs.v2.api.part;
+package com.hainabaichuan75.iac_p.ecs.v2.entity;
 
 import com.hainabaichuan75.iac_p.IACP;
+import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -16,9 +18,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * 部件方块实体的抽象基类 —— v2 组件存储与 NBT 批量序列化。
+ * 部件方块实体的抽象基类 —— ECS 中 <b>实体（Entity）</b>的默认实现，
+ * 提供组件存储与 NBT 批量序列化。
  * <p>
  * 继承此类即可按 {@link ComponentKey} 存取组件。组件定义在 state record 上
  * （如 {@code EngineState.KEY}），包含 NBT 键名和编解码器。
@@ -31,8 +35,8 @@ import java.util.Map;
  * public class MyPartBE extends PartBlockEntity {
  *     public MyPartBE(BlockPos pos, BlockState state) {
  *         super(ModTypes.MY_PART.get(), pos, state);
- *         setComponent(EngineState.KEY, EngineState.createDefault());
- *         setComponent(ControlState.KEY, ControlState.IDLE);
+ *         setComponent(SomeState.KEY, SomeState.createDefault());
+ *         setComponent(AnotherState.KEY, AnotherState.IDLE);
  *     }
  *     // ← 没有 saveAdditional / getUpdatePacket
  *     // ← 只有 BE 特有的逻辑
@@ -119,6 +123,7 @@ public abstract class PartBlockEntity extends BlockEntity implements Part {
      */
     @SuppressWarnings("unchecked")
     public void loadComponents(@NotNull CompoundTag tag) {
+        components.clear();
         CompoundTag payload = tag.getCompound(NBT_KEY);
         for (String nbtKey : payload.getAllKeys()) {
             ComponentKey<Object> key = (ComponentKey<Object>) ComponentKey.byNbtKey(nbtKey);
@@ -127,9 +132,9 @@ public abstract class PartBlockEntity extends BlockEntity implements Part {
                 continue;
             }
             Tag nbt = payload.get(nbtKey);
-            Object decoded = key.decoder().apply(nbt);
+            Object decoded = key.decoder().apply(Objects.requireNonNull(nbt));
             if (decoded == null) {
-                IACP.LOGGER.warn("Decoder returned null for component [{}] on {}", nbtKey, this);
+                IACP.LOGGER.warn("Component [{}] decoder returned null on {}, skipped", nbtKey, this);
                 continue;
             }
             components.put(key, decoded);
