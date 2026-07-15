@@ -120,16 +120,11 @@ public final class V2SystemRegistry {
      * 当前无内置 V2 System，留空等待后续迁移。即使为空，调度器也会自动跳过空列表。
      */
     public static void registerV2ServerSystems() {
-        // ── 逻辑 Tick（20Hz）按依赖顺序 ─────────────────────
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.SteeringSystem());            // 转向
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.TorqueDistributionSystem());   // 扭矩分配
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.AimSystem());                    // 瞄准解算（速度指令）
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.GimbalSystem());                 // 云台伺服（积分 + 限位）
+        register(new com.hainabaichuan75.iac_p.ecs.v2.system.ControlInputSystem());
+        register(new com.hainabaichuan75.iac_p.ecs.v2.system.AimSystem());
+        register(new com.hainabaichuan75.iac_p.ecs.v2.system.GimbalSystem());
 
-        // ── 物理 System（~100Hz）──
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.SuspensionSystem());            // 悬挂压缩：轮下射线（先于弹簧力）
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.SuspensionForceSystem());       // 悬挂弹簧力
-        register(new com.hainabaichuan75.iac_p.ecs.v2.system.TractionForceSystem());         // 牵引力
+        register(new com.hainabaichuan75.iac_p.ecs.v2.system.OldWheelSystem());
     }
 
     // ============================================================

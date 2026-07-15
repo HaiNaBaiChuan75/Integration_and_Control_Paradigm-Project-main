@@ -56,4 +56,6 @@ public class ModItems {
             ITEMS.registerSimpleBlockItem(ModBlocks.TEST_BLANK_WHEEL);
     public static final DeferredItem<BlockItem> TEST_BLANK_GIMBAL =
             ITEMS.registerSimpleBlockItem(ModBlocks.TEST_BLANK_GIMBAL);
+    public static final DeferredItem<BlockItem> TEST_BLANK_CONTROLLER =
+            ITEMS.registerSimpleBlockItem(ModBlocks.TEST_BLANK_CONTROLLER);
 }

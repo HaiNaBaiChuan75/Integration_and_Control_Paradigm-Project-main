@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.joml.Vector3d;
 
 import java.util.List;
 
@@ -208,6 +209,14 @@ public class ModBlocks {
     public static final DeferredBlock<TestBlankBlock> TEST_BLANK_GIMBAL = BLOCKS.registerBlock("test_blank_gimbal",
             p -> new TestBlankBlock(p, List.of(new TestBlankBlock.DefaultComponentEntry(GimbalDef.KEY,
                     GimbalDef.DEFAULT), new TestBlankBlock.DefaultComponentEntry(GimbalState.KEY, GimbalState.ZERO))),
+            BlockBehaviour.Properties.of()
+                    .strength(2.0f, 6.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    public static final DeferredBlock<TestBlankBlock> TEST_BLANK_CONTROLLER = BLOCKS.registerBlock("test_blank_controller",
+            p -> new TestBlankBlock(p, List.of(new TestBlankBlock.DefaultComponentEntry(ControlState.KEY,
+                    new ControlState(new Vector3d(0,0,-1),false,false,new Vector3d())))),
             BlockBehaviour.Properties.of()
                     .strength(2.0f, 6.0f)
                     .sound(SoundType.METAL)

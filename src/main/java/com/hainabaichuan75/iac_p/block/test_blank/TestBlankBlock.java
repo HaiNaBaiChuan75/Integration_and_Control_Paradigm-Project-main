@@ -1,16 +1,22 @@
 package com.hainabaichuan75.iac_p.block.test_blank;
 
 import com.hainabaichuan75.iac_p.ecs.v2.api.component.ComponentKey;
+import com.hainabaichuan75.iac_p.ecs.v2.component.rotation.CubeRotation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 
 /**
  * 测试用空白方块 —— 可携带预设组件列表，放置时由 BE 复制。
@@ -38,6 +44,19 @@ public class TestBlankBlock extends Block implements EntityBlock {
                           @NotNull List<DefaultComponentEntry> defaultComponents) {
         super(properties);
         this.defaultComponents = List.copyOf(defaultComponents);
+        // 注册 HORIZONTAL_FACING 属性
+        registerDefaultState(stateDefinition.any().setValue(HORIZONTAL_FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(HORIZONTAL_FACING);
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext ctx) {
+        return defaultBlockState().setValue(HORIZONTAL_FACING, ctx.getHorizontalDirection().getOpposite());
     }
 
     /**

@@ -16,6 +16,7 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 import static com.hainabaichuan75.iac_p.ecs.v2.component.rotation.Rotation.IDENTITY;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 /**
  * Part 的坐标变换句柄 —— 在 Part-local 与父 Level 世界坐标之间双向切换。
@@ -83,8 +84,9 @@ public record PartTransform(@NotNull Quaterniondc orientation, @NotNull Pose3dc 
     /**
      * 沿 fallback 链解析部件的旋转朝向。
      * <p>
-     * 按 {@link Rotation} &rarr; {@link CubeRotation} &rarr; 单位四元数的顺序查找，
-     * 返回第一个非 null 结果。
+     * 按 {@link Rotation} &rarr; {@link CubeRotation}
+     * &rarr; {@code HORIZONTAL_FACING} 方块属性
+     * &rarr; 单位四元数的顺序查找，返回第一个非 null 结果。
      *
      * @param part 部件实例
      * @return 旋转四元数，永不 null
@@ -96,6 +98,17 @@ public record PartTransform(@NotNull Quaterniondc orientation, @NotNull Pose3dc 
 
         CubeRotation cube = part.getComponent(CubeRotation.KEY);
         if (cube != null) return cube.quaternion;
+
+        // 回退：传统方块 HORIZONTAL_FACING 属性
+        var state = part.getBlockEntity().getBlockState();
+        if (state.hasProperty(HORIZONTAL_FACING)) {
+            var facing = state.getValue(HORIZONTAL_FACING);
+            return CubeRotation.fromDirection(facing).quaternion;
+        }
+        if (state.hasProperty(FACING)) {
+            var facing = state.getValue(FACING);
+            return CubeRotation.fromDirection(facing).quaternion;
+        }
 
         return IDENTITY.quaternion();
     }

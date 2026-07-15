@@ -85,6 +85,7 @@ public class ModBlockEntityTypes {
             BLOCK_ENTITY_TYPES.register("test_blank",
                     () -> BlockEntityType.Builder.of(
                             TestBlankBlockEntity::new, ModBlocks.TEST_BLANK.get(), ModBlocks.TEST_BLANK_ENGINE.get(),
-                            ModBlocks.TEST_BLANK_WHEEL.get(), ModBlocks.TEST_BLANK_GIMBAL.get()
+                            ModBlocks.TEST_BLANK_WHEEL.get(), ModBlocks.TEST_BLANK_GIMBAL.get(),
+                            ModBlocks.TEST_BLANK_CONTROLLER.get()
                     ).build(null));
 }

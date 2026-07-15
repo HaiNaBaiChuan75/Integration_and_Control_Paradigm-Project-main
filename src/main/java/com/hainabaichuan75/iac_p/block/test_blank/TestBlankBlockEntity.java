@@ -21,6 +21,13 @@ public class TestBlankBlockEntity extends PartBlockEntity {
         if (blockState.getBlock() instanceof TestBlankBlock tbb) {
             copyDefaults(tbb);
         }
+        // 放置时自动注入 CubeRotation（从 HORIZONTAL_FACING 转换）
+        if (blockState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
+            var facing = blockState.getValue(
+                    net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
+            setComponent(com.hainabaichuan75.iac_p.ecs.v2.component.rotation.CubeRotation.KEY,
+                    com.hainabaichuan75.iac_p.ecs.v2.component.rotation.CubeRotation.fromDirection(facing));
+        }
     }
 
     /**
