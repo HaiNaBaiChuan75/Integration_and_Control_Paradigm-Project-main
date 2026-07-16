@@ -2,10 +2,15 @@ package com.hainabaichuan75.iac_p.block.base_cabin;
 
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.entity.IACPSeatEntity;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -24,7 +29,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+import static com.simibubi.create.content.contraptions.actors.seat.SeatBlock.getLeashed;
+
 
 /**
  * BaseCabinBlock —— 基础座舱方块（GeckoLib 渲染的单格驾驶舱）。
@@ -64,34 +75,43 @@ public class BaseCabinBlock extends Block implements EntityBlock {
     // ====== 空手右键 → 坐下 ======
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
-                                               BlockHitResult hitResult) {
-        if (player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (player.isShiftKeyDown() || player instanceof FakePlayer)
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-
-        // 已有座位实体 → 弹出当前乘客，换人坐上
-        var seats = level.getEntitiesOfClass(IACPSeatEntity.class, new AABB(pos));
+        List<IACPSeatEntity> seats = level.getEntitiesOfClass(IACPSeatEntity.class, new AABB(pos));
         if (!seats.isEmpty()) {
-            IACPSeatEntity seat = seats.get(0);
-            var passengers = seat.getPassengers();
-            if (!passengers.isEmpty() && passengers.get(0) instanceof Player) {
-                return InteractionResult.PASS;
+            IACPSeatEntity seatEntity = seats.get(0);
+            List<Entity> passengers = seatEntity.getPassengers();
+            if (!passengers.isEmpty() && passengers.get(0) instanceof Player)
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (!level.isClientSide) {
+                seatEntity.ejectPassengers();
+                player.startRiding(seatEntity);
             }
-            seat.ejectPassengers();
-            player.startRiding(seat);
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
 
-        IACPSeatEntity.sitDown(level, pos, player);
-        return InteractionResult.SUCCESS;
+        if (level.isClientSide)
+            return ItemInteractionResult.SUCCESS;
+        sitDown(level, pos, getLeashed(level, player).or(player));
+        return ItemInteractionResult.SUCCESS;
     }
 
+
+    public static void sitDown(Level level, BlockPos pos, Entity entity) {
+        if (level.isClientSide)
+            return;
+        IACPSeatEntity seat = new IACPSeatEntity(level, pos);
+        level.addFreshEntity(seat);
+        entity.startRiding(seat, true);
+        if (entity instanceof TamableAnimal ta)
+            ta.setInSittingPose(true);
+    }
+
+
     // ====== BlockEntity ======
+    //提供geckolib视觉渲染，必须使用EntityBlock接口，
 
     @Nullable
     @Override
@@ -107,4 +127,5 @@ public class BaseCabinBlock extends Block implements EntityBlock {
             }
         };
     }
+
 }

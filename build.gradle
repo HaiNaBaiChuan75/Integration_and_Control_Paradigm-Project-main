@@ -58,6 +58,8 @@ dependencies {
     implementation "dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}"
     // Create
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
+    // Registrate — Create 用于注册的底层库（create 声明为 transitive=false 所以需显式引入）
+    implementation("com.tterrag.registrate:Registrate:MC1.21-1.3.0+67")
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
     implementation("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     // GeckoLib — 用于多方块 Controller 渲染 + 骨骼动画
