@@ -3,6 +3,9 @@ package com.hainabaichuan75.iac_p.network.packets;
 import com.hainabaichuan75.iac_p.IACP;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.ecs.v2.api.dispatch.V2SystemRegistry;
+import com.hainabaichuan75.iac_p.ecs.v2.api.entity.Part;
+import com.hainabaichuan75.iac_p.ecs.v2.component.ControlState;
 import com.hainabaichuan75.iac_p.events.PlayerMountTracker;
 import com.hainabaichuan75.iac_p.events.SubLevelScanner;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
@@ -15,6 +18,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3d;
+import org.joml.Vector3dc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -152,7 +159,10 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
                 // ── 控制信号转发到座舱的 PlayerCommandReceiver ──
                 var mountData = PlayerMountTracker.getMountData(serverPlayer);
                 if (mountData != null) {
-                    CockpitBlockEntity cockpit = findCockpitInSubLevel(level, mountData.subLevelUUID());
+                    SubLevel subLevel = getSubLevelByUUID(level, mountData.subLevelUUID());
+                    if (subLevel == null) return;
+
+                    CockpitBlockEntity cockpit = findCockpitInSubLevel(subLevel, level);
                     if (cockpit != null) {
                         // 油门 + 转向：Controller 约定 z- = 前, z+ = 后
                         // throttleDirection +1 = W(前进) → z = -1
@@ -173,25 +183,34 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
                             cockpit.setAimTarget(null);
                         }
                     }
+
+                    // ── V2 网络桥：将控制状态写入同一 SubLevel 内的 V2 Part ──
+                    writeV2ControlState(subLevel, packet);
                 }
             }
         });
     }
 
     // ====================================================================
-    //  工具：在 SubLevel 内找驾驶舱
+    //  工具：SubLevel 查找与 V2 控制桥接
     // ====================================================================
+
+    /**
+     * 通过 UUID 获取服务端 SubLevel。
+     */
+    @Nullable
+    private static SubLevel getSubLevelByUUID(@NotNull ServerLevel level, @NotNull UUID subLevelUUID) {
+        var container = SubLevelContainer.getContainer(level);
+        if (container == null) return null;
+        return container.getSubLevel(subLevelUUID);
+    }
 
     /**
      * 在指定 SubLevel 中查找驾驶舱 BlockEntity。
      * 使用 SubLevelScanner 统一遍历。
      */
-    private static CockpitBlockEntity findCockpitInSubLevel(ServerLevel level, UUID subLevelUUID) {
-        var container = SubLevelContainer.getContainer(level);
-        if (container == null) return null;
-        SubLevel subLevel = container.getSubLevel(subLevelUUID);
-        if (subLevel == null) return null;
-
+    @Nullable
+    private static CockpitBlockEntity findCockpitInSubLevel(@NotNull SubLevel subLevel, @NotNull ServerLevel level) {
         CockpitBlockEntity[] result = {null};
         SubLevelScanner.forEachBlock(subLevel, level, (worldPos, state, be) -> {
             if (result[0] != null) return;
@@ -200,5 +219,33 @@ public class VehicleControlC2SPacket implements CustomPacketPayload {
             }
         });
         return result[0];
+    }
+
+    /**
+     * 将数据包中的控制状态写入同一 SubLevel 内所有持有 {@link ControlState.KEY} 的 V2 Part。
+     * <p>
+     * 这是 V1 → V2 的桥梁，确保正在向 V2 迁移的载具也能接收玩家控制输入。
+     * 当所有方块完成迁移后，此方法将替代上方的 V1 {@link CockpitBlockEntity} 写入路径。
+     */
+    private static void writeV2ControlState(@NotNull SubLevel subLevel, @NotNull VehicleControlC2SPacket packet) {
+        List<Part> parts = V2SystemRegistry.collectParts(subLevel);
+        if (parts.isEmpty()) return;
+
+        Vector3dc intent = new Vector3d(0, 0, -packet.throttleDirection);
+        boolean anyBrake = false;
+        for (Entry entry : packet.entries) {
+            if (entry.brake) {
+                anyBrake = true;
+                break;
+            }
+        }
+        Vector3dc aimTarget = packet.hasAim ? new Vector3d(packet.aimX, packet.aimY, packet.aimZ) : null;
+        ControlState state = new ControlState(intent, anyBrake, false, aimTarget);
+
+        for (Part part : parts) {
+            if (part.getComponent(ControlState.KEY) != null) {
+                part.setComponent(ControlState.KEY, state);
+            }
+        }
     }
 }
