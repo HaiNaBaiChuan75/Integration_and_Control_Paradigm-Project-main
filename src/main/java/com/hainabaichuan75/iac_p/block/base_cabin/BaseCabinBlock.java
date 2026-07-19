@@ -1,13 +1,16 @@
 package com.hainabaichuan75.iac_p.block.base_cabin;
 
+import com.google.common.base.Optional;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.entity.IACPSeatEntity;
 
+import com.simibubi.create.content.contraptions.actors.seat.SeatBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -33,8 +36,6 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-
-import static com.simibubi.create.content.contraptions.actors.seat.SeatBlock.getLeashed;
 
 
 /**
@@ -110,6 +111,15 @@ public class BaseCabinBlock extends Block implements EntityBlock {
     }
 
 
+    public static Optional<Entity> getLeashed(Level level, Player player) {
+        List<Entity> entities = player.level().getEntities((Entity) null, player.getBoundingBox()
+                .inflate(10), e -> true);
+        for (Entity e : entities)
+            if (e instanceof Mob mob && mob.getLeashHolder() == player && SeatBlock.canBePickedUp(e))
+                return Optional.of(mob);
+        return Optional.absent();
+    }
+
     // ====== BlockEntity ======
     //提供geckolib视觉渲染，必须使用EntityBlock接口，
 
@@ -127,5 +137,6 @@ public class BaseCabinBlock extends Block implements EntityBlock {
             }
         };
     }
+
 
 }

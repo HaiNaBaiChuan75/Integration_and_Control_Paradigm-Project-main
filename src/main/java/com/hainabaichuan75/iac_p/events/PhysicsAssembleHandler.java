@@ -5,6 +5,7 @@ import com.hainabaichuan75.iac_p.block.base_cabin.BaseCabinBlock;
 import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlock;
 import com.hainabaichuan75.iac_p.index.ModBlocks;
 import com.hainabaichuan75.iac_p.util.SubLevelUtil;
+import com.hainabaichuan75.iac_p.vehicle.VehicleRegistry;
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.physics.constraint.ConstraintJointAxis;
@@ -76,6 +77,9 @@ public class PhysicsAssembleHandler {
      * 玩家操作冷却（tick），防止拆解后立即再次装配
      */
     private static final int PLAYER_COOLDOWN_TICKS = 20;
+
+    /** VehicleRegistry 是否已懒初始化 */
+    private static boolean vehicleRegistryInitialized = false;
 
     // ==================================================================
     //  玩家冷却追踪
@@ -152,12 +156,31 @@ public class PhysicsAssembleHandler {
     }
 
     // ==================================================================
+    //  VehicleRegistry 初始化
+    // ==================================================================
+    /**
+     * 懒初始化 VehicleRegistry 的 SubLevelObserver 注册。
+     * <p>
+     * 在首次装配/拆解操作时注册，确保后续所有 SubLevel 创建（含分裂）都能被跟踪。
+     */
+    private static void ensureVehicleRegistry(ServerLevel level) {
+        if (vehicleRegistryInitialized) return;
+
+        SubLevelContainer container = SubLevelContainer.getContainer(level);
+        if (container != null) {
+            VehicleRegistry.registerObserver(container);
+            vehicleRegistryInitialized = true;
+        }
+    }
+
+    // ==================================================================
     //  公开入口
     // ==================================================================
     /**
      * @return true 表示位置有效并执行了装配或拆解；false 表示位置无效，调用方可回退到其他检测手段
      */
     public static boolean handleAssembleOrDisassemble(ServerPlayer player, BlockPos pos) {
+        ensureVehicleRegistry(player.serverLevel());
         ServerLevel level = player.serverLevel();
 
         if (!player.blockPosition().closerThan(pos, 10.0)) {
@@ -194,6 +217,9 @@ public class PhysicsAssembleHandler {
      * 感知射线检测（拆解已装配结构）。
      */
     public static void handleAssembleSignal(ServerPlayer player, @Nullable BlockPos hitPos) {
+        // 确保 VehicleRegistry 已注册
+        ensureVehicleRegistry(player.serverLevel());
+
         // 冷却检查
         if (PLAYER_COOLDOWNS.containsKey(player.getUUID())) {
             IACP.LOGGER.debug("[PhysicsAssemble] 玩家 {} 操作冷却中，忽略", player.getName().getString());
