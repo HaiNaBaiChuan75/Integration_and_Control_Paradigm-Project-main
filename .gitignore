@@ -27,4 +27,3 @@ libs
 
 # build artifacts
 *.jar
-!src/**
