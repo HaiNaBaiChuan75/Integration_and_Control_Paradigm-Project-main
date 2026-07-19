@@ -24,5 +24,4 @@ public abstract class Module{
             level.sendBlockUpdated(be.getBlockPos(), be.getBlockState(), be.getBlockState(), 3);
         }
     }
-
 }
