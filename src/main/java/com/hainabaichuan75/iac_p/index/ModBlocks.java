@@ -8,6 +8,7 @@ import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlock;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlock;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlock;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlock;
+import com.hainabaichuan75.iac_p.block.nbt_test.NbtTestBlock;
 import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlock;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear0Block;
 import com.hainabaichuan75.iac_p.content.blocks.cockpit_light.CockpitLightLinear1Block;
@@ -178,6 +179,17 @@ public class ModBlocks {
             DebugSwivelBearingBlock::new,
             BlockBehaviour.Properties.of()
                     .strength(1.5f, 6.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
+
+    // ==================================================================
+    //  NBT 试点方块（Engine + Components 自 NBT）
+    // ==================================================================
+
+    public static final DeferredBlock<NbtTestBlock> NBT_TEST = BLOCKS.registerBlock("nbt_test",
+            NbtTestBlock::new,
+            BlockBehaviour.Properties.of()
+                    .strength(2.0f, 6.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion());
 

@@ -5,6 +5,7 @@ import com.hainabaichuan75.iac_p.block.machine_gun.MachineGunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotGunBlockEntity;
 import com.hainabaichuan75.iac_p.block.shotgun.ShotgunBaseBlockEntity;
 import com.hainabaichuan75.iac_p.block.suspension_test.SuspensionTestBlockEntity;
+import com.hainabaichuan75.iac_p.block.nbt_test.NbtTestBlockEntity;
 import com.hainabaichuan75.iac_p.block.test_blank.TestBlankBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_gear.DebugGearBlockEntity;
 import com.hainabaichuan75.iac_p.content.blocks.debug_swivel.DebugSwivelBearingBlockEntity;
@@ -77,6 +78,14 @@ public class ModBlockEntityTypes {
                     () -> BlockEntityType.Builder.of(
                             TestControllerBlockEntity::new,
                             ModBlocks.TEST_CONTROLLER.get()
+                    ).build(null));
+
+    // ===== NBT 试点 =====
+
+    public static final Supplier<BlockEntityType<NbtTestBlockEntity>> NBT_TEST =
+            BLOCK_ENTITY_TYPES.register("nbt_test",
+                    () -> BlockEntityType.Builder.of(
+                            NbtTestBlockEntity::new, ModBlocks.NBT_TEST.get()
                     ).build(null));
 
     // ===== 测试空白方块（所有变体共用同一 BE 类型） =====
