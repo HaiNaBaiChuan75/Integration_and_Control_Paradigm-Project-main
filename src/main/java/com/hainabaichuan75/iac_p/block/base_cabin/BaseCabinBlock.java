@@ -5,6 +5,7 @@ import com.hainabaichuan75.iac_p.block.cockpit.CockpitBlockEntity;
 import com.hainabaichuan75.iac_p.entity.IACPSeatEntity;
 
 import com.simibubi.create.content.contraptions.actors.seat.SeatBlock;
+import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -45,7 +46,7 @@ import java.util.List;
  * 但仅占一格高度，使用 GeckoLib 骨骼动画模型渲染。
  * 视觉上作为"通用驾驶舱 2.0"，提供同样的载具驾驶功能。
  */
-public class BaseCabinBlock extends Block implements EntityBlock {
+public class BaseCabinBlock extends Block implements EntityBlock, ProperWaterloggedBlock {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -103,7 +104,8 @@ public class BaseCabinBlock extends Block implements EntityBlock {
     public static void sitDown(Level level, BlockPos pos, Entity entity) {
         if (level.isClientSide)
             return;
-        IACPSeatEntity seat = new IACPSeatEntity(level, pos);
+        IACPSeatEntity seat = new IACPSeatEntity(level);
+        seat.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
         level.addFreshEntity(seat);
         entity.startRiding(seat, true);
         if (entity instanceof TamableAnimal ta)

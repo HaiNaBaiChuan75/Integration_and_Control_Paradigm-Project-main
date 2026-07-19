@@ -36,7 +36,6 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.util.Lazy;
-import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
