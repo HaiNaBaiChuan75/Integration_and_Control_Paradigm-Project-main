@@ -35,6 +35,7 @@ import java.util.List;
  * @param key  组件键
  * @param <T>  组件类型参数
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public record View<T>(@NotNull Part part, @NotNull ComponentKey<T> key) {
 
     /**

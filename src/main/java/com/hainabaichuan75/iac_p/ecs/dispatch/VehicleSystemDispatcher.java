@@ -34,7 +34,7 @@ import java.util.List;
  * </ul>
  * <p>
  */
-//@EventBusSubscriber
+@Deprecated(since = "1.0", forRemoval = true)
 public class VehicleSystemDispatcher {
 
     // ============================================================

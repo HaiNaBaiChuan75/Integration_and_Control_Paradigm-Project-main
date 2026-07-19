@@ -31,6 +31,7 @@ import java.util.List;
  * <li><b>轻量</b>——纯 Java 接口 + 静态列表，无框架依赖</li>
  * </ul>
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public final class V2SystemRegistry {
 
     private static final List<TickSystem> TICK_SYSTEMS = new ArrayList<>();

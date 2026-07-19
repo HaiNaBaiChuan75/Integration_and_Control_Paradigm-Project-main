@@ -36,6 +36,7 @@ import java.util.List;
  *   <li><b>异常隔离</b>——每个 System 调用包装在 try-catch 中，防止单个异常中断整条调度链</li>
  * </ul>
  */
+@Deprecated(since = "1.0", forRemoval = true)
 @EventBusSubscriber
 public class V2SystemDispatcher {
 

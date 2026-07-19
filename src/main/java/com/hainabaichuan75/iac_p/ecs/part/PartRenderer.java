@@ -23,6 +23,7 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
  *
  * @param <BE> 部件 BE 类型，需同时实现 {@link Part}、{@link GeoAnimatable}，并且是 {@link BlockEntity}
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public class PartRenderer<BE extends BlockEntity & Part & GeoAnimatable> extends GeoBlockRenderer<BE> {
 
     /**

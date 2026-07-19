@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * @see com.hainabaichuan75.iac_p.ecs.v2.entity.PartBlockEntity 抽象基类，提供组件存储 + NBT 批量序列化
  * @see View 类型化访问器与工厂
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public interface Part extends BlockEntitySubLevelActor {
     @NotNull BlockEntity getBlockEntity();
 

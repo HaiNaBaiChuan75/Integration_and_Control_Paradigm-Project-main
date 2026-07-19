@@ -17,6 +17,7 @@ import java.util.List;
  * <b>约束</b>：System 必须保持无状态——运行时数据保留在 Part 或 SubLevel 上，
  * 不在 System 内部持有可变字段。
  */
+@Deprecated(since = "1.0", forRemoval = true)
 @FunctionalInterface
 public interface VehicleTickSystem {
 

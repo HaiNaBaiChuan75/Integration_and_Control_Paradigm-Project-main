@@ -13,6 +13,7 @@ import java.util.List;
  * 适合：悬挂弹簧力与阻尼、轮胎驱动力与抓地力、引擎扭矩输出。
  * <p>
  */
+@Deprecated(since = "1.0", forRemoval = true)
 @FunctionalInterface
 public interface VehiclePhysicsSystem {
 

@@ -25,6 +25,7 @@ import java.util.function.Function;
  *
  * @param <T> 组件值的类型
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public final class ComponentKey<T> {
 
     private static final Map<String, ComponentKey<?>> REGISTRY = new LinkedHashMap<>();

@@ -14,6 +14,7 @@ import java.util.List;
  * <b>注意</b>：此 System 仅在客户端运行，不能访问服务端数据。
  * 需要同步的数据应通过 Part 的同步字段获取。
  */
+@Deprecated(since = "1.0", forRemoval = true)
 @FunctionalInterface
 public interface VehicleClientSystem {
 

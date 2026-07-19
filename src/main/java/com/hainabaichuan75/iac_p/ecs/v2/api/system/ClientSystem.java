@@ -20,6 +20,7 @@ import java.util.List;
  * 与操作 {@code ecs.part.Part} 的 {@code VehicleClientSystem} 并行存在，
  * 两者互不干扰。
  */
+@Deprecated(since = "1.0", forRemoval = true)
 @FunctionalInterface
 public interface ClientSystem {
 

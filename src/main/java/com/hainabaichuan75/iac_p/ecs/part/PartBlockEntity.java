@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @see Part
  * @see dev.ryanhcode.sable.sublevel.SubLevel#logicalPose()
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public abstract class PartBlockEntity extends BlockEntity implements Part {
 
     public PartBlockEntity(@NotNull BlockEntityType<?> type, @NotNull BlockPos pos, @NotNull BlockState blockState) {

@@ -29,6 +29,7 @@ import org.joml.Vector3dc;
  * @see PartBlockEntity
  * @see SubLevel#logicalPose()
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public interface Part extends BlockEntitySubLevelActor {
 
     /**

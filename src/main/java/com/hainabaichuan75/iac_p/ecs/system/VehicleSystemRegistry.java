@@ -26,6 +26,7 @@ import java.util.List;
  * <li><b>轻量</b>——纯 Java 接口 + 静态列表，无框架依赖</li>
  * </ul>
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public final class VehicleSystemRegistry {
 
     private static final List<VehicleTickSystem> TICK_SYSTEMS = new ArrayList<>();
