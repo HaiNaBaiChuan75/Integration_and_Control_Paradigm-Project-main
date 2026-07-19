@@ -16,17 +16,17 @@ public interface ModuleHost extends BlockEntitySubLevelActor {
     List<Module> modules();
 
     default void saveComponents(CompoundTag tag) {
-        for (var c : modules()) {
+        for (var module : modules()) {
             var ct = new CompoundTag();
-            c.save(ct);
-            tag.put(c.componentName(), ct);
+            module.save(ct);
+            tag.put(module.componentName(), ct);
         }
     }
 
     default void loadComponents(CompoundTag tag) {
-        for (var c : modules()) {
-            var ct = tag.getCompound(c.componentName());
-            if (!ct.isEmpty()) c.load(ct);
+        for (var module : modules()) {
+            var ct = tag.getCompound(module.componentName());
+            if (!ct.isEmpty()) module.load(ct);
         }
     }
 }

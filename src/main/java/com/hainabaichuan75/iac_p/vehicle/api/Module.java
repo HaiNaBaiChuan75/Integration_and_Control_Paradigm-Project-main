@@ -16,12 +16,4 @@ public abstract class Module{
     public abstract String componentName();
     public abstract void save(CompoundTag tag);
     public abstract void load(CompoundTag tag);
-
-    public final void setChanged() { be.setChanged(); }
-    public final void sync() {
-        var level = be.getLevel();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(be.getBlockPos(), be.getBlockState(), be.getBlockState(), 3);
-        }
-    }
 }
