@@ -18,7 +18,7 @@ bin
 build_err.txt
 libs
 
-.cache
+**/.cache
 **/*.log
 **/*.tmp
 
@@ -27,4 +27,3 @@ libs
 
 # build artifacts
 *.jar
-!src/**
