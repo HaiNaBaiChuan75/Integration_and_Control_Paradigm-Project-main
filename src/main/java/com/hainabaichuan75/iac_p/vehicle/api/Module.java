@@ -1,17 +1,11 @@
 package com.hainabaichuan75.iac_p.vehicle.api;
 
-import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
-import dev.ryanhcode.sable.sublevel.ServerSubLevel;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 载具组件抽象 —— 数据 + 行为 + 自定义 NBT 序列化 + BE 关联 + 生命周期。
+ * BE 内部模块 —— 可独立 save/load 的数据与领域方法。
  */
 public abstract class Module{
 
@@ -30,10 +24,5 @@ public abstract class Module{
             level.sendBlockUpdated(be.getBlockPos(), be.getBlockState(), be.getBlockState(), 3);
         }
     }
-
-    public void serverTick(ServerLevel level, BlockPos pos, BlockState state) {}
-    public void clientTick(ClientLevel level, BlockPos pos, BlockState state) {}
-    public void sable$tick(final ServerSubLevel subLevel) {}
-    public void sable$physicsTick(final ServerSubLevel subLevel, final RigidBodyHandle handle, final double timeStep) {}
 
 }
