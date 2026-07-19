@@ -13,11 +13,11 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 载具组件抽象 —— 数据 + 行为 + 自定义 NBT 序列化 + BE 关联 + 生命周期。
  */
-public abstract class Component{
+public abstract class Module{
 
     public final @NotNull BlockEntity be;
 
-    protected Component(@NotNull BlockEntity be) { this.be = be; }
+    protected Module(@NotNull BlockEntity be) { this.be = be; }
 
     public abstract String componentName();
     public abstract void save(CompoundTag tag);

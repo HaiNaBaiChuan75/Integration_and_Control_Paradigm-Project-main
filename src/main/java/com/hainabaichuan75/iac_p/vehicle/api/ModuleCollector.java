@@ -8,7 +8,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-final class ComponentCollector {
+final class ModuleCollector {
 
     private static final ClassValue<List<VarHandle>> SLOTS = new ClassValue<>() {
         @Override
@@ -23,7 +23,7 @@ final class ComponentCollector {
             for (var f = type; f != null && f != Object.class; f = f.getSuperclass()) {
                 for (var field : f.getDeclaredFields()) {
                     if (Modifier.isStatic(field.getModifiers())) continue;
-                    if (!Component.class.isAssignableFrom(field.getType())) continue;
+                    if (!Module.class.isAssignableFrom(field.getType())) continue;
                     try {
                         list.add(lookup.unreflectVarHandle(field));
                     } catch (ReflectiveOperationException e) {
@@ -35,10 +35,10 @@ final class ComponentCollector {
         }
     };
 
-    static List<Component> collect(Object host) {
-        var list = new ArrayList<Component>();
+    static List<Module> collect(Object host) {
+        var list = new ArrayList<Module>();
         for (var h : SLOTS.get(host.getClass())) {
-            var c = (Component) h.get(host);
+            var c = (Module) h.get(host);
             if (c != null) list.add(c);
         }
         return list;

@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.vehicle.common;
 
-import com.hainabaichuan75.iac_p.vehicle.api.Component;
+import com.hainabaichuan75.iac_p.vehicle.api.Module;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -12,7 +12,7 @@ import org.joml.Vector3dc;
  * 子类实现具体的开火行为。
  * 云台数学见 {@link com.hainabaichuan75.iac_p.vehicle.GimbalMath}。
  */
-public abstract class Weapon extends Component {
+public abstract class Weapon extends Module {
 
     int ammo;
     double yaw;

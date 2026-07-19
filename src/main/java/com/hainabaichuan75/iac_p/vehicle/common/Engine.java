@@ -1,13 +1,13 @@
 package com.hainabaichuan75.iac_p.vehicle.common;
 
-import com.hainabaichuan75.iac_p.vehicle.api.Component;
+import com.hainabaichuan75.iac_p.vehicle.api.Module;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * 引擎。
  */
-public class Engine extends Component {
+public class Engine extends Module {
 
     double rpm;
     double torqueOutput;

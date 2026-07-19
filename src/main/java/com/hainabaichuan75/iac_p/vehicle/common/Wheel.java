@@ -1,6 +1,6 @@
 package com.hainabaichuan75.iac_p.vehicle.common;
 
-import com.hainabaichuan75.iac_p.vehicle.api.Component;
+import com.hainabaichuan75.iac_p.vehicle.api.Module;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.joml.Vector3dc;
@@ -8,7 +8,7 @@ import org.joml.Vector3dc;
 /**
  * 轮子。
  */
-public class Wheel extends Component {
+public class Wheel extends Module {
 
     double angularVelocity;
     double suspensionCompression;
