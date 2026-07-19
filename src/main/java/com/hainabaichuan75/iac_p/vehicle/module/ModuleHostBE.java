@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.vehicle.api;
+package com.hainabaichuan75.iac_p.vehicle.module;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;

@@ -1,5 +1,12 @@
 package com.hainabaichuan75.iac_p.vehicle;
 
+import com.hainabaichuan75.iac_p.vehicle.provider.EngineProvider;
+import com.hainabaichuan75.iac_p.vehicle.provider.GimbalProvider;
+import com.hainabaichuan75.iac_p.vehicle.provider.WeaponProvider;
+import com.hainabaichuan75.iac_p.vehicle.provider.WheelProvider;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -21,6 +28,12 @@ public class Vehicle {
     private double maximumSpeed;
     private double maximumMovingSpeed;
     private int totalElectricity;
+
+    // ====== 部件能力（由编排层从 SubLevel 枚举填充） ======
+    private List<EngineProvider> engines = Collections.emptyList();
+    private List<WheelProvider> wheels = Collections.emptyList();
+    private List<GimbalProvider> gimbals = Collections.emptyList();
+    private List<WeaponProvider> weapons = Collections.emptyList();
 
     /**
      * @param subLevelUUID 关联的 Sable SubLevel UUID，非 null
@@ -75,6 +88,42 @@ public class Vehicle {
 
     public void setTotalElectricity(int totalElectricity) {
         this.totalElectricity = totalElectricity;
+    }
+
+    // ==================================================================
+    //  部件能力
+    // ==================================================================
+
+    public List<EngineProvider> getEngines() {
+        return engines;
+    }
+
+    public void setEngines(List<EngineProvider> engines) {
+        this.engines = engines;
+    }
+
+    public List<WheelProvider> getWheels() {
+        return wheels;
+    }
+
+    public void setWheels(List<WheelProvider> wheels) {
+        this.wheels = wheels;
+    }
+
+    public List<GimbalProvider> getGimbals() {
+        return gimbals;
+    }
+
+    public void setGimbals(List<GimbalProvider> gimbals) {
+        this.gimbals = gimbals;
+    }
+
+    public List<WeaponProvider> getWeapons() {
+        return weapons;
+    }
+
+    public void setWeapons(List<WeaponProvider> weapons) {
+        this.weapons = weapons;
     }
 
     @Override

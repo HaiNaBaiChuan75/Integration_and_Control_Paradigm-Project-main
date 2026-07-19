@@ -1,4 +1,4 @@
-package com.hainabaichuan75.iac_p.vehicle.api;
+package com.hainabaichuan75.iac_p.vehicle.module;
 
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import net.minecraft.nbt.CompoundTag;
